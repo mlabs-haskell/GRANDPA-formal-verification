@@ -1,15 +1,21 @@
 
 Require Coq.Vectors.Vector.
 
+Require List.
+
 Definition Vector := VectorDef.t.
 
 
 
 
 Module BlockChain.
+(* 
+  
+*)
 
-Inductive Block := 
-  | BlockC (id:nat).
+Inductive Block : nat -> Type:= 
+  | OriginBlock : Block 0
+  | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
 
 
@@ -27,20 +33,18 @@ Inductive Block :=
    - Block number (provided by the index of the block in the chain)
    - A way to have different blocks.
  *)
-Definition Chain := Vector Block .
-
 
 (* 
   This corresponds to head(C) <= head(C').
   There exits various ways to define this relation but we believe 
   that this one would be quite useful.
 *)
-Inductive Prefix : forall {n}, Chain n -> forall {m}, Chain m -> Type :=
+Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
   (* C <= C*)
-  | Same : forall n (C : Chain n), Prefix C C
+  | Same : forall n (B : Block n), Prefix B B
   (* C <= C'  ->  C <= (B :: C')*)
-  | IsPrefix {n m} (C: Chain n) (C': Chain m) (x : Block) :
-      Prefix C C' -> Prefix C (VectorDef.cons Block x m C').
+  | IsPrefix {n m} (B: Block n) (B': Block m) (b : nat) :
+      Prefix B B' -> Prefix B (NewBlock B b).
 
 
 (* 
@@ -49,17 +53,19 @@ Inductive Prefix : forall {n}, Chain n -> forall {m}, Chain m -> Type :=
    of the one in the paper `B<B' /\ B=B! /\ B>B'` .
 
  *)
-Inductive Related : forall {n}, Chain n -> forall {m}, Chain m -> Type :=
-  | IsLower {n m } (C:Chain n) (C':Chain m) : Prefix C C' -> Related C C'
-  | IsUpper {n m } (C:Chain n) (C':Chain m)  : Prefix C' C -> Related C' C.
-
-End BlockChain.
-
-Module SetOfVotes.
+Inductive Related : forall {n}, Block n -> forall {m}, Block m -> Type :=
+  | IsLower {n m } (B:Block n) (B':Block m) : Prefix B B' -> Related B B'
+  | IsUpper {n m } (B:Block n) (B':Block m)  : Prefix B' B -> Related B' B.
 
 
+Inductive Voter : Type := |VoterC (n:nat) :Voter.
 
-End SetOfVotes.
+Inductive Vote {n} : Block n -> Type := 
+  | VoteC {m} {original_chain: Block n} (block: Block m) (is_prefix: Prefix original_chain block) (voter : Voter) : Vote original_chain.
+
+Inductive Votes {n} : Block n ->  Type := | VotesC (B : Block n) (l:list (Vote B)): Votes B.
+
+
 
 (* TODO: Define:
 
@@ -70,7 +76,6 @@ End SetOfVotes.
 - g
 - Round
 - Estimate 
-*)
 
 Module preliminars.
 
@@ -92,7 +97,7 @@ Definition g (n:SetOfVotes) : Maybe Block := Nothing.
 Example SOme : Block = Block .
 
 
-Definition Time := nat.
+Inductive Time := | TimeC nat.
 
 Definition Voter := nat.
 
@@ -115,5 +120,6 @@ Inductive Round : Voters-> Time -> nat -> Type :=
 
 
 
-
+ *)
 End preliminars.
+
