@@ -62,7 +62,7 @@ Inductive Related : forall {n}, Block n -> forall {m}, Block m -> Type :=
 
 Definition Voter : Type := nat.
 
-Definition Voters := list Voter.
+Definition Voters: Type := list Voter.
 
 Inductive Vote {last_block_number} 
   :Voters -> Block last_block_number -> Type 
@@ -107,10 +107,16 @@ Admitted.
   valid_votes_count >= threshold \/ equivocating_voters >= f.
 *)
 
+Inductive Maybe : Type -> Type :=
+ | Just  {T:Type}  (t:T) : Maybe T
+ | Nothing  {T:Type}: Maybe T.
+
 (* Función g *)
-Definition g {last_block_number voters_upper} 
-             (T : Votes (Voters ) (Block last_block_number)) 
-           : Block last_block_number.
+Definition g {last_block_number} 
+  (voters:Voters)
+  (last_block : Block last_block_number)
+  (T : Votes voters last_block) 
+  : Maybe (Block last_block_number).
 (* TODO: Provide definition *)
 Admitted.
 
