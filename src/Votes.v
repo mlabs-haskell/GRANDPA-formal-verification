@@ -1,3 +1,4 @@
+Require List.
 Require Import Grandpa.Blocks.
 
 Definition Voter : Type := nat.
@@ -82,7 +83,7 @@ Fixpoint isSafe {bizantiners_number last_block_number }
   *)
 
 
-Definition has_supermajority  {bizantiners_number last_block_number}
+Definition hasSupermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
