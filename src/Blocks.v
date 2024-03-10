@@ -1,14 +1,7 @@
 Require Coq.Vectors.Vector.
 
-Require List.
-Require Nat.
-Require Coq.Init.Nat.
 
 Definition Vector := VectorDef.t.
-
-
-
-
 (* 
   
 *)
