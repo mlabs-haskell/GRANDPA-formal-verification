@@ -64,8 +64,9 @@ Variant Estimate {preview_number precommit_number : nat}
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
   : Type
   :=
-    EstimateC 
-    (new_block_number : nat)
+  (*TODO: add origin block case*)
+    |EstimateC 
+    {new_block_number : nat}
     (new_block : Block new_block_number)
     (is_children: IsChildren new_block last_block)
     {g_block_number: nat}
