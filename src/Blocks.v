@@ -34,6 +34,15 @@ Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
       Prefix block1 block2 -> Prefix block1 (NewBlock block2 block_id).
 
 
+(*
+  IsChildren B B' = B' < B
+ *)
+
+Variant IsChildren {n m} (block1 :Block n) (block2: Block m) : Type :=
+  | IsChildrenC (is_prefix: Prefix block2 block1) (block_number_is_above: n<m) :
+      IsChildren block1 block2.
+
+
 (* 
    Is equivalent to the relation B ~ B' in the paper
    We express it like `(B <= B' ) \/ (B' <= B)` instead 

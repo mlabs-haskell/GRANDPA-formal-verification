@@ -115,3 +115,13 @@ Definition IsSubset {bizantiners_number last_block_number_s last_block_number_t}
 Admitted.
 
 
+Definition mergeVotes {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes1 :Votes voters last_block)
+  (votes2 :Votes voters last_block)
+  : Votes voters last_block
+  :=
+    match votes1, votes2 with
+      | VotesC _ _ list1, VotesC _ _ list2 => VotesC _ _ (list1 ++ list2)
+      end.
