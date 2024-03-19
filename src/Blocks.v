@@ -20,7 +20,11 @@ Inductive Block : nat -> Type:=
    *)
   | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
-
+Definition get_block_number {n : nat} (block : Block n) : nat :=
+  match block with
+  | OriginBlock => 0
+  | NewBlock _ _ => S n
+  end.
 
 
 (* 

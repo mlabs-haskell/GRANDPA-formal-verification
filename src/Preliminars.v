@@ -1,5 +1,6 @@
 Require Import Blocks.
 Require Import Votes.
+Require List.
 
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
@@ -8,23 +9,11 @@ Definition g {bizantiners_number last_block_number}
   (T : Votes voters last_block) 
   : option (sigT ( fun out => Block out)).
 Admitted.
-(*  :=
-  let valid_votes := 
-    filter (fun v => match v with 
-                     | VoteC _ _ _ _ _ _ => true 
-                     | _ => false 
-                     end) 
-           (projT2 T) in
-  let sorted_votes := 
-    sort (fun v1 v2 => if leb (projT2 v1) (projT2 v2) then true else false) 
-         valid_votes in
-  match sorted_votes with
-  | [] => OriginBlock
-  | h :: _ => projT1 h
-  end.
+  
+(*  let non_equivocate_voters := List.filter isEquivocate T
+  in
+  let non_equivocate_votes := List.filter 
 *)
-
-Print g.
 
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}

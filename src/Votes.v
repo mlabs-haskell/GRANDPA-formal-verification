@@ -1,13 +1,17 @@
 Require List.
-Require Import Grandpa.Blocks.
+Require Import Blocks.
 
 Definition Voter : Type := nat.
 
 Variant Voters (bizantiners_number:nat) : Type 
   := 
     | VotersC (voters:list Voter) 
-        (*TODO: add a constraint here to make the voters to only appear 
-        once, or use a proper set.*)
+        (*
+           TODO: 
+            add a constraint here to make the voters to only appear 
+            once, or use a proper set.
+           For now we assume that voters are registered only once.
+          *)
         (bizantiners_are_lower: 3*bizantiners_number < length voters) 
       : Voters  bizantiners_number .
 
@@ -25,14 +29,26 @@ Definition votersLength {bizantiners_number} (voters:Voters bizantiners_number)
   | VotersC _ l _ => length l
   end.
 
-Inductive Vote {bizantiners_number last_block_number}
-  :Voters bizantiners_number -> Block last_block_number -> Type 
+Variant Vote {bizantiners_number last_block_number}
+  (voters: Voters bizantiners_number )
+  (original_chain:Block last_block_number)
+  :Type 
   := 
-    | VoteC {m}  (voters : Voters bizantiners_number) (voter : Voter) 
+    | VoteC {m}  (voter : Voter) 
       (is_voter: inVoters voter voters ) 
-      (original_chain: Block last_block_number) 
       (block: Block m) (is_prefix: Prefix original_chain block)
       : Vote voters original_chain.
+
+Definition vote_to_pair  {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number}
+  {original_chain:Block last_block_number}
+  (vote: Vote voters original_chain)
+  : (nat * (sigT (fun n => Block n)))
+  :=
+  match vote with 
+  | VoteC _ _ voter _ block _ => 
+        (voter , existT _ _ block)
+  end.
 
 
 Inductive Votes  {bizantiners_number last_block_number}
@@ -43,16 +59,25 @@ Inductive Votes  {bizantiners_number last_block_number}
       (votes_list:list (Vote voters last_block))
       : Votes voters last_block.
 
+Definition votes_to_pair_list {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (votes: Votes voters last_block)
+  : list (nat * (sigT (fun n => Block n)))
+  :=
+  match votes with 
+    | VotesC _ _ list => 
+        List.map vote_to_pair list
+  end.
 
-Definition Equivocate {bizantiners_number last_block_number } 
+Definition isEquivocate {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
-  (voter: Voter)
+  {voter: Voter}
   (votes: Votes voters last_block)
   : bool
   :=
     let unvote vote1 := match  vote1 with
-      |VoteC  _  voter _ _ _ _ => voter
+      |VoteC  _ _  voter _ _ _ => voter
       end
     in
     match votes with 
