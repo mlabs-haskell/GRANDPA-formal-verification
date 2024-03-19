@@ -62,8 +62,7 @@ Variant Estimate {preview_number precommit_number : nat}
   {last_block_number} 
   {last_block : Block last_block_number} 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
-  (*TODO Make Estimate part of Type instead of Prop *)
-  : nat -> Prop
+  : nat -> Type
   :=
   (*TODO: add origin block case*)
     |EstimateC 
@@ -99,7 +98,7 @@ Definition get_estimate {preview_number precommit_number : nat}
   {last_block_number} 
   {last_block : Block last_block_number} 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
-  : option (exists n, Estimate  round_state n).
+  : option (sigT (fun n  => Estimate  round_state n)).
 Admitted.
 
 
