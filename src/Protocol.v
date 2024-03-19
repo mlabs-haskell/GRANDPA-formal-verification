@@ -71,7 +71,7 @@ Variant Estimate {preview_number precommit_number : nat}
     (is_children: IsChildren new_block last_block)
     {g_block_number: nat}
     (g_preview: Block g_block_number)
-    (g_preview_is_some : g ( get_preview_votes round_state) = Some g_preview)
+    (g_preview_is_some : g ( get_preview_votes round_state) = Some (existT _ g_block_number g_preview))
     (new_block_is_ancestor_of_g: Prefix new_block g_preview)
     : Estimate round_state new_block_number.
 
@@ -116,12 +116,24 @@ Variant Completable {preview_number precommit_number : nat}
       (e: Estimate  round_state estimate_block_number)
       {g_block_number: nat}
       (g_preview: Block g_block_number)
-      (g_preview_is_some : g ( get_preview_votes round_state) = Some g_preview)
+      (g_preview_is_some 
+        : g ( get_preview_votes round_state) 
+          = Some (existT _ g_block_number g_preview)
+      )
       (new_block_is_below_g: estimate_block_number < g_block_number)
   | CompletableByImpossible 
       {g_block_number: nat}
       (g_preview: Block g_block_number)
-      (g_preview_is_some : g ( get_preview_votes round_state) = Some g_preview)
-      (cant_have_supermajority : forall n (block : Block n) , g_block_number < n -> hasSupermajority (get_precommit_votes round_state) = false)
+      (
+        g_preview_is_some 
+        : g ( get_preview_votes round_state) 
+          = Some (existT _ g_block_number g_preview)
+      )
+      (cant_have_supermajority 
+        : forall n (block : Block n) 
+          , g_block_number < n 
+          -> hasSupermajority (get_precommit_votes round_state) 
+            = false
+      )
   .
 

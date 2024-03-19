@@ -2,15 +2,13 @@ Require Import Blocks.
 Require Import Votes.
 
 (* Función g *)
-Definition g {bizantiners_number last_block_number out}
+Definition g {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T : Votes voters last_block) 
-  : option (Block out).
-(* TODO: Provide definition *)
+  : option (sigT ( fun out => Block out)).
 Admitted.
-
-(*
+(*  :=
   let valid_votes := 
     filter (fun v => match v with 
                      | VoteC _ _ _ _ _ _ => true 
@@ -26,6 +24,7 @@ Admitted.
   end.
 *)
 
+Print g.
 
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
@@ -36,10 +35,10 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   (is_sub_set: IsSubset S T )
   {gs_block_number: nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some gs)
+  (gs_is_result : g S = Some (existT _ gs_block_number gs))
   (gt_block_number: nat)
   (gt : Block gt_block_number)
-  (gt_is_result : g T = Some gt)
+  (gt_is_result : g T = Some (existT _ gt_block_number  gt))
   :Prefix gs gt. 
 Admitted.
 
@@ -92,14 +91,13 @@ Lemma lemma_2_6_3 {bizantiners_number last_block_number}
   (S: Votes voters last_block)
   {gs_block_number:nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some gs)
+  (gs_is_result : g S = Some (existT _ gs_block_number gs))
   {block_number : nat}
   (block: Block block_number)
   (unrelated_proof: Unrelated block gs)
   : ImpossibleSupermajority S block.
 Admitted.
 
-  
 
 
 
