@@ -16,18 +16,20 @@ Variant Voters (bizantiners_number:nat) : Type
       : Voters  bizantiners_number .
 
 
-Definition inVoters {bizantiners_number} 
-  (voter : Voter) (voters:Voters bizantiners_number) 
-  :=
-  match voters with 
-  | VotersC _ l _ => List.In voter l
-  end.
-
-Definition votersLength {bizantiners_number} (voters:Voters bizantiners_number)
+Definition voters_to_list {bizantiners_number} (voters:Voters bizantiners_number)
   := 
   match voters with
-  | VotersC _ l _ => length l
+  | VotersC _ l _ => l
   end.
+
+Definition voters_length {bizantiners_number} (voters:Voters bizantiners_number)
+  := 
+  length (voters_to_list voters).
+
+Definition in_Voters {bizantiners_number} 
+  (voter : Voter) (voters:Voters bizantiners_number) 
+  :=
+  List.In voter (voters_to_list voters).
 
 Variant Vote {bizantiners_number last_block_number}
   (voters: Voters bizantiners_number )
@@ -35,9 +37,21 @@ Variant Vote {bizantiners_number last_block_number}
   :Type 
   := 
     | VoteC {m}  (voter : Voter) 
-      (is_voter: inVoters voter voters ) 
+      (is_voter: in_Voters voter voters ) 
       (block: Block m) (is_prefix: Prefix original_chain block)
       : Vote voters original_chain.
+
+Definition vote_to_voter {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number}
+  {original_chain:Block last_block_number}
+  (vote: Vote voters original_chain)
+  : Voter
+  :=
+  match vote with 
+  | VoteC _ _ voter _ _ _ => 
+      voter
+  end.
+
 
 Definition vote_to_pair  {bizantiners_number last_block_number}
   {voters: Voters bizantiners_number}
@@ -59,6 +73,16 @@ Inductive Votes  {bizantiners_number last_block_number}
       (votes_list:list (Vote voters last_block))
       : Votes voters last_block.
 
+Definition votes_to_list {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (votes: Votes voters last_block)
+  : list (Vote voters last_block)
+  := 
+  match votes with
+  | VotesC _ _ l => l
+  end.
+
+
 Definition votes_to_pair_list {bizantiners_number last_block_number}
   {voters: Voters bizantiners_number} {last_block:Block last_block_number}
   (votes: Votes voters last_block)
@@ -69,10 +93,10 @@ Definition votes_to_pair_list {bizantiners_number last_block_number}
         List.map vote_to_pair list
   end.
 
-Definition isEquivocate {bizantiners_number last_block_number } 
+Definition is_equivocate {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
-  {voter: Voter}
+  (voter: Voter)
   (votes: Votes voters last_block)
   : bool
   :=
@@ -90,6 +114,26 @@ Definition isEquivocate {bizantiners_number last_block_number }
       in
         Nat.ltb (length filtered) 1
     end.
+
+Definition find_all_equivocated {bizantiners_number last_block_number } 
+  {voters: Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block)
+  :list Voter
+  :=
+    let voters_list := voters_to_list voters
+    in
+      List.filter  (fun voter => is_equivocate voter votes) voters_list.
+
+Definition find_non_equivocated {bizantiners_number last_block_number } 
+  {voters: Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block)
+  :list Voter
+  :=
+    let voters_list := voters_to_list voters
+    in
+      List.filter  (fun voter => negb (is_equivocate voter votes)) voters_list.
 
 Fixpoint isSafe {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}

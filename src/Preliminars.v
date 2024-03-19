@@ -7,13 +7,12 @@ Definition g {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T : Votes voters last_block) 
-  : option (sigT ( fun out => Block out)).
-Admitted.
-  
-(*  let non_equivocate_voters := List.filter isEquivocate T
+  : option (sigT ( fun out => Block out))
+  := 
+  let non_equivocate_voters := find_non_equivocated T
   in
-  let non_equivocate_votes := List.filter 
-*)
+  None.
+
 
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
