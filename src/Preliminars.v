@@ -9,8 +9,10 @@ Definition g {bizantiners_number last_block_number}
   (T : Votes voters last_block) 
   : option (sigT ( fun out => Block out))
   := 
-  let non_equivocate_voters := find_non_equivocated T
+  let (equivocate_voters, non_equivocate_voters) 
+    := split_voters_by_equivocation T
   in
+
   None.
 
 

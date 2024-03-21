@@ -115,25 +115,15 @@ Definition is_equivocate {bizantiners_number last_block_number }
         Nat.ltb (length filtered) 1
     end.
 
-Definition find_all_equivocated {bizantiners_number last_block_number } 
+Definition split_voters_by_equivocation {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
   (votes: Votes voters last_block)
-  :list Voter
+  : list Voter * list Voter
   :=
     let voters_list := voters_to_list voters
     in
-      List.filter  (fun voter => is_equivocate voter votes) voters_list.
-
-Definition find_non_equivocated {bizantiners_number last_block_number } 
-  {voters: Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block)
-  :list Voter
-  :=
-    let voters_list := voters_to_list voters
-    in
-      List.filter  (fun voter => negb (is_equivocate voter votes)) voters_list.
+      List.partition  (fun voter => is_equivocate voter votes) voters_list.
 
 Fixpoint isSafe {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
