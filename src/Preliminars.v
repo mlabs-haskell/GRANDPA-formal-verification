@@ -2,6 +2,18 @@ Require Import Blocks.
 Require Import Votes.
 Require List.
 
+Require Dictionary.
+
+Module NatDictTypes <: Dictionary.Types.
+  Definition K := nat.
+  Definition V := nat.
+  Definition eqb := Nat.eqb.
+End NatDictTypes.
+
+Module NatDict := Dictionary.Functions NatDictTypes.
+
+
+
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}

@@ -1,14 +1,23 @@
 Require Import List.
 
+Module Type Types.
+
 Parameter K:Type.
 Parameter V:Type.
 Parameter eqb: K -> K -> bool.
 
+End Types.
+
+Module Functions (Types:Types).
+
+Definition K := Types.K.
+Definition V := Types.V.
+Definition eqb := Types.eqb.
 
 Variant Dictionary K V: Type :=
   | DictionaryC (l : list (K*V)) : Dictionary K V.
 
-Definition empty K V:= DictionaryC K V nil.
+Definition empty:= DictionaryC K V nil.
 
 
 Fixpoint add_aux (element: K*V) (dict:list (K*V)): list (K*V)
@@ -46,3 +55,4 @@ Admitted.
 Definition  update_with : K -> (V -> V -> V)-> Dictionary K V -> list (K*V). 
 Admitted.
 
+End Functions.
