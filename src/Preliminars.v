@@ -13,7 +13,6 @@ End NatDictTypes.
 Module NatDict := Dictionary.Functions NatDictTypes.
 
 
-
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
