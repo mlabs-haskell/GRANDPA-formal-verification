@@ -2,16 +2,6 @@ Require Import Blocks.
 Require Import Votes.
 Require List.
 
-Require Dictionary.
-
-Module NatDictTypes <: Dictionary.Types.
-  Definition K := nat.
-  Definition V := nat.
-  Definition eqb := Nat.eqb.
-End NatDictTypes.
-
-Module NatDict := Dictionary.Functions NatDictTypes.
-
 
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
@@ -23,7 +13,19 @@ Definition g {bizantiners_number last_block_number}
   let (equivocate_voters, non_equivocate_voters) 
     := split_voters_by_equivocation T
   in
-
+  let number_of_equivocates := length equivocate_voters
+  in
+  (* TODO: Filter votes to keep only the non equivocate ones and use here *)
+  (* implement it as a function in votes "filter_votes_by_voter_subset" *)
+  let count  := count_votes non_equivocate_voters
+  in
+  let has_supermajority_predicate block_and_vote := 
+    match block_and_vote with
+    | (_, number_of_votes) => voters_length voters + bizantiners_number +1 < 2 * (number_of_votes + number_of_equivocates)
+    end
+  in
+  let blocks_with_super_majority := List.filter has_supermajority_predicate count
+  in
   None.
 
 
