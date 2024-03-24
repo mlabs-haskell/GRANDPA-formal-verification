@@ -2,6 +2,8 @@ Require List.
 Require Import  Nat.
 Require Import Blocks.
 
+Require Dictionary.
+
 Definition Voter : Type := nat.
 
 Variant Voters (bizantiners_number:nat) : Type 
@@ -137,6 +139,21 @@ Definition is_safe {bizantiners_number last_block_number }
      length equivocate_voters <? bizantiners_number
   end.
 
+
+
+Module BlockDictionaryTypes <: Dictionary.Types.
+  Definition K := nat.
+  Definition V := AnyBlock.
+  Definition eqb := Nat.eqb.
+End BlockDictionaryTypes.
+
+Module BlockDictionaryModule := Dictionary.Functions BlockDictionaryTypes.
+
+Definition BlockDictionary := BlockDictionaryModule.Dictionary nat AnyBlock.
+
+
+Fixpoint count_votes_aux (arg: BlockDictionary): BlockDictionary.
+Admitted.
 
 Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}

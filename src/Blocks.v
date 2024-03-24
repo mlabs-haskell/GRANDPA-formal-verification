@@ -20,6 +20,13 @@ Inductive Block : nat -> Type:=
    *)
   | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
+Definition AnyBlock := {n & Block n}.
+(*
+Example:
+  Definition newBlock_1 : AnyBlock := existT (fun n => Block n) 1 (NewBlock OriginBlock 1).
+  Check newBlock_1 : AnyBlock .
+*)
+
 Fixpoint eqb {n m} (block1:Block n) (block2:Block m) := 
   match block1, block2 with
   | OriginBlock, OriginBlock => true
