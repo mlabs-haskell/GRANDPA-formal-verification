@@ -1,6 +1,4 @@
 (* 
-      specialize (IHblock1 _ H2).
-Lemma equal_blocks_are_prefix {n m} (block1: Block n) (block2: Block m) : eqb block1 block2 = true -> Prefix block1 block2 .
 
   In the real implementation is unpractical to have the full
   history of the blockchain and instead a new block stores
@@ -70,6 +68,9 @@ Proof.
 Qed.
 *)
 
+Lemma eqb_eq {n} (block1 block2: Block n)  : eqb block1 block2 = true -> block1 = block2.
+Admitted.
+
 
 Definition get_block_number {n : nat} (block : Block n) : nat :=
   match block with
@@ -99,11 +100,14 @@ Proof.
 Qed.
 
 
-
-
-Lemma eqb_blocks_are_prefix {n m} (block1: Block n) (block2: Block m) : eqb block1 block2 = true -> Prefix block1 block2 .
+Lemma eqb_blocks_are_prefix {n} (block1 block2: Block n): eqb block1 block2 = true -> Prefix block1 block2.
 Proof.
+  Admitted.
+(* TODO: remove the admitted.*)
+(*refine (@rect2 _ _ _ _ _); [now constructor | simpl].
   intros H.
+  apply eqb_implies_same_nat in H  as M.
+  apply eqb_eq in H.
   unfold eqb in H.
   destruct (Nat.eqb n m) eqn:n_eq_m.
   - apply eqb_eq_nat in n_eq_m.
@@ -114,30 +118,40 @@ Proof.
   + (* Case: block1 = NewBlock oldBlock1 id1, block2 = OriginBlock *)
    discriminate H.
   + (* Case: block1 = NewBlock oldBlock1 id1, block2 = NewBlock oldBlock2 id2 *)
+    simpl in H.
+    apply Bool.andb_true_iff in H.
+    destruct H as [Hids Hrecur].
+
     rewrite n_eq_m in H.
     simpl in H.
     apply Same.
 Qed.
+ *)
 
 
-Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2)
-  :=
+Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) : Type.
+Admitted.
+(*  :=
   match block1, block2 with
     | OriginBlock, _ => Some (originBlock_is_always_prefix block2)
     | _, OriginBlock => None
     | NewBlock oldBlock1 _, NewBlock oldBlock2 _ =>
       if Nat.eqb n m then 
-        if eqb block1 block2 then 
-          Same block1 block2 
-        else 
-          None
+        let comparition := eqb block1 block2
+        in
+          if comparition then 
+            let same_nat := eqb_implies_same_nat block1 block2
+            in
+            eqb_blocks_are_prefix block1 block2 comparition
+          else 
+            None
       else
         match is_prefix oldBlock1 oldBlock2 with
         | Some p => Some (IsPrefix block1 p)
         | None => None
         end
   end.
-
+ *)
 
 (*
   IsChildren B B' = B' < B
@@ -161,4 +175,3 @@ Variant Related : forall {n}, Block n -> forall {m}, Block m -> Prop :=
     : Prefix block2 block1 -> Related block2 block1.
 
 Definition Unrelated {n m} (block1 : Block n) (block2 :Block m) : Type := not (Related block1 block2).
-

@@ -132,7 +132,7 @@ Variant Completable {preview_number precommit_number : nat}
       (cant_have_supermajority 
         : forall n (block : Block n) 
           , g_block_number < n 
-          -> hasSupermajority (get_precommit_votes round_state) 
+          -> has_supermajority (get_precommit_votes round_state) 
             = false
       )
   .

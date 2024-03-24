@@ -1,4 +1,5 @@
 Require List.
+Require Import  Nat.
 Require Import Blocks.
 
 Definition Voter : Type := nat.
@@ -12,14 +13,13 @@ Variant Voters (bizantiners_number:nat) : Type
             once, or use a proper set.
            For now we assume that voters are registered only once.
           *)
-        (bizantiners_are_lower: 3*bizantiners_number < length voters) 
       : Voters  bizantiners_number .
 
 
 Definition voters_to_list {bizantiners_number} (voters:Voters bizantiners_number)
   := 
   match voters with
-  | VotersC _ l _ => l
+  | VotersC _ l => l
   end.
 
 Definition voters_length {bizantiners_number} (voters:Voters bizantiners_number)
@@ -125,29 +125,27 @@ Definition split_voters_by_equivocation {bizantiners_number last_block_number }
     in
       List.partition  (fun voter => is_equivocate voter votes) voters_list.
 
-Fixpoint isSafe {bizantiners_number last_block_number } 
+
+Definition is_safe {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
   (votes: Votes voters last_block)
-  :bool.
-  Admitted.
-  (*
-    match voters with 
-    | VotersC  _ voters_list _ => 
-        match voters_list with
-        | nil => true
-        | List.cons x y => andb (negb (Equivocate x votes) ) (isSafe (Votes voters y))
-        end
-     end.
-  *)
+  :bool
+  :=
+  match split_voters_by_equivocation votes with
+  | (equivocate_voters, non_equivocate_voters) =>
+     length equivocate_voters <? bizantiners_number
+  end.
 
 
-Definition hasSupermajority  {bizantiners_number last_block_number}
+Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
   : bool.
-(* TODO: Provide Definition *)
+
+
+
 Admitted.
 
 (*

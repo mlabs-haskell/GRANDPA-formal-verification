@@ -31,7 +31,7 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T: Votes voters last_block)
-  (is_safe_t: isSafe T = true)
+  (is_safe_t: is_safe T = true)
   (S: Votes voters last_block) 
   (is_sub_set: IsSubset S T )
   {gs_block_number: nat}

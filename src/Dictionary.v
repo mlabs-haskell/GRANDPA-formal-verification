@@ -52,7 +52,7 @@ Definition  to_list : Dictionary K V -> list (K*V).
 Admitted.
 
 
-Definition  update_with : K -> (V -> V -> V)-> Dictionary K V -> list (K*V). 
+Definition  update_with : K -> (option V -> V -> V)-> Dictionary K V -> list (K*V). 
 Admitted.
 
 End Functions.
