@@ -34,6 +34,12 @@ Fixpoint eqb {n m} (block1:Block n) (block2:Block m) :=
   | _, _ => false
   end.
 
+Definition any_block_eqb (b1 b2: AnyBlock) : bool
+  := 
+    match b1 , b2 with 
+    | (existT _ n1 b1'), (existT _ n2 b2') => eqb b1' b2'
+    end.
+
 Lemma eqb_eq_nat {n m} : Nat.eqb n m = true <-> n = m.
 Admitted.
 

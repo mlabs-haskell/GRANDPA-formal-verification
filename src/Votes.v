@@ -142,27 +142,71 @@ Definition is_safe {bizantiners_number last_block_number }
 
 
 Module BlockDictionaryTypes <: Dictionary.Types.
-  Definition K := nat.
-  Definition V := AnyBlock.
-  Definition eqb := Nat.eqb.
+  Definition K := AnyBlock.
+  Definition V := nat.
+  Definition eqb := any_block_eqb.
 End BlockDictionaryTypes.
 
 Module BlockDictionaryModule := Dictionary.Functions BlockDictionaryTypes.
 
-Definition BlockDictionary := BlockDictionaryModule.Dictionary nat AnyBlock.
+Definition BlockDictionary := BlockDictionaryModule.Dictionary AnyBlock nat.
+
+Fixpoint count_vote_aux {last_block_number vote_block_number}
+  {last_block : Block last_block_number}
+  (vote_block:Block vote_block_number)
+  (prefix_proof : Prefix last_block vote_block)
+  (acc: BlockDictionary): BlockDictionary
+  :=
+    match prefix_proof with
+    | Same _ _=> acc
+    | IsPrefix _ older_block _ new_prefix_proof =>
+       let update_vote maybe_old_value v := 
+         match maybe_old_value with
+         | None => v
+         | Some v2 => v+v2
+         end
+       in
+       let updated_acc := BlockDictionaryModule.update_with (existT _ vote_block_number vote_block) update_vote acc
+       in 
+        count_vote_aux older_block new_prefix_proof updated_acc    
+    end.
 
 
-Fixpoint count_votes_aux (arg: BlockDictionary): BlockDictionary.
-Admitted.
+
+Definition count_vote {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (vote :Vote voters last_block) (acc: BlockDictionary): BlockDictionary
+  :=
+  match vote with
+  | VoteC _ _ _ _ block prefix_proof => count_vote_aux block prefix_proof acc
+  end.
+
+Fixpoint count_votes_aux {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes:list (Vote voters last_block)) (acc: BlockDictionary): (list (Vote voters last_block)) * BlockDictionary
+  :=
+  match votes with
+  | List.nil => (List.nil, acc)
+  | List.cons vote remain => count_votes_aux remain (count_vote vote acc)
+  end.
+
+Definition count_votes {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block): BlockDictionary
+  :=
+  match count_votes_aux (votes_to_list votes) BlockDictionaryModule.empty with
+  | (_ , out) => out
+  end.
+
 
 Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
   : bool.
-
-
-
 Admitted.
 
 (*
