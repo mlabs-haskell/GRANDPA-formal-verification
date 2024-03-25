@@ -1,45 +1,84 @@
 Require Import Blocks.
 Require Import Votes.
+Require List.
+Require Import Nat.
 
 (* Función g *)
-Definition g {bizantiners_number last_block_number out}
+Definition g {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T : Votes voters last_block) 
-  : option (Block out).
-(* TODO: Provide definition *)
-Admitted.
-
-(*
-  let valid_votes := 
-    filter (fun v => match v with 
-                     | VoteC _ _ _ _ _ _ => true 
-                     | _ => false 
-                     end) 
-           (projT2 T) in
-  let sorted_votes := 
-    sort (fun v1 v2 => if leb (projT2 v1) (projT2 v2) then true else false) 
-         valid_votes in
-  match sorted_votes with
-  | [] => OriginBlock
-  | h :: _ => projT1 h
+  : option (sigT ( fun out => Block out))
+  := 
+  let (equivocate_voters, non_equivocate_voters) 
+    := split_voters_by_equivocation T
+  in
+  let number_of_equivocates := length equivocate_voters
+  in
+  let count  
+    := 
+    count_votes  
+      (filter_votes_by_voters_subset 
+        voters 
+        last_block 
+        T 
+        (VotersC bizantiners_number non_equivocate_voters)
+      )
+  in
+  let has_supermajority_predicate block_and_vote := 
+    match block_and_vote with
+    | (_, number_of_votes) 
+        => 
+        voters_length voters + bizantiners_number +1 
+        <? 2 * (number_of_votes + number_of_equivocates)
+    end
+  in
+  let blocks_with_super_majority 
+    := 
+    List.filter has_supermajority_predicate 
+      (BlockDictionaryModule.to_list count)
+  in
+  let join (existencial:AnyBlock) acc 
+    := 
+    match existencial with
+    | existT _ block_number block =>
+        match acc with
+        | List.nil => List.cons existencial List.nil
+        | List.cons h others 
+            => match h with 
+               | existT _ h_block_number _ =>
+                   if h_block_number <? block_number 
+                   then List.cons existencial List.nil
+                   else 
+                    if Nat.eqb h_block_number  block_number 
+                    then List.cons existencial acc
+                    else
+                      acc
+              end
+        end
+    end
+  in
+  match   
+    List.fold_right join List.nil (List.map fst blocks_with_super_majority) 
+  with
+    | List.cons result List.nil => Some result
+    | _ => None
   end.
-*)
 
 
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T: Votes voters last_block)
-  (is_safe_t: isSafe T = true)
+  (is_safe_t: is_safe T = true)
   (S: Votes voters last_block) 
   (is_sub_set: IsSubset S T )
   {gs_block_number: nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some gs)
+  (gs_is_result : g S = Some (existT _ gs_block_number gs))
   (gt_block_number: nat)
   (gt : Block gt_block_number)
-  (gt_is_result : g T = Some gt)
+  (gt_is_result : g T = Some (existT _ gt_block_number  gt))
   :Prefix gs gt. 
 Admitted.
 
@@ -92,64 +131,9 @@ Lemma lemma_2_6_3 {bizantiners_number last_block_number}
   (S: Votes voters last_block)
   {gs_block_number:nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some gs)
+  (gs_is_result : g S = Some (existT _ gs_block_number gs))
   {block_number : nat}
   (block: Block block_number)
   (unrelated_proof: Unrelated block gs)
   : ImpossibleSupermajority S block.
 Admitted.
-
-  
-
-
-
-(* TODO: Define:
-
-- Time
-- Round
-- Estimate 
-
-Module preliminars.
-
-
-Inductive Maybe : Type -> Type :=
- | Just  {T:Type}  (t:T) : Maybe T
- | Nothing  {T:Type}: Maybe T.
-
-Definition SetOfVotes := nat.
-
-Definition checkSuperMajority (S:SetOfVotes) : bool := true.
-
-
-
-Definition g (n:SetOfVotes) : Maybe Block := Nothing.
-
-
-
-Example SOme : Block = Block .
-
-
-Inductive Time := | TimeC nat.
-
-Definition Voter := nat.
-
-Definition Voters := list nat.
-
-Definition Vote := list Block.
-
-Inductive Round : Voters-> Time -> nat -> Type := 
-  | EmptyRound  (vs:Voters) (t:Time) (round_number:nat) : 
-      Round vs t round_number
-  | RoundStep {vs:Voters} {t_prev:Time} {round_number:nat}  
-    (previous_step:Round vs t_prev round_number)  
-    (new_votes:list (Vote * nat) ): 
-    Round vs (t_prev +1) round_number
-  | NewRound {vs:Voters} {t_prev:Time} {round_number:nat}  
-    (previous_round:Round vs t_prev round_number)  
-    (new_voters:Voters ): 
-    Round new_voters (t_prev +1) (round_number+1).
-
-
-
-
- *)

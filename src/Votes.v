@@ -1,38 +1,70 @@
 Require List.
-Require Import Grandpa.Blocks.
+Require Import  Nat.
+Require Import Blocks.
+
+Require Dictionary.
 
 Definition Voter : Type := nat.
 
 Variant Voters (bizantiners_number:nat) : Type 
   := 
     | VotersC (voters:list Voter) 
-        (*TODO: add a constraint here to make the voters to only appear 
-        once, or use a proper set.*)
-        (bizantiners_are_lower: 3*bizantiners_number < length voters) 
+        (*
+           TODO: 
+            add a constraint here to make the voters to only appear 
+            once, or use a proper set.
+           For now we assume that voters are registered only once.
+          *)
       : Voters  bizantiners_number .
 
 
-Definition inVoters {bizantiners_number} 
-  (voter : Voter) (voters:Voters bizantiners_number) 
-  :=
-  match voters with 
-  | VotersC _ l _ => List.In voter l
-  end.
-
-Definition votersLength {bizantiners_number} (voters:Voters bizantiners_number)
+Definition voters_to_list {bizantiners_number} (voters:Voters bizantiners_number)
   := 
   match voters with
-  | VotersC _ l _ => length l
+  | VotersC _ l => l
   end.
 
-Inductive Vote {bizantiners_number last_block_number}
-  :Voters bizantiners_number -> Block last_block_number -> Type 
+Definition voters_length {bizantiners_number} (voters:Voters bizantiners_number)
   := 
-    | VoteC {m}  (voters : Voters bizantiners_number) (voter : Voter) 
-      (is_voter: inVoters voter voters ) 
-      (original_chain: Block last_block_number) 
+  length (voters_to_list voters).
+
+Definition in_Voters {bizantiners_number} 
+  (voter : Voter) (voters:Voters bizantiners_number) 
+  :=
+  List.In voter (voters_to_list voters).
+
+Variant Vote {bizantiners_number last_block_number}
+  (voters: Voters bizantiners_number )
+  (original_chain:Block last_block_number)
+  :Type 
+  := 
+    | VoteC {m}  (voter : Voter) 
+      (is_voter: in_Voters voter voters ) 
       (block: Block m) (is_prefix: Prefix original_chain block)
       : Vote voters original_chain.
+
+Definition vote_to_voter {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number}
+  {original_chain:Block last_block_number}
+  (vote: Vote voters original_chain)
+  : Voter
+  :=
+  match vote with 
+  | VoteC _ _ voter _ _ _ => 
+      voter
+  end.
+
+
+Definition vote_to_pair  {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number}
+  {original_chain:Block last_block_number}
+  (vote: Vote voters original_chain)
+  : (nat * (sigT (fun n => Block n)))
+  :=
+  match vote with 
+  | VoteC _ _ voter _ block _ => 
+        (voter , existT _ _ block)
+  end.
 
 
 Inductive Votes  {bizantiners_number last_block_number}
@@ -43,8 +75,27 @@ Inductive Votes  {bizantiners_number last_block_number}
       (votes_list:list (Vote voters last_block))
       : Votes voters last_block.
 
+Definition votes_to_list {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (votes: Votes voters last_block)
+  : list (Vote voters last_block)
+  := 
+  match votes with
+  | VotesC _ _ l => l
+  end.
 
-Definition Equivocate {bizantiners_number last_block_number } 
+
+Definition votes_to_pair_list {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (votes: Votes voters last_block)
+  : list (nat * (sigT (fun n => Block n)))
+  :=
+  match votes with 
+    | VotesC _ _ list => 
+        List.map vote_to_pair list
+  end.
+
+Definition is_equivocate {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
   (voter: Voter)
@@ -52,7 +103,7 @@ Definition Equivocate {bizantiners_number last_block_number }
   : bool
   :=
     let unvote vote1 := match  vote1 with
-      |VoteC  _  voter _ _ _ _ => voter
+      |VoteC  _ _  voter _ _ _ => voter
       end
     in
     match votes with 
@@ -66,29 +117,123 @@ Definition Equivocate {bizantiners_number last_block_number }
         Nat.ltb (length filtered) 1
     end.
 
-Fixpoint isSafe {bizantiners_number last_block_number } 
+Definition split_voters_by_equivocation {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
   (votes: Votes voters last_block)
-  :bool.
-  Admitted.
-  (*
-    match voters with 
-    | VotersC  _ voters_list _ => 
-        match voters_list with
-        | nil => true
-        | List.cons x y => andb (negb (Equivocate x votes) ) (isSafe (Votes voters y))
-        end
-     end.
-  *)
+  : list Voter * list Voter
+  :=
+    let voters_list := voters_to_list voters
+    in
+      List.partition  (fun voter => is_equivocate voter votes) voters_list.
+
+Section Some.
+
+Context {bizantiners_number last_block_number : nat}.
+Variable voters: Voters bizantiners_number.
+Variable last_block  :Block last_block_number.
+Variable votes: Votes voters last_block.
+
+Definition in_nat_list (n:nat) (l:list nat) :bool := 
+  match List.find (fun m => Nat.eqb n m) l with
+  | None => false
+  | _ => true
+  end.
+
+Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number ) 
+  : Votes voters last_block
+  := 
+  let votes_list := votes_to_list votes
+  in
+  let voters_as_nat_list := voters_to_list subset
+  in
+  let vote_predicate vote := in_nat_list (vote_to_voter vote) voters_as_nat_list
+  in
+    VotesC voters last_block (List.filter vote_predicate  votes_list).
+    
+End Some.
 
 
-Definition hasSupermajority  {bizantiners_number last_block_number}
+
+Definition is_safe {bizantiners_number last_block_number } 
+  {voters: Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block)
+  :bool
+  :=
+  match split_voters_by_equivocation votes with
+  | (equivocate_voters, non_equivocate_voters) =>
+     length equivocate_voters <? bizantiners_number
+  end.
+
+
+
+Module BlockDictionaryTypes <: Dictionary.Types.
+  Definition K := AnyBlock.
+  Definition V := nat.
+  Definition eqb := any_block_eqb.
+End BlockDictionaryTypes.
+
+Module BlockDictionaryModule := Dictionary.Functions BlockDictionaryTypes.
+
+Definition BlockDictionary := BlockDictionaryModule.Dictionary AnyBlock nat.
+
+Fixpoint count_vote_aux {last_block_number vote_block_number}
+  {last_block : Block last_block_number}
+  (vote_block:Block vote_block_number)
+  (prefix_proof : Prefix last_block vote_block)
+  (acc: BlockDictionary): BlockDictionary
+  :=
+    match prefix_proof with
+    | Same _ _=> acc
+    | IsPrefix _ older_block _ new_prefix_proof =>
+       let update_vote maybe_old_value v := 
+         match maybe_old_value with
+         | None => v
+         | Some v2 => v+v2
+         end
+       in
+       let updated_acc := BlockDictionaryModule.update_with (existT _ vote_block_number vote_block) update_vote acc
+       in 
+        count_vote_aux older_block new_prefix_proof updated_acc    
+    end.
+
+
+
+Definition count_vote {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (vote :Vote voters last_block) (acc: BlockDictionary): BlockDictionary
+  :=
+  match vote with
+  | VoteC _ _ _ _ block prefix_proof => count_vote_aux block prefix_proof acc
+  end.
+
+Fixpoint count_votes_aux {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes:list (Vote voters last_block)) (acc: BlockDictionary): (list (Vote voters last_block)) * BlockDictionary
+  :=
+  match votes with
+  | List.nil => (List.nil, acc)
+  | List.cons vote remain => count_votes_aux remain (count_vote vote acc)
+  end.
+
+Definition count_votes {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block): BlockDictionary
+  :=
+  match count_votes_aux (votes_to_list votes) BlockDictionaryModule.empty with
+  | (_ , out) => out
+  end.
+
+
+Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
   : bool.
-(* TODO: Provide Definition *)
 Admitted.
 
 (*
