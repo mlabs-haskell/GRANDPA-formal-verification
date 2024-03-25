@@ -1,7 +1,7 @@
 Require Import Blocks.
 Require Import Votes.
 Require List.
-
+Require Import Nat.
 
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
@@ -15,18 +15,55 @@ Definition g {bizantiners_number last_block_number}
   in
   let number_of_equivocates := length equivocate_voters
   in
-  (* TODO: Filter votes to keep only the non equivocate ones and use here *)
-  (* implement it as a function in votes "filter_votes_by_voter_subset" *)
-  let count  := count_votes non_equivocate_voters
+  let count  
+    := 
+    count_votes  
+      (filter_votes_by_voters_subset 
+        voters 
+        last_block 
+        T 
+        (VotersC bizantiners_number non_equivocate_voters)
+      )
   in
   let has_supermajority_predicate block_and_vote := 
     match block_and_vote with
-    | (_, number_of_votes) => voters_length voters + bizantiners_number +1 < 2 * (number_of_votes + number_of_equivocates)
+    | (_, number_of_votes) 
+        => 
+        voters_length voters + bizantiners_number +1 
+        <? 2 * (number_of_votes + number_of_equivocates)
     end
   in
-  let blocks_with_super_majority := List.filter has_supermajority_predicate count
+  let blocks_with_super_majority 
+    := 
+    List.filter has_supermajority_predicate 
+      (BlockDictionaryModule.to_list count)
   in
-  None.
+  let join (existencial:AnyBlock) acc 
+    := 
+    match existencial with
+    | existT _ block_number block =>
+        match acc with
+        | List.nil => List.cons existencial List.nil
+        | List.cons h others 
+            => match h with 
+               | existT _ h_block_number _ =>
+                   if h_block_number <? block_number 
+                   then List.cons existencial List.nil
+                   else 
+                    if Nat.eqb h_block_number  block_number 
+                    then List.cons existencial acc
+                    else
+                      acc
+              end
+        end
+    end
+  in
+  match   
+    List.fold_right join List.nil (List.map fst blocks_with_super_majority) 
+  with
+    | List.cons result List.nil => Some result
+    | _ => None
+  end.
 
 
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}

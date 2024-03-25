@@ -134,10 +134,10 @@ Variable voters: Voters bizantiners_number.
 Variable last_block  :Block last_block_number.
 Variable votes: Votes voters last_block.
 
-Fixpoint in_nat_list (n:nat) (l:list nat) :bool := 
-  match l with
-  | List.nil => false
-  | List.cons head remain => orb (Nat.eqb head n) (in_nat_list n remain)
+Definition in_nat_list (n:nat) (l:list nat) :bool := 
+  match List.find (fun m => Nat.eqb n m) l with
+  | None => false
+  | _ => true
   end.
 
 Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number ) 
@@ -151,9 +151,6 @@ Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number )
   in
     VotesC voters last_block (List.filter vote_predicate  votes_list).
     
-
-
-Print filter_votes_by_voters_subset.
 End Some.
 
 
