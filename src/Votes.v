@@ -127,6 +127,36 @@ Definition split_voters_by_equivocation {bizantiners_number last_block_number }
     in
       List.partition  (fun voter => is_equivocate voter votes) voters_list.
 
+Section Some.
+
+Context {bizantiners_number last_block_number : nat}.
+Variable voters: Voters bizantiners_number.
+Variable last_block  :Block last_block_number.
+Variable votes: Votes voters last_block.
+
+Fixpoint in_nat_list (n:nat) (l:list nat) :bool := 
+  match l with
+  | List.nil => false
+  | List.cons head remain => orb (Nat.eqb head n) (in_nat_list n remain)
+  end.
+
+Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number ) 
+  : Votes voters last_block
+  := 
+  let votes_list := votes_to_list votes
+  in
+  let voters_as_nat_list := voters_to_list subset
+  in
+  let vote_predicate vote := in_nat_list (vote_to_voter vote) voters_as_nat_list
+  in
+    VotesC voters last_block (List.filter vote_predicate  votes_list).
+    
+
+
+Print filter_votes_by_voters_subset.
+End Some.
+
+
 
 Definition is_safe {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
