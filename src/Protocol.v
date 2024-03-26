@@ -5,13 +5,12 @@ Require Import Preliminars.
 
 Definition Time := nat.
 
-
 Inductive RoundState 
-      {preview_number precommit_number block_number}
+      {preview_number precommit_number last_block_number}
   (preview_voters:Voters preview_number) 
   (precommit_voters: Voters precommit_number)
   (round_start_time:Time) 
-  (last_block: Block block_number)
+  (last_block: Block last_block_number)
     : Time ->  Type :=
   | InitialRoundState 
     : RoundState preview_voters precommit_voters round_start_time last_block 0
@@ -26,33 +25,35 @@ Inductive RoundState
     : RoundState preview_voters precommit_voters round_start_time last_block 
       (time_increment+ old_time_increment).
 
+Section State1.
+
+Context {preview_number precommit_number last_block_number : nat}.
+Context {preview_voters:Voters preview_number }.
+Context {precommit_voters: Voters precommit_number}.
+Context {last_block: Block last_block_number}.
+Context {round_time : Time}.
+Context {round_number: nat}.
+
+
+
 
 Definition get_preview_votes
-  {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
-  {round_time:Time}
-  {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
   : 
-  (Votes preview_voters last_block).
-Admitted.
+  (Votes preview_voters last_block)
+  := 
+  match round_state with
+  | InitialRoundState _ _ _ _ => VotesC _ _ List.nil (* No votes in initial round state *)
+  | RoundStateUpdate _ _ _ _ _ _ new_preview_votes _ => new_preview_votes
+  end.
 
 Definition get_precommit_votes
-  {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
-  {round_time:Time}
-  {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
   : 
   (Votes precommit_voters last_block).
 Admitted.
 
+End State1.
 
 Variant Estimate {preview_number precommit_number : nat}
   {preview_voters : Voters preview_number} 
@@ -76,39 +77,31 @@ Variant Estimate {preview_number precommit_number : nat}
     : Estimate round_state new_block_number.
 
 
+
+Section State2.
+
+Context {preview_number precommit_number last_block_number : nat}.
+Context {preview_voters:Voters preview_number }.
+Context {precommit_voters: Voters precommit_number}.
+Context {last_block: Block last_block_number}.
+Context {round_time : Time}.
+Context {round_number: nat}.
+
+
 Definition get_estimate_block
-  {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
-  {round_time:Time}
-  {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   {round_state: RoundState preview_voters precommit_voters  round_time last_block round_number}
   {n}
   (e:Estimate round_state n)
   : Block n.
 Admitted.
 
-Definition get_estimate {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
-  {round_time:Time}
-  {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
+Definition get_estimate 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
   : option (sigT (fun n  => Estimate  round_state n)).
 Admitted.
 
 
-Variant Completable {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
-  {round_time:Time}
-  {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
+Variant Completable 
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number)
   : Type
   :=
@@ -136,4 +129,4 @@ Variant Completable {preview_number precommit_number : nat}
             = false
       )
   .
-
+End State2.
