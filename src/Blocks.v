@@ -1,3 +1,4 @@
+Require Bool.
 (* 
 
   In the real implementation is unpractical to have the full
@@ -43,8 +44,6 @@ Definition any_block_eqb (b1 b2: AnyBlock) : bool
 Lemma eqb_eq_nat {n m} : Nat.eqb n m = true <-> n = m.
 Admitted.
 
-Require Bool.
-Print Bool.andb_true_iff.
 
 Lemma eqb_implies_same_nat {n m} (block1: Block n) (block2: Block m) : eqb block1 block2 = true -> n = m .
 Admitted.
