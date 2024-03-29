@@ -10,33 +10,8 @@ Definition g {bizantiners_number last_block_number}
   (T : Votes voters last_block) 
   : option (sigT ( fun out => Block out))
   := 
-  let (equivocate_voters, non_equivocate_voters) 
-    := split_voters_by_equivocation T
-  in
-  let number_of_equivocates := length equivocate_voters
-  in
-  let count  
-    := 
-    count_votes  
-      (filter_votes_by_voters_subset 
-        voters 
-        last_block 
-        T 
-        (VotersC bizantiners_number non_equivocate_voters)
-      )
-  in
-  let has_supermajority_predicate block_and_vote := 
-    match block_and_vote with
-    | (_, number_of_votes) 
-        => 
-        voters_length voters + bizantiners_number +1 
-        <? 2 * (number_of_votes + number_of_equivocates)
-    end
-  in
   let blocks_with_super_majority 
-    := 
-    List.filter has_supermajority_predicate 
-      (BlockDictionaryModule.to_list count)
+    := get_supermajority_blocks T
   in
   let join (existencial:AnyBlock) acc 
     := 
