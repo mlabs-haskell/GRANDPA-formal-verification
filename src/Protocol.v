@@ -1,9 +1,11 @@
-Require Import Blocks.
-Require Import Votes.
+Require Import Blocks.                 
+Require Import Votes.                  
 Require Import Preliminars.
 Require List.
 
 Require Import Nat.
+Require Arith.Compare_dec.
+Require Import Program.Equality.
 
 Definition Time := nat.
 
@@ -13,11 +15,11 @@ Inductive RoundState
   (precommit_voters: Voters precommit_number)
   (round_start_time:Time) 
   (last_block: Block last_block_number)
-  : nat -> Time ->  Type :=
+  (round_number: nat)
+  : Time ->  Type :=
   | InitialRoundState 
-    : RoundState preview_voters precommit_voters round_start_time last_block 0 0
+    : RoundState preview_voters precommit_voters round_start_time last_block round_number 0
   | RoundStateUpdate 
-    {round_number}
     {old_time_increment: Time}
     (old_state: RoundState 
       preview_voters precommit_voters 
@@ -48,8 +50,8 @@ Definition get_preview_votes
   (Votes preview_voters last_block)
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ => VotesC _ _ List.nil 
-  | RoundStateUpdate _ _ _ _ _ _ new_preview_votes _ => new_preview_votes
+  | InitialRoundState _ _ _ _ _ => VotesC _ _ List.nil 
+  | RoundStateUpdate _ _ _ _ _ _ _ new_preview_votes _ => new_preview_votes
   end.
 
 Definition get_precommit_votes
@@ -58,8 +60,8 @@ Definition get_precommit_votes
   (Votes precommit_voters last_block)
   :=
   match round_state with
-  | InitialRoundState _ _ _ _ => VotesC _ _ List.nil (* No votes in initial round state *)
-  | RoundStateUpdate _ _ _ _ _ _ _ new_precommit_votes => new_precommit_votes
+  | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil (* No votes in initial round state *)
+  | RoundStateUpdate _ _ _ _ _ _ _ _ new_precommit_votes => new_precommit_votes
   end.
 
 End State1.
@@ -77,8 +79,8 @@ Fixpoint get_all_preview_votes{preview_number precommit_number : nat}
   (Votes preview_voters last_block)
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ => VotesC _ _ List.nil 
-  | RoundStateUpdate _ _ _ _ old_state  _ new_preview_votes _ => mergeVotes (get_all_preview_votes old_state) new_preview_votes
+  | InitialRoundState _ _ _ _ _ => VotesC _ _ List.nil 
+  | RoundStateUpdate _ _ _ _ _ old_state  _ new_preview_votes _ => mergeVotes (get_all_preview_votes old_state) new_preview_votes
   end.
 
 Fixpoint get_all_precommit_votes{preview_number precommit_number : nat}
@@ -94,8 +96,8 @@ Fixpoint get_all_precommit_votes{preview_number precommit_number : nat}
   (Votes precommit_voters last_block)
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ => VotesC _ _ List.nil 
-  | RoundStateUpdate _ _ _ _ old_state  _ _ new_precommit_votes => mergeVotes (get_all_precommit_votes old_state) new_precommit_votes
+  | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil 
+  | RoundStateUpdate _ _ _ _ _ old_state  _ _ new_precommit_votes => mergeVotes (get_all_precommit_votes old_state) new_precommit_votes
   end.
 
 
@@ -148,17 +150,13 @@ Definition get_estimate_block
     | EstimateC _ new_block _ _ _ _ => new_block
   end.
 
-Fixpoint get_estimate_aux_recursive {gv_block_number:nat} 
+Fixpoint get_estimate_aux_recursive {gv_block_number block_number:nat} 
+  (block:Block block_number)
   (gv:Block gv_block_number)
   (precommit_supermajority_blocks: list (AnyBlock*nat))
-  (round_state: 
-    RoundState preview_voters precommit_voters  
-      round_time last_block round_number 
-      time_increment
-  )
   : option AnyBlock
   :=
-    if last_block_number <? gv_block_number
+    if block_number <? gv_block_number
     then 
       let find_block any_block := 
         match any_block with
@@ -173,9 +171,9 @@ Fixpoint get_estimate_aux_recursive {gv_block_number:nat}
                 | NewBlock old_block _ 
                     =>  
                     get_estimate_aux_recursive 
+                      block
                       old_block 
                       precommit_supermajority_blocks
-                      round_state
                 end
         | Some (any_block,_)
             => Some any_block
@@ -185,11 +183,6 @@ Fixpoint get_estimate_aux_recursive {gv_block_number:nat}
 Definition get_estimate_aux 
   (preview_votes: Votes preview_voters last_block) 
   (precommit_votes: Votes precommit_voters last_block)
-  (round_state: 
-    RoundState preview_voters precommit_voters  
-      round_time last_block round_number 
-      time_increment
-  )
   : option AnyBlock
   :=
   match g preview_votes with 
@@ -198,12 +191,10 @@ Definition get_estimate_aux
     let precommit_supermajority_blocks := 
       get_supermajority_blocks precommit_votes
     in
-      match preview_votes with
-      | VotesC _ _ l =>
-          get_estimate_aux_recursive 
-            (projT2 g_preview_votes) 
-            precommit_supermajority_blocks round_state
-      end
+      get_estimate_aux_recursive 
+        last_block
+        (projT2 g_preview_votes) 
+        precommit_supermajority_blocks
   end.
 
 Definition get_estimate 
@@ -215,19 +206,95 @@ Definition get_estimate
   : option AnyBlock
   :=
  match round_state  with
-  | InitialRoundState _ _ _ _ => Some (existT _ 0 OriginBlock)
-  | RoundStateUpdate _ _ _ _ _ _ _ _=> 
+  | InitialRoundState _ _ _ _ _ => 
+      if Nat.eqb round_number 0 then
+      Some (existT _ 0 OriginBlock)
+      else
+      None
+  | RoundStateUpdate _ _ _ _ _ _ _ _ _=> 
     let all_preview_votes := get_all_preview_votes round_state
     in
     let all_precommit_votes := get_all_precommit_votes round_state
     in
-    match g all_preview_votes with
-    | None => None
-    | _ => None
-    end
+    get_estimate_aux all_preview_votes all_precommit_votes
   end.
 
-Require Import Program.Equality.
+
+End State2.
+
+Section State3.
+Context {preview_number precommit_number last_block_number : nat}.
+Context {preview_voters:Voters preview_number }.
+Context {precommit_voters: Voters precommit_number}.
+Context {last_block: Block last_block_number}.
+Context {round_time : Time}.
+Context {round_number: nat}.
+Context {time_increment : Time}.
+
+
+Lemma get_estimate_aux_recursive_is_none_on_nil : 
+  forall {m} (last_block_lemma:Block m) 
+         {n} (block:Block n) ,   
+                    get_estimate_aux_recursive 
+                      last_block
+                      block
+                      nil = None.
+Proof.
+  intros m last_block_lemma. 
+  - intro n. induction n as [|n HInductive]
+    ;intro block. 
+    + dependent inversion block.
+      simpl. reflexivity.
+    + dependent inversion block. 
+      simpl. 
+      destruct (last_block_number <? S n).
+      ++  apply HInductive.
+      ++  reflexivity.
+Qed.
+      
+
+
+Lemma get_estimate_result_is_children  
+  {block_number:nat}
+  {block:Block block_number}
+  (round_state: 
+    RoundState preview_voters precommit_voters  
+      round_time last_block round_number 
+      time_increment
+  )
+  (round_is_not_zero: round_number <> 0)
+  (get_estimate_result
+    : get_estimate round_state = Some (existT _ block_number block)
+  )
+  : Prefix block last_block.
+Proof.
+  unfold get_estimate in get_estimate_result.
+  destruct round_state eqn:H_state.
+  - destruct round_number eqn:H_round_number.
+    + contradiction.
+    + simpl in get_estimate_result.
+      discriminate get_estimate_result.
+  - simpl in get_estimate_result.
+    unfold get_estimate_aux in get_estimate_result.
+    destruct (g (mergeVotes (get_all_preview_votes r) new_preview_votes)) 
+      as [g_preview|] eqn:g_preview_eq.
+    2: 
+      discriminate get_estimate_result.
+    + destruct 
+        (get_supermajority_blocks
+          (mergeVotes (get_all_precommit_votes r) new_precommit_votes)
+        ) eqn:precommit_supermajority_blocks_eq.
+      ++ assert (get_estimate_aux_recursive last_block (projT2 g_preview) nil = None) as is_nil.
+         {
+            apply (get_estimate_aux_recursive_is_none_on_nil last_block (projT2 g_preview) ).
+          }
+         rewrite is_nil in get_estimate_result.
+         discriminate.
+      ++ unfold get_estimate_aux_recursive in get_estimate_result.
+         simpl in get_estimate_result.
+         Admitted.
+(* TODO: Finish it *)
+
 
 Theorem get_estimate_output_is_estimate 
   {block_number:nat}
@@ -278,4 +345,4 @@ Variant Completable
             = false
       )
   .
-End State2.
+End State3.
