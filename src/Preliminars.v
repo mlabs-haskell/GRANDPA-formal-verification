@@ -45,6 +45,8 @@ Definition g {bizantiners_number last_block_number}
     | List.cons result List.nil => Some result
     | _ => None
   end.
+
+
 Lemma gt_some_implies_supermajority_not_empty {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -80,6 +82,10 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
 Proof.
   remember (g T) as gt_out.
   unfold g in Heqgt_out.
+  pose (superset_has_subset_majority_blocks S T is_sub_set) as supermajority_s_subset_t.
+  pose (gt_some_implies_supermajority_not_empty S gs gs_is_result) 
+    as supermajority_s_not_nil.
+  unfold g in gs_is_result.
 Admitted.
 
 Close Scope type_scope.
