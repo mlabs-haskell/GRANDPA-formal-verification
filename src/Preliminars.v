@@ -13,6 +13,12 @@ Definition g {bizantiners_number last_block_number}
   let blocks_with_super_majority 
     := get_supermajority_blocks T
   in
+  (*
+    We will look for a block of maximum block_number 
+    such that it has supermajority.
+    This join help us get a list with the blocks with 
+     the maximum length.
+   *)
   let join (existencial:AnyBlock) acc 
     := 
     match existencial with
@@ -39,8 +45,24 @@ Definition g {bizantiners_number last_block_number}
     | List.cons result List.nil => Some result
     | _ => None
   end.
+Lemma gt_some_implies_supermajority_not_empty {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T: Votes voters last_block)
+  {gt_block_number: nat}
+  (gt : Block gt_block_number)
+  (gt_is_result : g T = Some (existT _ gt_block_number gt))
+  : get_supermajority_blocks T <> List.nil.
+Proof.
+  unfold not.
+  intro is_nil.
+  unfold g in gt_is_result.
+  rewrite is_nil in gt_is_result.
+  simpl in gt_is_result.
+  discriminate gt_is_result.
+Qed.
 
-
+Open Scope type_scope.
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -51,11 +73,16 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {gs_block_number: nat}
   (gs : Block gs_block_number)
   (gs_is_result : g S = Some (existT _ gs_block_number gs))
-  (gt_block_number: nat)
-  (gt : Block gt_block_number)
-  (gt_is_result : g T = Some (existT _ gt_block_number  gt))
-  :Prefix gs gt. 
+  : {gt_block_number & 
+      {gt : Block gt_block_number 
+        & (g T = Some (existT _ gt_block_number gt)) * (Prefix gs gt)}
+    }.
+Proof.
+  remember (g T) as gt_out.
+  unfold g in Heqgt_out.
 Admitted.
+
+Close Scope type_scope.
 
 
 Variant ImpossibleSupermajority {bizantiners_number last_block_number}

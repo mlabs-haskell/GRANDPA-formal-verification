@@ -84,6 +84,11 @@ Definition votes_to_list {bizantiners_number last_block_number}
   | VotesC _ _ l => l
   end.
 
+Definition votes_to_voters_list {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (votes: Votes voters last_block)
+  : list Voter
+  := List.map vote_to_voter (votes_to_list votes).
 
 Definition votes_to_pair_list {bizantiners_number last_block_number}
   {voters: Voters bizantiners_number} {last_block:Block last_block_number}
@@ -102,20 +107,12 @@ Definition is_equivocate {bizantiners_number last_block_number }
   (votes: Votes voters last_block)
   : bool
   :=
-    let unvote vote1 := match  vote1 with
-      |VoteC  _ _  voter _ _ _ => voter
-      end
-    in
-    match votes with 
-    | VotesC  _ _ votes_list => 
-      let voters_list : list Voter := List.map unvote votes_list
+      let voters_list : list Voter 
+        := votes_to_voters_list votes
       in
-      let has_same_voter (new_vote : Voter) := Nat.eqb new_vote voter 
+      let filtered := List.filter (Nat.eqb voter) voters_list
       in
-      let filtered := List.filter has_same_voter voters_list
-      in
-        Nat.ltb (length filtered) 1
-    end.
+        1 <? (length filtered).
 
 Definition split_voters_by_equivocation {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
@@ -265,35 +262,120 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
   in
     blocks_with_super_majority.
 
+Definition IsSubset {bizantiners_number last_block_number} 
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S : Votes voters last_block)
+  (T : Votes voters last_block) 
+  :Prop
+  :=
+  forall (vote: Vote voters last_block), 
+    List.In vote (votes_to_list S)
+    -> List.In vote (votes_to_list T).
+
+Lemma aux {A} (l l1 l2:list A) p 
+  : 
+  List.partition p l = (l1,l2) 
+  -> forall x, List.In x l1 
+  -> p x = true. 
+Proof.
+  Admitted.
+
+
+Lemma equivocates_are_voters {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T : Votes voters last_block) 
+  {equivocate_voters non_equivocate_voters: list Voter}
+  {split_result: split_voters_by_equivocation T = (equivocate_voters,non_equivocate_voters)}
+  : forall (voter:Voter), 
+    List.In voter equivocate_voters
+    -> List.In voter (votes_to_voters_list T).
+Proof.
+  intros voter equivocated.
+  unfold split_voters_by_equivocation in split_result.
+  assert (List.In voter (voters_to_list voters)) as in_voters_list.
+  {
+    pose 
+      (List.elements_in_partition 
+        (fun voter => is_equivocate voter T) 
+        (voters_to_list voters) 
+        split_result
+      ) as is_element_iff .
+    apply is_element_iff.
+    left.
+    assumption.
+  }
+  pose 
+    (aux 
+      (voters_to_list voters) 
+      equivocate_voters 
+      non_equivocate_voters 
+      (fun voter => is_equivocate voter T)
+      split_result
+      voter
+      equivocated
+    ) as H.
+    simpl in H.
+    unfold is_equivocate in H.
+    rewrite PeanoNat.Nat.ltb_lt in H.
+    remember (List.filter (Nat.eqb voter) (votes_to_voters_list T) ) as filtered_list.
+    destruct filtered_list as [|one_elem remain].
+    - simpl in H.  
+      pose (PeanoNat.Nat.nlt_succ_diag_l 0) as contra.
+      contradiction.
+    - pose (List.in_eq one_elem remain) as in_left_list.
+      rewrite Heqfiltered_list in in_left_list.
+      pose (List.filter_In (Nat.eqb voter) one_elem (votes_to_voters_list T)) as iff.
+      rewrite iff in in_left_list.
+      destruct in_left_list.
+      apply (PeanoNat.Nat.eqb_eq voter one_elem) in H1.
+      rewrite <- H1 in H0.
+      assumption.
+Qed.
+
+
+Lemma superset_has_equivocates_of_subset {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S : Votes voters last_block) 
+  (T : Votes voters last_block) 
+  (is_subset: IsSubset S T)
+  {equivocate_voters_s non_equivocate_voters_s: list Voter}
+  {equivocate_voters_t non_equivocate_voters_t: list Voter}
+  {split_s_result:(equivocate_voters_s,non_equivocate_voters_s) = split_voters_by_equivocation S}
+  {split_t_result:(equivocate_voters_t,non_equivocate_voters_t) = split_voters_by_equivocation T}
+  : forall (voter:Voter), 
+    List.In voter equivocate_voters_s 
+    -> List.In voter equivocate_voters_t.
+Proof.
+  intro voter.
+  intro is_equivocate_s.
+  Admitted.
+
+
+Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S : Votes voters last_block) 
+  (T : Votes voters last_block) 
+  (is_subset: IsSubset S T)
+  : forall anyblock anyblock_votes, 
+      List.In (anyblock,anyblock_votes) (get_supermajority_blocks S)
+      -> exists anyblock_votes_in_t 
+          , List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks T).
+Proof.
+Admitted.
+  
+
+
 Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
-  : bool.
-Admitted.
-
-(*
-  let n := length voters in
-  let threshold := (n + f + 1) / 2 in
-  let valid_votes := 
-    filter (fun v => match v with 
-                     | VoteC _ _ _ _ _ _ => true 
-                     end) 
-           voters in
-  let valid_votes_count := length valid_votes in
-  let equivocating_voters := 
-    voters_upper - length (remove_duplicates Nat.eq_dec 
-                                (map (fun v => projT2 v) valid_votes)) in
-  valid_votes_count >= threshold \/ equivocating_voters >= f.
-*)
-
-Definition IsSubset {bizantiners_number last_block_number_s last_block_number_t} 
-  {voters:Voters bizantiners_number}
-  {last_block_s : Block last_block_number_s}
-  {last_block_t : Block last_block_number_t}
-  (S : Votes voters last_block_s)
-  (T : Votes voters last_block_t) : Prop.
-Admitted.
+  : bool
+  := 
+  0 <? length (get_supermajority_blocks S) .
 
 
 Definition mergeVotes {bizantiners_number last_block_number}
