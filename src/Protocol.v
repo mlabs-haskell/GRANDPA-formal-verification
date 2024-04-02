@@ -345,4 +345,72 @@ Variant Completable
             = false
       )
   .
+
+Definition try_to_complete_round
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : option (Completable round_state).
+Admitted.
+
+Definition is_completable 
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : bool
+  :=
+  match try_to_complete_round round_state with
+  | None => false
+  | _ => true
+  end.
+
+
+Definition Source (X:Type) := forall (t:Time) (new_round_number:nat) round_number , round_number < new_round_number -> X.
+
+Definition parameterize {X:Type} {F:Type->Type} (P: X -> F X ) (source:  Source X)
+  : Source (F X)
+  := 
+  fun (t : Time) (new_round_number : nat) (n : nat) (pf : n < new_round_number) =>
+    P (source t new_round_number n pf).
+
+Definition parameterizeDependent {X:Type} {F:X->Type} (P: forall x, F x ) (source:  Source X)
+  : forall t nr n pf , (F (source t nr n pf))
+  := 
+  fun (t : Time) (new_round_number : nat) (n : nat) (pf : n < new_round_number) =>
+    P (source t new_round_number n pf).
+
+Print parameterize .
+
 End State3.
+
+Definition parameterize_bizantine := parameterize (F:=fun _ => nat) (fun _ => 1) (fun t => fun nr => fun n => fun pr => n).
+
+Definition parameterize_block_number := parameterize (F:=fun _ => nat) (fun _ => 1) (fun t => fun nr => fun n => fun pr => n).
+
+Definition parameterize_block (p_block_nummber:Source nat) := parameterizeDependent Block p_block_nummber.
+
+Print parameterize_block.
+
+Definition p_voter (s:Source nat) := parameterize (F:=fun x => x) (fun x => x) s.
+
+Definition p_Voters (s_bizantine:Source nat)  := parameterizeDependent Voters s_bizantine.
+ 
+Definition ProtocolView (t:Time) (voter:Voter) (current_round:nat) :
+  preview_number_s : forall t -> preview_number_s.
+  RoundState (preview_voters: p_Voters ) .
+
+
+
+Definition p2 := parameterize (fun _ => (fun  _ => nat)).
+
+Definition p_last_block_number := parameterize (fun _ => (fun  _ => nat )).
+Definition p_last_block (m_last_block_number:p_last_block_number) : parameterize () := (fun t => (fun  n => fun proof => Block (m_last_block_number t n proof) )).
+Definition parameterize_voters := parameterize (fun _ => (fun  _ => Voters ))
+
+
+Check ( (fun t => fun n => fun z => fun _ => Some (t+n+z)) :p2).
+
+Check ((fun t => fun n => fun z => fun _ => (t+n+z)) : parameterize_bizantine ).
+
+Definition can_start_round (old_round_number:nat) (round_source: parameterize (fun )) 
+
+Definition parameterized_voters := forall .
+
+Definition get_previous_rounds (t:Time) (new_round_number: nat) : forall n , n < new_round_number -> option
+  ({t_init & { round_last_block & RoundState preview_votes precommit_votes t_init round_number ).
