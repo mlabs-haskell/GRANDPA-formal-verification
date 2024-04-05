@@ -1,5 +1,5 @@
 Require Bool.
-(* 
+(** 
 
   In the real implementation is unpractical to have the full
   history of the blockchain and instead a new block stores
@@ -15,14 +15,14 @@ Require Bool.
 
 Inductive Block : nat -> Type:= 
   | OriginBlock : Block 0
-  (* 
+  (** 
      The id only purpose is to bring us the ability to talk about 
    different blocks.
    *)
   | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
 Definition AnyBlock := {n & Block n}.
-(*
+(** 
 Example:
   Definition newBlock_1 : AnyBlock := existT (fun n => Block n) 1 (NewBlock OriginBlock 1).
   Check newBlock_1 : AnyBlock .
@@ -45,44 +45,45 @@ Lemma eqb_eq_nat {n m} : Nat.eqb n m = true <-> n = m.
 Admitted.
 
 
-Lemma eqb_implies_same_nat {n m} (block1: Block n) (block2: Block m) : eqb block1 block2 = true -> n = m .
-Admitted.
-(*
+Require Import Coq.Program.Equality.
+Require Import Setoid.
+Lemma eqb_implies_same_nat {n} (block1: Block n): forall m (block2: Block m), eqb block1 block2 = true -> n = m .
 Proof.
-  intros H.
-  induction block1.
-  - destruct block2.
+  induction block1 as [|n block1 HInductive id1].
+  - intros m block2 Hblock2.
+    destruct block2.
     + reflexivity.
-    + discriminate H.
-  - destruct block2.
-    + discriminate H.
-    + simpl in H.
-      apply Bool.andb_true_iff in H.
-      destruct H as [H1 H2].
-      apply eqb_eq_nat in H1.
-      rewrite H1.
-      specialize (IHblock1 _ H2).
-      rewrite IHblock1.
-      reflexivity.
+    + simpl in Hblock2. 
+      discriminate.
+  - intros m block2 Hblock2.
+    destruct block2 as [| pre_m pre_block2 pre_id] eqn:eq_block2 .
+    + simpl in Hblock2. 
+      discriminate.
+    + simpl in Hblock2.
+      apply Bool.andb_true_iff in Hblock2.
+      destruct Hblock2 as [_ same_children].
+      pose (HInductive pre_m pre_block2 same_children) as same_number .
+      rewrite same_number.
+      trivial.
 Qed.
+
+Lemma eqb_eq {n} (block1: Block n)  : forall (block2:Block n), eqb block1 block2 = true -> block1 = block2.
 Proof.
-  intros H.
-  destruct (Nat.eqb n m) eqn:E.
-  - apply eqb_eq_nat in E. 
-    assumption.
-  - destruct block1, block2; simpl in H; try discriminate H
-    + auto.
-    (* this is the special case, we can't just discriminate *)
-    + assert (Nat.eqb n n0 = false) as not_successor.
-      auto.
-      rewrite not_successor in H. 
-      discriminate H.
+  induction block1 as [|n block1 HInductive id].
+  - intros block2 Hblock2.
+    dependent destruction block2.
+    reflexivity.
+  - intros block2  Hblock2. 
+    dependent destruction block2.
+    simpl in Hblock2.
+    apply Bool.andb_true_iff in Hblock2.
+    destruct Hblock2 as [same_id same_children].
+    pose (HInductive _ same_children) as eq_b1_b2.
+    rewrite eqb_eq_nat in same_id.
+    rewrite same_id.
+    rewrite eq_b1_b2.
+    trivial.
 Qed.
-*)
-
-Lemma eqb_eq {n} (block1 block2: Block n)  : eqb block1 block2 = true -> block1 = block2.
-Admitted.
-
 
 Definition get_block_number {n : nat} (block : Block n) : nat :=
   match block with
@@ -91,13 +92,13 @@ Definition get_block_number {n : nat} (block : Block n) : nat :=
   end.
 
 
-(* 
-  ` Prefix B B' ` in the paper is presented as ` B <=B' `
+(**  
+   [Prefix B B'] in the paper is presented as [B <= B'].
 *)
 Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
-  (* B <= B *)
+  (** [B <= B']*)
   | Same : forall n (block : Block n), Prefix block block
-  (* B <= B'  ->  B <= (b :: B') *)
+  (** [B <= B'  ->  B <= (b :: B')] *)
   | IsPrefix {n m} (block1: Block n) (block2: Block m) (block_id : nat) :
       Prefix block1 block2 -> Prefix block1 (NewBlock block2 block_id).
 
@@ -114,59 +115,35 @@ Qed.
 
 Lemma eqb_blocks_are_prefix {n} (block1 block2: Block n): eqb block1 block2 = true -> Prefix block1 block2.
 Proof.
-  Admitted.
-(* TODO: remove the admitted.*)
-(*refine (@rect2 _ _ _ _ _); [now constructor | simpl].
-  intros H.
-  apply eqb_implies_same_nat in H  as M.
-  apply eqb_eq in H.
-  unfold eqb in H.
-  destruct (Nat.eqb n m) eqn:n_eq_m.
-  - apply eqb_eq_nat in n_eq_m.
-  destruct block1, block2.
-  + apply Same.
-  + (* Case: block1 = OriginBlock, block2 = NewBlock oldBlock2 id2 *)
-   discriminate H.
-  + (* Case: block1 = NewBlock oldBlock1 id1, block2 = OriginBlock *)
-   discriminate H.
-  + (* Case: block1 = NewBlock oldBlock1 id1, block2 = NewBlock oldBlock2 id2 *)
-    simpl in H.
-    apply Bool.andb_true_iff in H.
-    destruct H as [Hids Hrecur].
-
-    rewrite n_eq_m in H.
-    simpl in H.
-    apply Same.
+  intro H.
+  pose (eqb_eq block1 block2 H) as eq_blocks.
+  rewrite eq_blocks.
+  refine (Same n block2).
 Qed.
- *)
 
+Open Scope nat_scope.
 
-Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) : Type.
-Admitted.
-(*  :=
-  match block1, block2 with
-    | OriginBlock, _ => Some (originBlock_is_always_prefix block2)
-    | _, OriginBlock => None
-    | NewBlock oldBlock1 _, NewBlock oldBlock2 _ =>
-      if Nat.eqb n m then 
-        let comparition := eqb block1 block2
-        in
-          if comparition then 
-            let same_nat := eqb_implies_same_nat block1 block2
-            in
-            eqb_blocks_are_prefix block1 block2 comparition
-          else 
-            None
-      else
-        match is_prefix oldBlock1 oldBlock2 with
-        | Some p => Some (IsPrefix block1 p)
+Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) 
+ :=
+  if Nat.leb n  m then
+    match block2 with
+    | OriginBlock => 
+        match block1 with 
+        | OriginBlock => Some (Same 0 OriginBlock)
+        | _ => None
+        end
+    | NewBlock old_block id =>
+        match is_prefix block1 old_block with
+        | Some p => Some (IsPrefix block1 old_block id p)
         | None => None
         end
-  end.
- *)
+    end
+  else
+  None.
+ 
 
-(*
-  IsChildren B B' = B' < B
+(**
+  [IsChildren B B' = B' < B]
  *)
 
 Variant IsChildren {n m} (block1 :Block n) (block2: Block m) : Type :=
