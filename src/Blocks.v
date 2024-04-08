@@ -25,11 +25,32 @@ Inductive Block : nat -> Type:=
    *)
   | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
+
+(** From time to time we need to form a type that can contain 
+  blocks of any lenght. In such cases we will use AnyBlock 
+   as the type.
+*)
 Definition AnyBlock := {n & Block n}.
+
+
 (** 
 Example:
-  Definition newBlock_1 : AnyBlock := existT (fun n => Block n) 1 (NewBlock OriginBlock 1).
-  Check newBlock_1 : AnyBlock .
+  
+  [Definition newBlock_1 : AnyBlock := existT (fun n => Block n) 1 (NewBlock OriginBlock 1).]
+
+  [Check newBlock_1 : AnyBlock .]
+*)
+
+(** * Block Equality
+  In the term
+   [block1 = block2]
+   we need to already know (syntactically) that both blocks has the same lenght.
+  otherwise coq would (rightfully) refuse to construct the term.
+   
+  This means that either we work with Heterogeneous equality or 
+   cast around the types (also called transport).
+
+  As I lack experience with Heterogeneous equality I choose to cast around types.
 *)
 
 Fixpoint eqb {n m} (block1:Block n) (block2:Block m) := 
@@ -136,9 +157,6 @@ Definition get_block_number {n : nat} (block : Block n) : nat :=
   | NewBlock _ _ => S n
   end.
 
-Print False_rec.
-Search (S ?n = 0).
-Search (?x = ?y <-> ?y = ?x).
 
 Lemma symmetric_aux {n m:nat} : n=m -> m=n.
 Proof.
@@ -147,6 +165,10 @@ Proof.
   reflexivity.
 Qed.
 
+(** * Cast 
+  As mentioned before, the comparation of blocks of different lenght
+   require us to have a way to tranform a block type.
+*)
 Fixpoint cast {n} (block:Block n) {struct block}: forall {m}, m = n -> Block m
   :=
   match block in Block n' return forall m, m = n' -> Block m with 
@@ -230,7 +252,7 @@ Proof.
     reflexivity.
 Qed.
 
-(**  
+(**  * Prefix
    [Prefix B B'] in the paper is presented as [B <= B'].
 *)
 Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
@@ -243,10 +265,8 @@ Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
 Lemma originBlock_is_always_prefix  {n} (block:Block n):  Prefix OriginBlock block.
 Proof.
   induction block.
-  - (* Case: block = OriginBlock *)
-    apply Same.
-  - (* Case: block = NewBlock oldBlock id *)
-    apply IsPrefix.
+  - apply Same.
+  - apply IsPrefix.
     apply IHblock.
 Qed.
 
@@ -320,6 +340,11 @@ Qed.
 
 Open Scope nat_scope.
 
+(** ** is_prefix
+  Although we already have Prefix, it's definition tell us what a 
+   prefix is, not how to take two blocks and find a prefix.
+*)
+
 Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) 
  :=
   if Nat.leb n  m then
@@ -392,6 +417,8 @@ Proof.
 
 
 
+(** * More blocks relations
+*)
  
 
 (**
@@ -403,11 +430,8 @@ Variant IsChildren {n m} (block1 :Block n) (block2: Block m) : Type :=
       IsChildren block1 block2.
 
 
-(* 
-   Is equivalent to the relation B ~ B' in the paper
-   We express it like `(B <= B' ) \/ (B' <= B)` instead 
-   of the one in the paper `B<B' /\ B=B! /\ B>B'` .
-
+(** 
+   The relation B ~ B' in the paper
  *)
 Variant Related {n m} (block1:Block n) (block2 :Block m) : Prop :=
   | RelatedAsChildren
@@ -468,7 +492,6 @@ Proof.
          destruct is_prefix0.
          rewrite H in Heqmaybe_prefix2_1.
          inversion Heqmaybe_prefix2_1.
-      Print False_rec.
       ++ pose (eqb_implies_same_nat _ _ H) as same_nat.
          pose (eqb_blocks_are_prefix2 _ _ H same_nat) as H2.
          pose (prefix_of_cast_right b1 b2 same_nat H2) as H3.

@@ -43,8 +43,6 @@ Proof.
     + destruct (h_block_number =? block_number);discriminate.
 Qed.
 
-Search List.fold_right.
-
 
 Definition find_highest_blocks (blocks:list AnyBlock):list AnyBlock
   := 
@@ -163,8 +161,8 @@ Proof.
   rewrite <- Hsuper_s in gs_is_result.
   destruct super_s.
   - contradiction.
-  - pose (supermajority_s_subset_t (projT1 p) (projT2 p)).
 Admitted.
+(* - pose (supermajority_s_subset_t (projT1 p) (projT2 p)). *)
 
 (*
 plan:

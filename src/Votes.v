@@ -1,11 +1,47 @@
 Require List.
 Require Import  Nat.
-Require Import Blocks.
+Require Import Coq.Program.Equality.
 
 Require Dictionary.
+Require Import Blocks.
 
+(** * Voters 
+*)
+
+(** 
+Some requirements about a type that can represent voters:
+   - It must have infinite inhabitants.
+   - It must have decidable equality.
+This means, we can have any number of voters and we can 
+distinguish between them. 
+For this reason we choose to use naturals.
+*)
 Definition Voter : Type := nat.
 
+
+(**
+  The bizantiners_number parameter isn't used 
+   in the definition of the type, we 
+   leave it open to any assumption. 
+   Previously we had a constraint but 
+   it wasn't useful and only complicate things.
+
+  Ideally a Voters must be proper set, but we 
+   don't want to complicate much the types.
+  We may add a constraint in the constructor 
+   to ensure that no voter is repeated in the 
+   list, but it may complicate construction of 
+   voters.
+
+  Why not [Definition Voters nat := list Voter]?
+  this would be equivalent to [list nat]. 
+   We are going to work with multiple things 
+   that are equivalent to [list nat]. This 
+   means we should use the newtype pattern here.
+
+  Note: Coq doesn't have a newtype syntax as 
+   in Haskell, so we should use a variant.
+*)
 Variant Voters (bizantiners_number:nat) : Type 
   := 
     | VotersC (voters:list Voter) 
@@ -32,6 +68,41 @@ Definition in_Voters {bizantiners_number}
   (voter : Voter) (voters:Voters bizantiners_number) 
   :=
   List.In voter (voters_to_list voters).
+
+(** * Votes
+*)
+
+(** ** Vote
+
+From the paper:
+
+<<
+  A vote is a block hash, together with some metadata such as round number 
+  and the type of vote, such as prevote or precommit, all signed with a 
+  voter’s private key
+>>
+  
+Following the same approach as with the Blocks, we choose to replace the 
+block hash with the real block. This makes proofs easier.
+
+Round number would be added later when we add Time and Rounds, this 
+  simplifies the work with a Vote.
+
+We don't have types for votes, instead when needed, we distinguish
+them by maintaining two different set of votes, one for precommits 
+and other for previews.
+
+However, we want to tie a Vote with a particular set of Voters 
+and to ensure that the Vote is coherent.
+
+Additionally a Vote depends on the [last_block], this is 
+we are only interested in the blocks that are children of 
+[last_block]. 
+
+This means that [last_block] can be often interpreter as the 
+_last_block_finalized_.
+However this may not be the case in particular situations.
+*)
 
 Variant Vote {bizantiners_number last_block_number}
   (voters: Voters bizantiners_number )
@@ -67,6 +138,9 @@ Definition vote_to_pair  {bizantiners_number last_block_number}
   end.
 
 
+(** ** Votes
+  As with [Voters], we choose to use the newtype pattern here.
+*)
 Inductive Votes  {bizantiners_number last_block_number}
   (voters: Voters bizantiners_number) (last_block:Block last_block_number)
   :Type 
@@ -114,6 +188,24 @@ Definition is_equivocate {bizantiners_number last_block_number }
       in
         1 <? (length filtered).
 
+(**
+The first element are the equivocate voters 
+and the second one are the voters that only voted once.
+
+
+Why?
+
+In Purescript the partition funtion returns a record like:
+
+<<
+  {success: _ , failures: _} 
+>>
+
+Then you can do [out.success] and [out.failures]. 
+
+In coq that may be not worth the effort.
+*)
+
 Definition split_voters_by_equivocation {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -145,7 +237,6 @@ Proof.
   rewrite H2 in xIn.
   rewrite List.filter_In in xIn.
   destruct xIn as [xIn x_true].
-  Search List.In.
   Admitted.
 
 
@@ -154,6 +245,13 @@ Close Scope list.
 
 Section Some.
 
+(** 
+  Sections are really useful to declare local variables 
+   to avoid having big predicates.
+   But sometimes we may need to close a section since 
+   coq interprets in a erroneous way what we write.
+   We immediately open a section again when this happen.
+*)
 Context {bizantiners_number last_block_number : nat}.
 Variable voters: Voters bizantiners_number.
 Variable last_block  :Block last_block_number.
@@ -203,6 +301,16 @@ Module BlockDictionaryModule := Dictionary.Functions BlockDictionaryTypes.
 
 Definition BlockDictionary := BlockDictionaryModule.Dictionary AnyBlock nat.
 
+(** ** Vote count
+*)
+
+(**
+  A vote for [B: Block n] is also a vote for [B':Block n'] 
+   as long as [B' <= B] ([Prefix B' B]). 
+
+  This function takes a block and add a vote to the [acc] dictionary
+   for every block that is above the [last_block].
+*)
 Fixpoint count_vote_aux {last_block_number vote_block_number}
   {last_block : Block last_block_number}
   (vote_block:Block vote_block_number)
@@ -223,6 +331,12 @@ Fixpoint count_vote_aux {last_block_number vote_block_number}
         count_vote_aux older_block new_prefix_proof updated_acc    
     end.
 
+(** 
+  Coq refuses to evaluate functions that use fixpoint
+   unless all it's arguments are already evaluted.
+   This made us split the fixpoint functions in two or more
+   functions to attempt to maximize the unfolding of functions.
+*)
 Definition count_vote {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -231,6 +345,11 @@ Definition count_vote {bizantiners_number last_block_number}
   match vote with
   | VoteC _ _ _ _ block prefix_proof => count_vote_aux block prefix_proof acc
   end.
+
+(**
+The first element of the output is the list of votes that remains to 
+be considered.
+*)
 
 Fixpoint count_votes_aux {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
@@ -242,6 +361,14 @@ Fixpoint count_votes_aux {bizantiners_number last_block_number}
   | List.cons vote remain => count_votes_aux remain (count_vote vote acc)
   end.
 
+(** 
+  Takes a set of votes and returns a dictionary of blocks
+   where the value for a block is the number of votes for that 
+   block.
+
+  We have to use AnyBlock here since the Dictionary 
+   contains blocks of different lengths.
+*)
 Definition count_votes {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -251,8 +378,31 @@ Definition count_votes {bizantiners_number last_block_number}
   | (_ , out) => out
   end.
 
-Search List.partition.
 
+(**
+  This is the core function implementing supermajority.
+
+   From the paper: 
+
+<<
+A voter equivocates in a set of votes [S] if they have cast multiple different 
+votes in [S] . We call a set [S] of votes safe if the number of voters 
+who equivocate in [S] is at most [f] . We say that [S] has a [supermajority]
+for a block [B] if the set of voters who either have a vote for 
+blocks [>= B] or equivocate in [S] has size at least [(n+f + 1)/2]. 
+We count equivocations as votes for everything so that observing a vote 
+is monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority 
+for [B] so does [T] , while being able to ignore yet more equivocating votes
+from an equivocating voter.
+>>
+
+Our implementation aproach is as follows:
+
+   - Find the equivocate votes and the ones that aren't equivocate.
+   - Count the non equivocate votes for every block.
+   - Remove blocks that don't have at least [(n+f+1)/2] votes.
+      In this case [n:=length voters] and [f:= bizantiners_number]
+*)
 Definition get_supermajority_blocks {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -289,6 +439,10 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
   in
     blocks_with_super_majority.
 
+
+(**
+This definition doesn't take in account the repetitions of elements
+*)
 Definition IsSubset {bizantiners_number last_block_number} 
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -361,8 +515,9 @@ Proof.
       assumption.
 Qed.
 
-
-
+(**
+   S ⊂ T => eqivocates_in_S ⊂ equivocates_in_T
+*)
 Lemma superset_has_equivocates_of_subset {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -381,8 +536,18 @@ Proof.
   intro is_equivocate_s.
   Admitted.
 
-Require Import Coq.Program.Equality.
 
+(**
+From the paper:
+
+<<
+We count equivocations as votes for everything so that observing a vote is 
+monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority 
+for [B] so does [T] , while being able to ignore yet more equivocating votes 
+from an equivocating voter.
+>>
+  
+*)
 Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -398,7 +563,6 @@ Proof.
   simpl.
   remember (get_supermajority_blocks T) as gt eqn:Heq_gt.
   unfold get_supermajority_blocks in Heq_gt.
-  Search List.In.
   remember (split_voters_by_equivocation T) as splitedT.
   destruct splitedT as [equivocated_voters non_equivocate_voters].
   rewrite Heq_gt in H1.
@@ -423,7 +587,6 @@ Proof.
 Admitted.
   
 
-
 Definition has_supermajority  {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -433,6 +596,9 @@ Definition has_supermajority  {bizantiners_number last_block_number}
   0 <? length (get_supermajority_blocks S) .
 
 
+(**
+   Since Votes is a wrap around a list, this function wraps [++].
+*)
 Definition mergeVotes {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
