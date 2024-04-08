@@ -124,6 +124,34 @@ Definition split_voters_by_equivocation {bizantiners_number last_block_number }
     in
       List.partition  (fun voter => is_equivocate voter votes) voters_list.
 
+Open Scope list.
+
+Lemma non_equivocate_votes_are_unique {bizantiners_number last_block_number } 
+  {voters: Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (votes: Votes voters last_block)
+  {equivocate_voters non_equivocate_voters}
+  (eq_split : (equivocate_voters,non_equivocate_voters) = split_voters_by_equivocation votes)
+  : 
+  forall x l1 l2, non_equivocate_voters  = l1++ (x::l2) -> not (List.In x (l1++l2)).
+Proof.
+  intros x l1 l2 H HIn.
+  pose (List.in_elt x l1 l2) as xIn.
+  rewrite <- H in xIn.
+  unfold split_voters_by_equivocation in eq_split.
+  pose (List.partition_as_filter (fun voter => is_equivocate voter votes) (voters_to_list voters) ).
+  rewrite e in eq_split.
+  inversion eq_split.
+  rewrite H2 in xIn.
+  rewrite List.filter_In in xIn.
+  destruct xIn as [xIn x_true].
+  Search List.In.
+  Admitted.
+
+
+Close Scope list.
+
+
 Section Some.
 
 Context {bizantiners_number last_block_number : nat}.
@@ -195,8 +223,6 @@ Fixpoint count_vote_aux {last_block_number vote_block_number}
         count_vote_aux older_block new_prefix_proof updated_acc    
     end.
 
-
-
 Definition count_vote {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -225,6 +251,7 @@ Definition count_votes {bizantiners_number last_block_number}
   | (_ , out) => out
   end.
 
+Search List.partition.
 
 Definition get_supermajority_blocks {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
@@ -335,6 +362,7 @@ Proof.
 Qed.
 
 
+
 Lemma superset_has_equivocates_of_subset {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
@@ -353,6 +381,33 @@ Proof.
   intro is_equivocate_s.
   Admitted.
 
+Require Import Coq.Program.Equality.
+
+Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T : Votes voters last_block) 
+  : forall (block1 block2:AnyBlock) (v1 v2:nat), 
+    List.In (block1,v1) (get_supermajority_blocks T)
+    -> List.In (block2,v2) (get_supermajority_blocks T)
+    -> Related (projT2 block1) (projT2 block2).
+Proof.
+  intros ab1 ab2 v1 v2 H1 H2.
+  destruct ab1 as [n1 b1] eqn:Hab1.
+  destruct ab2 as [n2 b2] eqn:Hab2.
+  simpl.
+  remember (get_supermajority_blocks T) as gt eqn:Heq_gt.
+  unfold get_supermajority_blocks in Heq_gt.
+  Search List.In.
+  remember (split_voters_by_equivocation T) as splitedT.
+  destruct splitedT as [equivocated_voters non_equivocate_voters].
+  rewrite Heq_gt in H1.
+  rewrite (List.filter_In) in H1.
+  destruct H1 as [count1 ineq1].
+  rewrite Heq_gt in H2.
+  rewrite (List.filter_In) in H2.
+  destruct H2 as [count2 ineq2].
+  Admitted.
 
 Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}

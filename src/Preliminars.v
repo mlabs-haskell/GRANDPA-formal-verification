@@ -1,25 +1,15 @@
 Require Import Blocks.
+
 Require Import Votes.
 Require List.
 Require Import Nat.
 
-(* Función g *)
-Definition g {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
-  : option (sigT ( fun out => Block out))
-  := 
-  let blocks_with_super_majority 
-    := get_supermajority_blocks T
-  in
-  (*
-    We will look for a block of maximum block_number 
-    such that it has supermajority.
-    This join help us get a list with the blocks with 
-     the maximum length.
-   *)
-  let join (existencial:AnyBlock) acc 
+
+
+Definition find_highest_blocks_join
+  (existencial:AnyBlock) 
+  (acc:list AnyBlock)
+  : list AnyBlock
     := 
     match existencial with
     | existT _ block_number block =>
@@ -37,10 +27,92 @@ Definition g {bizantiners_number last_block_number}
                       acc
               end
         end
-    end
+    end.
+
+Lemma find_highest_blocks_join_never_nil 
+  (existencial:AnyBlock) (acc:list AnyBlock) 
+  : find_highest_blocks_join existencial acc <> List.nil.
+Proof.
+  destruct existencial as [block_number block].
+  destruct acc as [|h_any_block].
+  - discriminate.
+  - simpl.
+    destruct h_any_block as [h_block_number h_block].
+    destruct (h_block_number <? block_number).
+    + discriminate.
+    + destruct (h_block_number =? block_number);discriminate.
+Qed.
+
+Search List.fold_right.
+
+
+Definition find_highest_blocks (blocks:list AnyBlock):list AnyBlock
+  := 
+  List.fold_right find_highest_blocks_join List.nil blocks.
+
+
+Lemma find_highest_blocks_nil_iff_nil (blocks: list AnyBlock) 
+  : find_highest_blocks blocks = nil <-> blocks = nil.
+Proof.
+  split.
+  - intro H.
+    unfold find_highest_blocks in H.
+    destruct blocks.
+    + reflexivity.
+    + simpl in H.
+      apply find_highest_blocks_join_never_nil in H.
+      contradiction.
+  - intro H.
+    rewrite H.
+    auto.
+Qed.
+
+
+Lemma find_highest_blocks_output_has_same_height (blocks: list AnyBlock) 
+  : 
+  forall (n:nat) (block1:Block n)
+  , List.In (existT _ n block1) (find_highest_blocks blocks)
+    -> forall (m:nat) (block2:Block m), 
+       List.In (existT _ m block2) (find_highest_blocks blocks) 
+        -> n = m.
+Proof.
+  intros n b1 HinResult m b2 HinResult2.
+  induction blocks as [|h_block].
+  - simpl in HinResult. 
+    contradiction.
+  - simpl in HinResult.
+    Admitted.
+
+Lemma find_highest_blocks_works (blocks: list AnyBlock) 
+  :forall (n:nat) (block1:Block n)
+    , List.In (existT _ n block1) (find_highest_blocks blocks)
+    -> forall (m:nat) (block2:Block m)
+      ,List.In (existT _ m block2) blocks
+      -> m <= n.
+Proof.
+  intros n b1 Hb1.
+  induction blocks as [| h_block remain_blocks HInd].
+  - simpl. 
+    intros m b2 f.
+    contradiction.
+  - intros m b2 H.
+    simpl in H.
+    destruct H as [is_head|in_remain].
+    2:{ simpl in Hb1. Admitted.
+
+
+(* Función g *)
+Definition g {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T : Votes voters last_block) 
+  : option (sigT ( fun out => Block out))
+  := 
+  let blocks_with_super_majority 
+    := get_supermajority_blocks T
   in
   match   
-    List.fold_right join List.nil (List.map fst blocks_with_super_majority) 
+    find_highest_blocks (List.map fst blocks_with_super_majority) 
   with
     | List.cons result List.nil => Some result
     | _ => None
@@ -80,13 +152,33 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
         & (g T = Some (existT _ gt_block_number gt)) * (Prefix gs gt)}
     }.
 Proof.
-  remember (g T) as gt_out.
-  unfold g in Heqgt_out.
+  remember (g T) as gt_out eqn:is_gt.
+  remember (get_supermajority_blocks S) as super_s eqn:Hsuper_s.
+  unfold g in is_gt.
   pose (superset_has_subset_majority_blocks S T is_sub_set) as supermajority_s_subset_t.
   pose (gt_some_implies_supermajority_not_empty S gs gs_is_result) 
     as supermajority_s_not_nil.
   unfold g in gs_is_result.
+  rewrite <- Hsuper_s in supermajority_s_not_nil.
+  rewrite <- Hsuper_s in gs_is_result.
+  destruct super_s.
+  - contradiction.
+  - pose (supermajority_s_subset_t (projT1 p) (projT2 p)).
 Admitted.
+
+(*
+plan:
+   - Probar que si dos bloques B1 y B2 no estan relacionados pero tienen
+   supermajoria en S entonces decendidendo por la funcion de supermajorya 
+   eventualmente llegamos a que en conjunto hay al menos n + f +1 -f =  n+1 votos
+   contradiccion, por lo que todos los bloques con supermajoria estan 
+   en una misma cadena.
+   - Para esto agregar la propiedad  de decibilidad de ser prefijo de bloques
+   - Para finalizar la prueba is la lista que se contruye en g para buscar 
+      el bloque de mayor tamano, es no vacia y tiene mas de un elemento
+      , entonces estan no relacionados, pero ambos vienen de supermajoria 
+   contradiciendo el inicio.
+ *)
 
 Close Scope type_scope.
 

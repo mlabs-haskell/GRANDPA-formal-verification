@@ -375,8 +375,6 @@ Definition parameterizeDependent {X:Type} {F:X->Type} (P: forall x, F x ) (sourc
   fun (t : Time) (new_round_number : nat) (n : nat) (pf : n < new_round_number) =>
     P (source t new_round_number n pf).
 
-Print parameterize .
-
 End State3.
 
 Definition parameterize_bizantine := parameterize (F:=fun _ => nat) (fun _ => 1) (fun t => fun nr => fun n => fun pr => n).
@@ -385,13 +383,11 @@ Definition parameterize_block_number := parameterize (F:=fun _ => nat) (fun _ =>
 
 Definition parameterize_block (p_block_nummber:Source nat) := parameterizeDependent Block p_block_nummber.
 
-Print parameterize_block.
-
 Definition p_voter (s:Source nat) := parameterize (F:=fun x => x) (fun x => x) s.
 
 Definition p_Voters (s_bizantine:Source nat)  := parameterizeDependent Voters s_bizantine.
  
-Definition ProtocolView (t:Time) (voter:Voter) (current_round:nat) :
+(*Definition ProtocolView (t:Time) (voter:Voter) (current_round:nat) :
   preview_number_s : forall t -> preview_number_s.
   RoundState (preview_voters: p_Voters ) .
 
@@ -414,3 +410,4 @@ Definition parameterized_voters := forall .
 
 Definition get_previous_rounds (t:Time) (new_round_number: nat) : forall n , n < new_round_number -> option
   ({t_init & { round_last_block & RoundState preview_votes precommit_votes t_init round_number ).
+ *)
