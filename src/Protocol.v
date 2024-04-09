@@ -361,53 +361,164 @@ Definition is_completable
   end.
 
 
-Definition Source (X:Type) := forall (t:Time) (new_round_number:nat) round_number , round_number < new_round_number -> X.
+Definition Source (X:Type) := forall (t:Time) (round_number:nat) (voter:Voter), X.
 
 Definition parameterize {X:Type} {F:Type->Type} (P: X -> F X ) (source:  Source X)
   : Source (F X)
   := 
-  fun (t : Time) (new_round_number : nat) (n : nat) (pf : n < new_round_number) =>
-    P (source t new_round_number n pf).
+  fun (t : Time) (r : nat) (v:Voter) =>
+    P (source t r v).
 
 Definition parameterizeDependent {X:Type} {F:X->Type} (P: forall x, F x ) (source:  Source X)
-  : forall t nr n pf , (F (source t nr n pf))
+  : forall t r v , (F (source t r v ))
   := 
-  fun (t : Time) (new_round_number : nat) (n : nat) (pf : n < new_round_number) =>
-    P (source t new_round_number n pf).
+  fun (t : Time) (r : nat) (v:Voter) =>
+    P (source t r v).
+
+
+Definition parameterize_function {X Y:Type} (f:X->Y) (s:Source X) : Source Y := 
+  fun t r v => f (s t r v).
+
+Definition para {X:Type} (f:X->Type) (s:Source X) := forall t r v, f (s t r v).
 
 End State3.
 
-Definition parameterize_bizantine := parameterize (F:=fun _ => nat) (fun _ => 1) (fun t => fun nr => fun n => fun pr => n).
 
-Definition parameterize_block_number := parameterize (F:=fun _ => nat) (fun _ => 1) (fun t => fun nr => fun n => fun pr => n).
+Definition const_source {X:Type} (x:X) : Source X := fun t r v => x.
 
-Definition parameterize_block (p_block_nummber:Source nat) := parameterizeDependent Block p_block_nummber.
+Definition Voter_source (s:Source nat) : Source (Voter) := parameterize (F:=fun x => x) (fun x => x) s.
 
-Definition p_voter (s:Source nat) := parameterize (F:=fun x => x) (fun x => x) s.
+Definition Voters_source (s_bizantine:Source nat) := forall t r v, Voters (s_bizantine t r v).
 
-Definition p_Voters (s_bizantine:Source nat)  := parameterizeDependent Voters s_bizantine.
- 
-(*Definition ProtocolView (t:Time) (voter:Voter) (current_round:nat) :
-  preview_number_s : forall t -> preview_number_s.
-  RoundState (preview_voters: p_Voters ) .
+Definition Block_source (s:Source nat) := forall t r v, Block (s t r v).
+
+Definition Vote_source (t:Time) (r:nat) (v:Voter) {s_voters_nat: Source nat} 
+  (s_voters: forall t r v, Voters (s_voters_nat t r v)) 
+  {s_blocks_nat: Source nat} (s_blocks : Block_source s_blocks_nat)
+  :=  
+    Vote (s_voters t r v) (s_blocks t r v).
+
+Definition Votes_source  (t:Time) (r:nat) (v:Voter) {s_voters_nat: Source nat} 
+  (s_voters: forall t r v, Voters (s_voters_nat t r v)) 
+  {s_blocks_nat: Source nat} (s_blocks : Block_source s_blocks_nat)
+  := Votes (s_voters t r v) (s_blocks t r v).
+
+Definition RoundState_source (t:Time) (r:nat) (v:Voter) {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  (s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)) 
+  (s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)) 
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} (s_last_block : Block_source s_last_block_nat)
+  {s_time_increment:Source Time }
+  := 
+  RoundState
+    (preview_number:= s_preview_voters_nat t r v)
+    (precommit_number:= s_precommit_voters_nat t r v)
+    (last_block_number:=s_last_block_nat t r v)
+    (s_preview_voters t r v) 
+    (s_precommit_voters t r v) 
+    (s_round_start_time t r v) 
+    (s_last_block t r v) 
+    r
+    (s_time_increment t r v).
+
+Definition Estimate_source (t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_roundstate:
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r 
+        (s_time_increment t r v)
+  )
+  := Estimate
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (preview_voters:=s_preview_voters t r v) 
+        (precommit_voters:=s_precommit_voters t r v) 
+        (round_time:=s_round_start_time t r v) 
+        (round_number:=r) 
+        (last_block_number:=s_last_block_nat t r v)
+        (last_block:=s_last_block t r v) 
+        (time_increment:=s_time_increment t r v)
+        s_roundstate.
 
 
+Definition Completable_source (t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_roundstate: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  )
+  := Completable (s_roundstate t r v).
 
-Definition p2 := parameterize (fun _ => (fun  _ => nat)).
+Fixpoint voter_already_votes_in_all (t:Time) (r:nat) (v:Voter)
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_roundstate:
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  )
+  {struct r}
+  :bool.
+Proof. Admitted.
 
-Definition p_last_block_number := parameterize (fun _ => (fun  _ => nat )).
-Definition p_last_block (m_last_block_number:p_last_block_number) : parameterize () := (fun t => (fun  n => fun proof => Block (m_last_block_number t n proof) )).
-Definition parameterize_voters := parameterize (fun _ => (fun  _ => Voters ))
+Definition can_start_round (t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_roundstate: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  ):bool
+  :=
+  match r with
+    | 0 => true
+    | S r' =>  is_completable (s_roundstate t r' v) && voter_already_votes_in_all t r' v (s_roundstate t r' v)
+  end.
 
-
-Check ( (fun t => fun n => fun z => fun _ => Some (t+n+z)) :p2).
-
-Check ((fun t => fun n => fun z => fun _ => (t+n+z)) : parameterize_bizantine ).
-
-Definition can_start_round (old_round_number:nat) (round_source: parameterize (fun )) 
-
-Definition parameterized_voters := forall .
-
-Definition get_previous_rounds (t:Time) (new_round_number: nat) : forall n , n < new_round_number -> option
-  ({t_init & { round_last_block & RoundState preview_votes precommit_votes t_init round_number ).
- *)
