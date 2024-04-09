@@ -191,6 +191,7 @@ Fixpoint cast {n} (block:Block n) {struct block}: forall {m}, m = n -> Block m
           end 
   end.
 
+
 (* 
    You can define cast with this, but it would mean an opaque function.
 Proof.
@@ -279,19 +280,29 @@ Qed.
 Lemma newblock_prefix {n m} (block1: Block n) (block2:Block m) {id} 
   : Prefix (NewBlock block1 id) block2 -> Prefix block1 block2.
 Proof.
-  Admitted.
-  (*  intro H.
-  dependent induction H .
-  - apply IsPrefix.
-    apply Same.
-  - dependent destruction block2.
+  intro H.
+  induction block2.
+  - dependent destruction block1.
+    + apply Same.
     + inversion H.
-    + apply prefix_of_newblock.
-      apply IHPrefix.
-      apply prefix_of_newblock.
-  auto using IsPrefix.
+  - dependent destruction H.
+    + apply IsPrefix. apply Same.
+    + apply IHblock2 in H.
+      auto using IsPrefix.
 Qed.
-  *)
+
+
+Lemma prefix_transitive {n m r} 
+  (block1: Block n) (block2:Block m) (block3: Block r) 
+  : Prefix block1 block2 -> Prefix block2 block3 -> Prefix block1 block3.
+Proof.
+  intros h1_2.
+  dependent induction h1_2.
+  - auto.
+  - intro H.
+    apply IHh1_2.
+    apply (newblock_prefix block2 block3 H).
+Qed.
 
 Lemma prefix_height_is_below {n m} (block1: Block n) (block2:Block m)
   : Prefix block1 block2 -> n <= m.
@@ -345,9 +356,10 @@ Open Scope nat_scope.
    prefix is, not how to take two blocks and find a prefix.
 *)
 
+(*
 Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) 
  :=
-  if Nat.leb n  m then
+  if Nat.ltb n  m then
     match block2 with
     | OriginBlock => 
         match block1 with 
@@ -361,17 +373,57 @@ Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix b
         end
     end
   else
+    if Nat.eqb n m then
+      match block2,block1 in Block m' * Block n' return option (Prefix ) with
+      | OriginBlock,OriginBlock => Some (0 OriginBlock)
+      | NewBlock b2 id2,NewBlock b1 id1 => 
+          match is_prefix b1 b2 with
+          | Some p => Some (IsPrefix block1 old_block id p)
+          | None => None
+          end
   None.
 
-Lemma prefix_implies_is_prefix {n m} (block1 : Block n) (block2: Block m) 
-  : Prefix block1 block2 -> exists p,   is_prefix block1 block2 = Some p.
+
+Lemma prefix_implies_is_prefix {n} (block1 : Block n)
+  : forall {m} (block2: Block m) ,
+    Prefix block1 block2 -> exists p,   is_prefix block1 block2 = Some p.
 Proof.
-  intro H.
-  dependent induction block2.
-  - dependent destruction block1.
+  dependent induction block1.
+  - dependent induction block2.
     + simpl. eauto.
-    + inversion H.
-  - destruct (is_prefix block1 block2) eqn:Hr.
+    + intro H.
+      pose (originBlock_is_always_prefix block2) as always_prefix.
+      apply IHblock2 in always_prefix.
+      simpl.
+      destruct (is_prefix OriginBlock block2).
+      ++ eauto.
+      ++ 
+      destruct always_prefix as [p1 proof_is_prefix].
+      inversion proof_is_prefix.
+  - dependent induction block2.
+    + intro H. inversion H.
+    + intro H.
+      dependent destruction H.
+      ++ exists (Same _ (NewBlock block2 id0) ).
+         simpl.
+         remember (Nat.leb n0 n0) as x.
+         simpl. 
+         pose (PeanoNat.Nat.leb_refl n0) as n0_leb_n0.
+         rewrite <- Heqx in n0_leb_n0.
+         destruct (Nat.leb n0 n0).
+         2:{ rewrite Heqx in n0_leb_n0. inversion n0_leb_n0.}
+
+
+
+    pose (prefix_height_is_below _ _ H) as n_leq_Sn0. 
+    rewrite <- PeanoNat.Nat.leb_le in n_leq_Sn0.
+    simpl. 
+    destruct (Nat.leb n (S n0)).
+    2:{ inversion n_leq_Sn0.}
+    + dependent destruction H.
+      ++  simpl.
+
+    destruct (is_prefix block1 block2) eqn:Hr.
   (* 2:{ 
       simpl.
   - destruct (is_prefix block1 (NewBlock block2 id)) eqn:Hr.
@@ -403,17 +455,22 @@ Proof.
       rewrite <- leb_iff_le in Sn_leq_Sn0.
       rewrite Sn_leq_Sn0.
     *)
-    Admitted.
+*)
 
-Lemma prefix_of_cast_right {n m} (block1 : Block n) (block2: Block m) {w}
+(*Lemma prefix_of_cast_right {n m} (block1 : Block n) (block2: Block m) {w}
   (eq_w_m: w = m)
   : Prefix block1 (cast block2 eq_w_m)-> Prefix block1 block2.
 Proof.
   intros H.
   dependent induction block1.
   - apply originBlock_is_always_prefix.
-  - destruct block2.
-    Admitted.
+  - dependent destruction H.
+    + dependent destruction block2.  
+      ++ inversion eq_w_m.
+      ++ simpl in x.
+         injection x.
+         intros eq_id eq_b1_b2.
+*)
 
 
 
@@ -467,9 +524,21 @@ Proof.
       auto using le_n_S.
 Qed.
 
+(*
+
 Lemma decidable_related : forall n (block1:Block n) m (block2 :Block m)
   , {Related block1 block2} + {Unrelated block1 block2}.
 Proof.
+  dependent induction block2.
+  -  destruct block1;left.
+    + auto using RelatedAsEquals.
+    + apply related_symmetric.
+      apply prefix_implies_related.
+      apply originBlock_is_always_prefix.
+  - destruct IHblock2 as [H|H].
+    + destruct H.
+      apply prefix_implies_related.
+      auto using prefix_of_newblock.
   intros n b1 m b2.
   remember (is_prefix b1 b2) as maybe_prefix1_2.
   destruct maybe_prefix1_2.
@@ -500,6 +569,7 @@ Proof.
          rewrite proof_prefix in Heqmaybe_prefix1_2.
          discriminate Heqmaybe_prefix1_2.
 Qed.
+ *)
 
 Lemma different_blocks_of_same_height_are_unrelated : 
   forall n (block1 block2 :Block n) 

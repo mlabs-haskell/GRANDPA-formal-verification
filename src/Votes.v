@@ -571,6 +571,11 @@ Proof.
   rewrite Heq_gt in H2.
   rewrite (List.filter_In) in H2.
   destruct H2 as [count2 ineq2].
+  rewrite PeanoNat.Nat.ltb_lt in ineq1.
+  rewrite PeanoNat.Nat.ltb_lt in ineq2.
+  pose (PeanoNat.Nat.add_lt_mono _ _ _ _ ineq1 ineq2) as ineq.
+  (* Search (?n * ?m < ?n * ?w). *)
+
   Admitted.
 
 Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
