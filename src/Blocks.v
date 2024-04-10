@@ -3,6 +3,11 @@ Require Import Lia.
 Require Import Coq.Program.Equality.
 Require Import Setoid.
 
+Require Import PeanoNat.
+
+Declare Scope blocks_scope.
+Open Scope blocks_scope.
+
 (** 
 
   In the real implementation is unpractical to have the full
@@ -56,19 +61,20 @@ Example:
 Fixpoint eqb {n m} (block1:Block n) (block2:Block m) := 
   match block1, block2 with
   | OriginBlock, OriginBlock => true
-  | NewBlock old1 id1, NewBlock old2 id2 => andb (Nat.eqb id1 id2) (eqb old1 old2)
+  | NewBlock old1 id1, NewBlock old2 id2 => andb (id1 =? id2) (eqb old1 old2)
   | _, _ => false
   end.
+
+Notation " b1 =? b2 " := (eqb b1 b2):blocks_scope.
 
 Definition anyblock_eqb (b1 b2: AnyBlock) : bool
   := 
     match b1 , b2 with 
-    | (existT _ n1 b1'), (existT _ n2 b2') => eqb b1' b2'
+    | (existT _ n1 b1'), (existT _ n2 b2') => b1' =? b2'
     end.
 
-
-
-Lemma eqb_implies_same_nat {n} (block1: Block n): forall {m} (block2: Block m), eqb block1 block2 = true -> n = m .
+Lemma eqb_implies_same_nat {n} (block1: Block n)
+  : forall {m} (block2: Block m), block1 =? block2 = true -> n = m .
 Proof.
   induction block1 as [|n block1 HInductive id1].
   - intros m block2 Hblock2.
@@ -88,19 +94,21 @@ Proof.
       trivial.
 Qed.
 
-Lemma eqb_reflexive {n} (block1: Block n)  :  eqb block1 block1 = true.
+Lemma eqb_reflexive {n} (block1: Block n)  :  block1 =? block1 = true.
 Proof.
   induction block1.
   - auto. 
   - simpl. 
     apply Bool.andb_true_iff.
     split.
-    + apply PeanoNat.Nat.eqb_eq.
+    + apply Nat.eqb_eq.
       reflexivity.
     + auto.
 Qed.
 
-Lemma eqb_symmetric {n} (block1:Block n): forall {m} (block2:Block m) , eqb block1 block2 = true -> eqb block2 block1 = true.
+Lemma eqb_symmetric {n} (block1:Block n)
+  : forall {m} (block2:Block m) 
+  , block1 =? block2 = true -> block2 =? block1 = true.
 Proof.
   induction block1.
   - intros m block2.
@@ -115,14 +123,15 @@ Proof.
       destruct H as [eqb_id eqb_blocks].
       apply Bool.andb_true_iff.
       split.
-      ++ apply PeanoNat.Nat.eqb_eq.
-         apply PeanoNat.Nat.eqb_eq in eqb_id.
+      ++ apply Nat.eqb_eq.
+         apply Nat.eqb_eq in eqb_id.
          auto.
       ++ auto. 
 Qed.
 
 
-Lemma eqb_eq {n} (block1: Block n)  : forall (block2:Block n), eqb block1 block2 = true <-> block1 = block2.
+Lemma eqb_eq {n} (block1: Block n)  
+  : forall (block2:Block n), block1 =? block2 = true <-> block1 = block2.
 Proof.
   induction block1 as [|n block1 HInductive id].
   - intro block2.
@@ -141,7 +150,7 @@ Proof.
       apply Bool.andb_true_iff in Hblock2.
       destruct Hblock2 as [same_id same_children].
       rewrite (HInductive _) in same_children.
-      rewrite PeanoNat.Nat.eqb_eq in same_id.
+      rewrite Nat.eqb_eq in same_id.
       rewrite same_id.
       rewrite same_children.
       trivial.
@@ -176,7 +185,7 @@ Fixpoint cast {n} (block:Block n) {struct block}: forall {m}, m = n -> Block m
         => match m with 
            | 0 =>fun H => OriginBlock
            | S m' =>fun H 
-               => False_rec (Block (S m')) (PeanoNat.Nat.neq_succ_0 _ H)
+               => False_rec (Block (S m')) (Nat.neq_succ_0 _ H)
           end 
   | NewBlock oldBlock id
       => fun m 
@@ -184,31 +193,14 @@ Fixpoint cast {n} (block:Block n) {struct block}: forall {m}, m = n -> Block m
            | 0 =>fun H 
                => False_rec 
                 (Block 0) 
-                (PeanoNat.Nat.neq_succ_0 _ (symmetric_aux H))
+                (Nat.neq_succ_0 _ (symmetric_aux H))
            | S m' => fun H 
                => NewBlock (cast oldBlock (m:=m') (f_equal pred H)) id
           end 
   end.
 
-
-(* 
-   You can define cast with this, but it would mean an opaque function.
-Proof.
-  intro block.
-  induction n.
-  - intros m H.
-    rewrite H.
-    refine OriginBlock.
-  - intros m H.
-    dependent destruction block.
-    rewrite H.
-    refine (NewBlock (IHn block n _ ) id).
-    reflexivity.
-Qed.
-*)
-
 Lemma cast_origin_is_origin {m} (eq_n_m:m=0)
-  : eqb OriginBlock (cast OriginBlock (m:=m) eq_n_m) = true.
+  : OriginBlock =? (cast OriginBlock (m:=m) eq_n_m) = true.
 Proof.
   simpl.
   rewrite eq_n_m.
@@ -216,7 +208,7 @@ Proof.
 Qed.
 
 Lemma cast_are_same {n} (block:Block n) {m} (eq_n_m:m=n) 
-  : eqb block (cast block (m:=m) eq_n_m)=true.
+  : block =? (cast block (m:=m) eq_n_m)=true.
 Proof.
   dependent induction block.
   - apply cast_origin_is_origin.
@@ -225,12 +217,12 @@ Proof.
     simpl.
     apply Bool.andb_true_iff.
     split.
-    + apply PeanoNat.Nat.eqb_refl.
+    + apply Nat.eqb_refl.
     + apply IHblock.
 Qed.
 
 Lemma cast_eqb_are_equal {n m} (block1: Block n) (block2:Block m)
-  (are_equal:eqb block1 block2 = true) 
+  (are_equal:block1 =? block2 = true) 
   (same_nats: n = m)
   : block1 = cast block2 same_nats.
 Proof.
@@ -244,7 +236,7 @@ Proof.
     simpl in are_equal.
     apply Bool.andb_true_iff in are_equal.
     destruct are_equal as [eq_id eqb_blocks].
-    apply (PeanoNat.Nat.eqb_eq id) in eq_id.
+    apply (Nat.eqb_eq id) in eq_id.
     rewrite <- eq_id.
     pose (IHblock1 n0 block2 eqb_blocks (f_equal Nat.pred same_nats)) as eq_blocks.
     simpl.
@@ -262,7 +254,9 @@ Inductive Prefix : forall {n}, Block n -> forall {m}, Block m -> Type :=
   | IsPrefix {n m} (block1: Block n) (block2: Block m) (block_id : nat) :
       Prefix block1 block2 -> Prefix block1 (NewBlock block2 block_id).
 
-Lemma originBlock_is_always_prefix  {n} (block:Block n):  Prefix OriginBlock block.
+Notation " a <= b " := (Prefix a b):blocks_scope.
+
+Lemma originBlock_is_always_prefix  {n} (block:Block n):  OriginBlock <= block.
 Proof.
   induction block.
   - apply Same.
@@ -271,13 +265,13 @@ Proof.
 Qed.
 
 Lemma prefix_of_newblock {n m} (block1: Block n) (block2:Block m) {id} 
-  : Prefix block1 block2 -> Prefix block1 (NewBlock block2 id).
+  : block1 <= block2 -> block1 <= (NewBlock block2 id).
 Proof.
   auto using IsPrefix.
 Qed.
 
 Lemma newblock_prefix {n m} (block1: Block n) (block2:Block m) {id} 
-  : Prefix (NewBlock block1 id) block2 -> Prefix block1 block2.
+  : (NewBlock block1 id) <= block2 -> block1 <= block2.
 Proof.
   intro H.
   induction block2.
@@ -293,7 +287,7 @@ Qed.
 
 Lemma prefix_transitive {n m r} 
   (block1: Block n) (block2:Block m) (block3: Block r) 
-  : Prefix block1 block2 -> Prefix block2 block3 -> Prefix block1 block3.
+  : block1 <= block2 -> block2 <= block3 -> block1 <= block3.
 Proof.
   intros h1_2.
   dependent induction h1_2.
@@ -304,7 +298,7 @@ Proof.
 Qed.
 
 Lemma prefix_height_is_below {n m} (block1: Block n) (block2:Block m)
-  : Prefix block1 block2 -> n <= m.
+  : block1 <= block2 -> (n <= m)%nat.
 Proof.
   intro H.
   dependent induction block2.
@@ -312,7 +306,7 @@ Proof.
     + auto.
     + inversion H.
   - dependent destruction block1.
-    + apply PeanoNat.Nat.le_0_l.
+    + apply Nat.le_0_l.
     + dependent destruction H.
       ++ auto.
       ++ apply IHblock2 in H.
@@ -320,7 +314,7 @@ Proof.
 Qed.
 
 
-Lemma eqb_blocks_are_prefix {n} (block1 block2: Block n): eqb block1 block2 = true -> Prefix block1 block2.
+Lemma eqb_blocks_are_prefix {n} (block1 block2: Block n): block1 =? block2 = true -> block1 <= block2.
 Proof.
   intro H.
   rewrite (eqb_eq block1 block2) in H.
@@ -330,14 +324,14 @@ Qed.
 
 
 Lemma eqb_blocks_are_prefix2 {n m} (block1: Block n) (block2:Block m)
-  (are_equal:eqb block1 block2 = true) 
+  (are_equal:block1 =? block2 = true) 
   (same_nats: n = m)
 (*: block1 = cast block2 (eqb_implies_same_nat _ _ are_equal).
 Proof.
   remember (cast block2 (eqb_implies_same_nat _ _ are_equal)) as block3.
 *)
 
-  :  Prefix block1 (cast block2 same_nats ).
+  :  block1 <= (cast block2 same_nats ).
 Proof.
   assert (block1 = cast block2 same_nats).
     {
@@ -349,9 +343,9 @@ Proof.
 Qed.
 
 Lemma eqb_blocks_are_prefix3 {n m} (block1: Block n) (block2:Block m)
-  (are_equal:eqb block1 block2 = true) 
+  (are_equal: block1 =? block2 = true) 
   (same_nats: m = n)
-  :  Prefix (cast block1 same_nats ) block2.
+  :  (cast block1 same_nats ) <= block2.
 Proof.
   assert (block2 = cast block1 same_nats).
     {
@@ -364,8 +358,6 @@ Proof.
 Qed.
 
 
-Open Scope nat_scope.
-
 (** ** is_prefix
   Although we already have Prefix, it's definition tell us what a 
    prefix is, not how to take two blocks and find a prefix.
@@ -374,14 +366,14 @@ Open Scope nat_scope.
 
 Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) {struct block2} : bool 
  :=
-  if Nat.ltb n  m then
+  if n <? m then
     match block2 with
     | OriginBlock =>  false (* in this case m =0 -> n<0 -> false *)
     | NewBlock old_block id => is_prefix block1 old_block
     end
   else
-    if Nat.eqb n m then
-      eqb block1 block2 
+    if (n =? m)%nat then
+      block1 =? block2 
     else
     false.
 
@@ -391,17 +383,17 @@ Proof.
   dependent induction block.
   - auto.
   - simpl.
-    rewrite (PeanoNat.Nat.ltb_irrefl (S n)).
-    rewrite (PeanoNat.Nat.eqb_refl n).
+    rewrite (Nat.ltb_irrefl (S n)).
+    rewrite (Nat.eqb_refl n).
     apply andb_true_intro.
     split.
-    + apply PeanoNat.Nat.eqb_refl.
+    + apply Nat.eqb_refl.
     + apply eqb_reflexive.
 Qed.
 
 Lemma prefix_of_cast_right {n} (block1 : Block n) 
   :forall  {m} (block2: Block m) {w} (eq_w_m: w = m)
-    ,Prefix block1 (cast block2 eq_w_m)-> Prefix block1 block2.
+    ,block1 <= (cast block2 eq_w_m)-> block1 <= block2.
 Proof.
   dependent induction block2.
   - intros w eq_w_m H. 
@@ -429,7 +421,7 @@ Qed.
 
 Lemma prefix_implies_is_prefix {n} (block1 : Block n)
   : forall {m} (block2: Block m) ,
-  Prefix block1 block2 -> is_prefix block1 block2 = true.
+  block1 <= block2 -> is_prefix block1 block2 = true.
 Proof.
   dependent induction block2.
   - intro H.
@@ -443,7 +435,7 @@ Proof.
     + apply IHblock2 in H as is_prefix_1_2.
       simpl.
       apply prefix_height_is_below in H as n_leq_n0.
-      apply (PeanoNat.Nat.leb_le) in n_leq_n0.
+      apply (Nat.leb_le) in n_leq_n0.
       unfold Nat.ltb.
       simpl.
       rewrite n_leq_n0.
@@ -452,7 +444,7 @@ Qed.
 
 Lemma is_prefix_implies_prefix {n} (block1 : Block n)
   : forall {m} (block2: Block m) ,
-  is_prefix block1 block2 = true -> Prefix block1 block2.
+  is_prefix block1 block2 = true -> block1 <= block2.
 Proof.
   dependent induction block2.
   - intro H.
@@ -461,11 +453,11 @@ Proof.
     + inversion H.
   - intro H.
     unfold is_prefix in  H.
-    destruct (Nat.ltb n (S n0)) eqn:Hlet.
+    destruct (n <? (S n0)) eqn:Hlet.
     + apply prefix_of_newblock.
       apply IHblock2.
       auto.
-    + destruct (Nat.eqb n (S n0)).
+    + destruct (n =? (S n0))%nat.
       2:{ inversion H. }
       ++ pose (eqb_implies_same_nat _ _ H) as n_eq_Sn0.
          pose (eqb_blocks_are_prefix2 _ _ H n_eq_Sn0) as Hcast.
@@ -475,7 +467,7 @@ Qed.
 
 Definition is_prefix_some {n m} 
   (block1 : Block n) (block2: Block m) 
-  : option (Prefix block1 block2) .
+  : option (block1 <= block2) .
 Proof.
   destruct (is_prefix block1 block2) eqn:H.
   - apply Some.
@@ -493,24 +485,27 @@ Qed.
  *)
 
 Variant IsChildren {n m} (block1 :Block n) (block2: Block m) : Type :=
-  | IsChildrenC (is_prefix: Prefix block1 block2) (block_number_is_above: n<m) :
+  | IsChildrenC (is_prefix: block1 <= block2) (block_number_is_above: n<m) :
       IsChildren block1 block2.
 
+Notation " a < b " := (IsChildren a b):blocks_scope.
 
 (** 
    The relation B ~ B' in the paper
  *)
 Variant Related {n m} (block1:Block n) (block2 :Block m) : Prop :=
   | RelatedAsChildren
-    : IsChildren block1 block2 -> Related block1 block2
+    : block1 < block2 -> Related block1 block2
   | RelatedAsParent
-    : IsChildren block2 block1 -> Related block1 block2
-  | RelatedAsEquals: eqb block1 block2 = true -> Related block1 block2.
+    : block2 < block1 -> Related block1 block2
+  | RelatedAsEquals: block1 =? block2 = true -> Related block1 block2.
 
-Definition Unrelated {n m} (block1 : Block n) (block2 :Block m) : Prop := not (Related block1 block2).
+Notation " a ~ b " := (Related a b)(at level 70, right associativity):blocks_scope.
+
+Definition Unrelated {n m} (block1 : Block n) (block2 :Block m) : Prop := not (block1 ~ block2).
 
 Lemma related_symmetric : forall {n} (block1:Block n) {m} (block2 :Block m)
-  , Related block1 block2 -> Related block2 block1.
+  , block1 ~ block2 -> block2 ~ block1.
 Proof.
   intros n b1 m b2 H.
   destruct H. 
@@ -521,7 +516,7 @@ Proof.
 Qed.
 
 Lemma prefix_implies_related  {n m} (block1:Block n) (block2:Block m) 
-  : Prefix block1 block2 -> Related block1 block2.
+  : block1 <= block2 -> block1 ~ block2.
 Proof.
   intros H.
   dependent destruction H.
@@ -535,7 +530,7 @@ Proof.
 Qed.
 
 Definition is_related_some {n m} (block1:Block n) (block2:Block m) 
-  : option (Related block1 block2)
+  : option (block1 ~ block2)
   :=
   match is_prefix_some block1 block2 with
   | Some p => Some (prefix_implies_related block1 block2 p)
@@ -555,7 +550,7 @@ Definition is_related {n m} (block1:Block n) (block2:Block m)
 
 
 Lemma decidable_related : forall n (block1:Block n) m (block2 :Block m)
-  , {Related block1 block2} + {Unrelated block1 block2}.
+  , {block1 ~ block2} + {Unrelated block1 block2}.
 Proof.
   intros n b1 m b2.
   remember (is_prefix b1 b2) as maybe_prefix1_2.
@@ -599,11 +594,13 @@ Proof.
   intros n b1 b2 no_eq Hrelated.
   destruct Hrelated as [Hrelated|Hrelated|Hrelated].
   - destruct Hrelated.
-    apply (PeanoNat.Nat.lt_irrefl n).
+    apply (Nat.lt_irrefl n).
     auto.
   - destruct Hrelated.
-    apply (PeanoNat.Nat.lt_irrefl n).
+    apply (Nat.lt_irrefl n).
     auto.
   - rewrite eqb_eq in Hrelated.
     contradiction.
 Qed.
+
+Close Scope blocks_scope.

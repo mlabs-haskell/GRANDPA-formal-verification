@@ -1,9 +1,12 @@
 Require List.
 Require Import  Nat.
 Require Import Coq.Program.Equality.
+Require Coq.Program.Wf.
 
 Require Dictionary.
 Require Import Blocks.
+
+Open Scope blocks_scope.
 
 (** * Voters 
 *)
@@ -116,7 +119,7 @@ Variant Vote {bizantiners_number last_block_number}
   := 
     | VoteC {m}  (voter : Voter) 
       (is_voter: in_Voters voter voters ) 
-      (block: Block m) (is_prefix: Prefix original_chain block)
+      (block: Block m) (is_prefix: original_chain <= block)
       : Vote voters original_chain.
 
 Definition vote_to_voter {bizantiners_number last_block_number}
@@ -140,6 +143,17 @@ Definition vote_to_pair  {bizantiners_number last_block_number}
   match vote with 
   | VoteC _ _ voter _ block _ => 
         (voter , existT _ _ block)
+  end.
+
+Definition vote_to_block  {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number}
+  {original_chain:Block last_block_number}
+  (vote: Vote voters original_chain)
+  : (sigT (fun n => Block n))
+  :=
+  match vote with 
+  | VoteC _ _ voter _ block _ => 
+        existT _ _ block
   end.
 
 
@@ -183,8 +197,9 @@ Definition voter_voted_in_votes {bizantiners_number last_block_number}
   0 <?
     List.length(
     List.filter 
-      (fun vote => Nat.eqb voter (vote_to_voter vote)) 
+      (fun vote => (voter =? (vote_to_voter vote))%nat) 
       (votes_to_list votes)).
+
 
 
 Definition is_equivocate {bizantiners_number last_block_number } 
@@ -271,7 +286,7 @@ Variable last_block  :Block last_block_number.
 Variable votes: Votes voters last_block.
 
 Definition in_nat_list (n:nat) (l:list nat) :bool := 
-  match List.find (fun m => Nat.eqb n m) l with
+  match List.find (fun m => (n =? m)%nat) l with
   | None => false
   | _ => true
   end.
@@ -302,77 +317,106 @@ Definition is_safe {bizantiners_number last_block_number }
      length equivocate_voters <=? bizantiners_number
   end.
 
-
-
-Module BlockDictionaryTypes <: Dictionary.Types.
-  Definition K := AnyBlock.
-  Definition V := nat.
-  Definition eqb := any_block_eqb.
-End BlockDictionaryTypes.
-
-Module BlockDictionaryModule := Dictionary.Functions BlockDictionaryTypes.
-
-Definition BlockDictionary := BlockDictionaryModule.Dictionary AnyBlock nat.
+Definition BlockDictionary := Dictionary.Dictionary AnyBlock nat.
 
 (** ** Vote count
 *)
 
-(**
-  A vote for [B: Block n] is also a vote for [B':Block n'] 
-   as long as [B' <= B] ([Prefix B' B]). 
 
-  This function takes a block and add a vote to the [acc] dictionary
-   for every block that is above the [last_block].
-*)
-Fixpoint count_vote_aux {last_block_number vote_block_number}
+Definition count_vote_aux {last_block_number vote_block_number}
   {last_block : Block last_block_number}
   (vote_block:Block vote_block_number)
-  (prefix_proof : Prefix last_block vote_block)
+  (prefix_proof : last_block <= vote_block)
+  (acc: BlockDictionary)
+  : BlockDictionary
+  :=
+   let update_vote maybe_old_value v := 
+     match maybe_old_value with
+     | None => v
+     | Some v2 => v+v2
+     end
+   in
+   Dictionary.update_with 
+    Blocks.anyblock_eqb 
+    (existT _ vote_block_number vote_block) update_vote acc.
+
+Definition count_block_votes
+  (block: AnyBlock) 
+  (votes_as_list : list AnyBlock)
   (acc: BlockDictionary): BlockDictionary
   :=
-    match prefix_proof with
-    | Same _ _=> acc
-    | IsPrefix _ older_block _ new_prefix_proof =>
-       let update_vote maybe_old_value v := 
-         match maybe_old_value with
-         | None => v
-         | Some v2 => v+v2
-         end
-       in
-       let updated_acc := BlockDictionaryModule.update_with (existT _ vote_block_number vote_block) update_vote acc
-       in 
-        count_vote_aux older_block new_prefix_proof updated_acc    
-    end.
+    let number_of_votes_for_block 
+      := List.length (List.filter (Blocks.anyblock_eqb block) votes_as_list)
+    in
+      Dictionary.add Blocks.anyblock_eqb block number_of_votes_for_block acc.
 
-(** 
-  Coq refuses to evaluate functions that use fixpoint
-   unless all it's arguments are already evaluted.
-   This made us split the fixpoint functions in two or more
-   functions to attempt to maximize the unfolding of functions.
-*)
-Definition count_vote {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (vote :Vote voters last_block) (acc: BlockDictionary): BlockDictionary
-  :=
-  match vote with
-  | VoteC _ _ _ _ block prefix_proof => count_vote_aux block prefix_proof acc
-  end.
 
 (**
 The first element of the output is the list of votes that remains to 
 be considered.
 *)
 
-Fixpoint count_votes_aux {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes:list (Vote voters last_block)) (acc: BlockDictionary): (list (Vote voters last_block)) * BlockDictionary
+
+Program Fixpoint make_votes_dictionary
+  (votes:list AnyBlock) (acc: BlockDictionary)
+  {measure (length votes)}
+  :(list AnyBlock) * BlockDictionary
   :=
   match votes with
   | List.nil => (List.nil, acc)
-  | List.cons vote remain => count_votes_aux remain (count_vote vote acc)
+  | List.cons block remain_blocks => 
+    let updated_dict := 
+      count_block_votes block votes acc
+    in
+    make_votes_dictionary 
+      (List.filter 
+        (fun b => negb (Blocks.anyblock_eqb block b)) remain_blocks
+      ) updated_dict
   end.
+Next Obligation.
+  apply (PeanoNat.Nat.le_lt_trans _ (length (remain_blocks)) _ ).
+  - apply List.filter_length_le.
+  - auto.
+Defined.
+
+(**
+  A vote for [B: Block n] is also a vote for [B':Block n'] 
+   as long as [B' <= B] ([Prefix B' B]). 
+
+*)
+
+(* Fixpoint flat_votes_aux {m}
+  (last_block_number:nat) 
+  (block:Block m)
+  (voter_number:nat)
+  (acc: BlockDictionary): BlockDictionary
+  :=
+  if last_block_number <? m 
+  then 
+    match block with  
+    | OriginBlock => acc
+    | NewBlock older_block id 
+        =>
+       let update_vote maybe_old_value v := 
+         match maybe_old_value with
+         | None => v
+         | Some v2 => v+v2
+         end
+       in
+       let updated_acc := 
+            Dictionary.update_with 
+              Blocks.anyblock_eqb
+              (existT _ m block) update_vote acc
+       in 
+        flat_votes_aux last_block_number older_block vote updated_acc
+    end
+  else
+    acc.
+
+Fixpoint flat_votes_dictionary (acc:BlockDictionary) : BlockDictionary
+  := 
+  List.map (fun (b,_) => projT2 b) BlockDictionaryModule.to_list acc
+ *)
 
 (** 
   Takes a set of votes and returns a dictionary of blocks
@@ -387,7 +431,7 @@ Definition count_votes {bizantiners_number last_block_number}
   {last_block : Block last_block_number}
   (votes: Votes voters last_block): BlockDictionary
   :=
-  match count_votes_aux (votes_to_list votes) BlockDictionaryModule.empty with
+  match make_votes_dictionary (List.map vote_to_block (votes_to_list votes)) Dictionary.empty with
   | (_ , out) => out
   end.
 
@@ -448,7 +492,7 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
   let blocks_with_super_majority 
     := 
     List.filter has_supermajority_predicate 
-      (BlockDictionaryModule.to_list count)
+      (Dictionary.to_list Blocks.anyblock_eqb count)
   in
     blocks_with_super_majority.
 
@@ -568,7 +612,7 @@ Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_numb
   : forall (block1 block2:AnyBlock) (v1 v2:nat), 
     List.In (block1,v1) (get_supermajority_blocks T)
     -> List.In (block2,v2) (get_supermajority_blocks T)
-    -> Related (projT2 block1) (projT2 block2).
+    -> (projT2 block1) ~ (projT2 block2).
 Proof.
   intros ab1 ab2 v1 v2 H1 H2.
   destruct ab1 as [n1 b1] eqn:Hab1.
@@ -628,3 +672,5 @@ Definition mergeVotes {bizantiners_number last_block_number}
     match votes1, votes2 with
       | VotesC _ _ list1, VotesC _ _ list2 => VotesC _ _ (list1 ++ list2)
       end.
+
+Close Scope blocks_scope.

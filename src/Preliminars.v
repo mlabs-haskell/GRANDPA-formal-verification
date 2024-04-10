@@ -1,10 +1,8 @@
-Require Import Blocks.
-
-
-
-Require Import Votes.
 Require List.
 Require Import Nat.
+
+Require Import Blocks.
+Require Import Votes.
 
 
 
