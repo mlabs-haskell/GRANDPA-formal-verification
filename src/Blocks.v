@@ -483,6 +483,16 @@ Proof.
          assumption.
 Qed.
 
+Definition is_prefix_some {n m} 
+  (block1 : Block n) (block2: Block m) 
+  : option (Prefix block1 block2) .
+Proof.
+  destruct (is_prefix block1 block2) eqn:H.
+  - apply Some.
+    apply is_prefix_implies_prefix.
+    auto.
+  - exact None.
+Qed.
 
 (** * More blocks relations
 *)
@@ -509,7 +519,7 @@ Variant Related {n m} (block1:Block n) (block2 :Block m) : Prop :=
 
 Definition Unrelated {n m} (block1 : Block n) (block2 :Block m) : Prop := not (Related block1 block2).
 
-Lemma related_symmetric : forall n (block1:Block n) m (block2 :Block m)
+Lemma related_symmetric : forall {n} (block1:Block n) {m} (block2 :Block m)
   , Related block1 block2 -> Related block2 block1.
 Proof.
   intros n b1 m b2 H.
@@ -533,6 +543,26 @@ Proof.
     + apply prefix_height_is_below in H.
       auto using le_n_S.
 Qed.
+
+Definition is_related_some {n m} (block1:Block n) (block2:Block m) 
+  : option (Related block1 block2)
+  :=
+  match is_prefix_some block1 block2 with
+  | Some p => Some (prefix_implies_related block1 block2 p)
+  | None 
+      => match is_prefix_some block2 block1 with
+         | Some p 
+             =>Some 
+                (related_symmetric _ _ (prefix_implies_related block2 block1 p))
+         | None => None
+          end
+  end.
+
+Definition is_related {n m} (block1:Block n) (block2:Block m) 
+  : bool
+  := is_prefix block1 block2 || is_prefix block2 block1.
+
+
 
 Lemma decidable_related : forall n (block1:Block n) m (block2 :Block m)
   , {Related block1 block2} + {Unrelated block1 block2}.
