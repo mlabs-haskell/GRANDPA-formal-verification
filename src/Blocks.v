@@ -349,6 +349,22 @@ Proof.
     refine (Same n block1).
 Qed.
 
+Lemma eqb_blocks_are_prefix3 {n m} (block1: Block n) (block2:Block m)
+  (are_equal:eqb block1 block2 = true) 
+  (same_nats: m = n)
+  :  Prefix (cast block1 same_nats ) block2.
+Proof.
+  assert (block2 = cast block1 same_nats).
+    {
+    apply cast_eqb_are_equal.
+    apply eqb_symmetric.
+    assumption.
+    }
+    rewrite <- H.
+    refine (Same m block2).
+Qed.
+
+
 Open Scope nat_scope.
 
 (** ** is_prefix
@@ -356,122 +372,116 @@ Open Scope nat_scope.
    prefix is, not how to take two blocks and find a prefix.
 *)
 
-(*
-Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) : option (Prefix block1 block2) 
+
+Fixpoint is_prefix {n m} (block1 : Block n) (block2: Block m) {struct block2} : bool 
  :=
   if Nat.ltb n  m then
     match block2 with
-    | OriginBlock => 
-        match block1 with 
-        | OriginBlock => Some (Same 0 OriginBlock)
-        | _ => None
-        end
-    | NewBlock old_block id =>
-        match is_prefix block1 old_block with
-        | Some p => Some (IsPrefix block1 old_block id p)
-        | None => None
-        end
+    | OriginBlock =>  false (* in this case m =0 -> n<0 -> false *)
+    | NewBlock old_block id => is_prefix block1 old_block
     end
   else
     if Nat.eqb n m then
-      match block2,block1 in Block m' * Block n' return option (Prefix ) with
-      | OriginBlock,OriginBlock => Some (0 OriginBlock)
-      | NewBlock b2 id2,NewBlock b1 id1 => 
-          match is_prefix b1 b2 with
-          | Some p => Some (IsPrefix block1 old_block id p)
-          | None => None
-          end
-  None.
+      eqb block1 block2 
+    else
+    false.
+
+Lemma is_prefix_reflexive {n} (block :Block n)
+  : is_prefix block block = true.
+Proof.
+  dependent induction block.
+  - auto.
+  - simpl.
+    destruct (Nat.ltb (S n) (S n)) eqn:Hineq.
+      + pose (PeanoNat.Nat.ltb_irrefl (S n)) as Hineq2.
+        rewrite Hineq2 in Hineq.
+        inversion Hineq.
+      + destruct (Nat.eqb n n) eqn:Heq.
+        ++ apply andb_true_intro.
+           split.
+           +++ apply PeanoNat.Nat.eqb_eq. reflexivity.
+           +++ apply eqb_reflexive.
+        ++ pose (PeanoNat.Nat.eqb_refl n) as Heq2.
+           rewrite Heq2 in Heq.
+           inversion Heq.
+Qed.
+
+Lemma prefix_of_cast_right {n} (block1 : Block n) 
+  :forall  {m} (block2: Block m) {w} (eq_w_m: w = m)
+    ,Prefix block1 (cast block2 eq_w_m)-> Prefix block1 block2.
+Proof.
+  dependent induction block2.
+  - intros w eq_w_m H. 
+    dependent destruction H.
+    + simpl.
+      destruct n.
+      ++ apply Same.
+      ++ inversion eq_w_m.
+  - intros w eq_w_n0 H.
+    dependent destruction H.
+    2:{
+      apply prefix_of_newblock.
+      remember (f_equal Nat.pred eq_w_n0) as x.
+      simpl in x.
+      apply (IHblock2  _ x ).
+      auto.
+    }
+    remember (NewBlock block2 id) as x.
+    pose (eqb_blocks_are_prefix3 x x ).
+    rewrite eq_w_n0.
+    apply p.
+    apply eqb_reflexive.
+Qed.
 
 
 Lemma prefix_implies_is_prefix {n} (block1 : Block n)
   : forall {m} (block2: Block m) ,
-    Prefix block1 block2 -> exists p,   is_prefix block1 block2 = Some p.
+  Prefix block1 block2 -> is_prefix block1 block2 = true.
 Proof.
-  dependent induction block1.
-  - dependent induction block2.
-    + simpl. eauto.
-    + intro H.
-      pose (originBlock_is_always_prefix block2) as always_prefix.
-      apply IHblock2 in always_prefix.
-      simpl.
-      destruct (is_prefix OriginBlock block2).
-      ++ eauto.
-      ++ 
-      destruct always_prefix as [p1 proof_is_prefix].
-      inversion proof_is_prefix.
-  - dependent induction block2.
-    + intro H. inversion H.
-    + intro H.
-      dependent destruction H.
-      ++ exists (Same _ (NewBlock block2 id0) ).
-         simpl.
-         remember (Nat.leb n0 n0) as x.
-         simpl. 
-         pose (PeanoNat.Nat.leb_refl n0) as n0_leb_n0.
-         rewrite <- Heqx in n0_leb_n0.
-         destruct (Nat.leb n0 n0).
-         2:{ rewrite Heqx in n0_leb_n0. inversion n0_leb_n0.}
-
-
-
-    pose (prefix_height_is_below _ _ H) as n_leq_Sn0. 
-    rewrite <- PeanoNat.Nat.leb_le in n_leq_Sn0.
-    simpl. 
-    destruct (Nat.leb n (S n0)).
-    2:{ inversion n_leq_Sn0.}
-    + dependent destruction H.
-      ++  simpl.
-
-    destruct (is_prefix block1 block2) eqn:Hr.
-  (* 2:{ 
-      simpl.
-  - destruct (is_prefix block1 (NewBlock block2 id)) eqn:Hr.
-    + eauto.
-    + simpl in Hr.
-  - apply newblock_prefix in H.
+  dependent induction block2.
+  - intro H.
     simpl.
-
-
-  intro H.
-  dependent induction block1.
-  - dependent induction block2. 
-    + simpl.
-      exists H.
-      dependent destruction H. auto.
-    + pose (originBlock_is_always_prefix block2) as origin_prefix_block2.
-      apply IHblock2 in origin_prefix_block2.
-      destruct origin_prefix_block2 as [prefix_block2 inductive].
-      simpl. 
-      rewrite inductive.
-      exists (IsPrefix OriginBlock block2 id prefix_block2).
-      auto.
-  - dependent destruction block2.
+    dependent destruction block1. 
+    + auto.
     + inversion H.
-    + simpl.
-      pose (prefix_height_is_below _ _ H) as Sn_leq_Sn0.
-      pose (PeanoNat.Nat.leb_le (n) (n0)) as leb_iff_le.
-      apply le_S_n in Sn_leq_Sn0.
-      rewrite <- leb_iff_le in Sn_leq_Sn0.
-      rewrite Sn_leq_Sn0.
-    *)
-*)
+  - intro H.
+    dependent destruction H.
+    + apply is_prefix_reflexive.
+    + apply IHblock2 in H as is_prefix_1_2.
+      simpl.
+      pose (prefix_height_is_below _ _ H) as n_leq_n0.
+      destruct (Nat.ltb n (S n0)) eqn:Hlet.
+      ++  auto.
+      ++  pose (PeanoNat.Nat.leb_le n n0) as Hineq.
+         rewrite <- Hineq in n_leq_n0.
+         unfold Nat.ltb in Hlet.
+         simpl in Hlet.
+         rewrite Hlet in n_leq_n0.
+         inversion n_leq_n0.
+Qed.
 
-(*Lemma prefix_of_cast_right {n m} (block1 : Block n) (block2: Block m) {w}
-  (eq_w_m: w = m)
-  : Prefix block1 (cast block2 eq_w_m)-> Prefix block1 block2.
+Lemma is_prefix_implies_prefix {n} (block1 : Block n)
+  : forall {m} (block2: Block m) ,
+  is_prefix block1 block2 = true -> Prefix block1 block2.
 Proof.
-  intros H.
-  dependent induction block1.
-  - apply originBlock_is_always_prefix.
-  - dependent destruction H.
-    + dependent destruction block2.  
-      ++ inversion eq_w_m.
-      ++ simpl in x.
-         injection x.
-         intros eq_id eq_b1_b2.
-*)
-
+  dependent induction block2.
+  - intro H.
+    dependent destruction block1. 
+    + apply Same.
+    + inversion H.
+  - intro H.
+    unfold is_prefix in  H.
+    destruct (Nat.ltb n (S n0)) eqn:Hlet.
+    + apply prefix_of_newblock.
+      apply IHblock2.
+      auto.
+    + destruct (Nat.eqb n (S n0)).
+      2:{ inversion H. }
+      ++ pose (eqb_implies_same_nat _ _ H) as n_eq_Sn0.
+         pose (eqb_blocks_are_prefix2 _ _ H n_eq_Sn0) as Hcast.
+         apply (prefix_of_cast_right block1 (NewBlock block2 id) n_eq_Sn0).
+         assumption.
+Qed.
 
 
 (** * More blocks relations
@@ -524,28 +534,23 @@ Proof.
       auto using le_n_S.
 Qed.
 
-(*
-
 Lemma decidable_related : forall n (block1:Block n) m (block2 :Block m)
   , {Related block1 block2} + {Unrelated block1 block2}.
 Proof.
-  dependent induction block2.
-  -  destruct block1;left.
-    + auto using RelatedAsEquals.
-    + apply related_symmetric.
-      apply prefix_implies_related.
-      apply originBlock_is_always_prefix.
-  - destruct IHblock2 as [H|H].
-    + destruct H.
-      apply prefix_implies_related.
-      auto using prefix_of_newblock.
   intros n b1 m b2.
   remember (is_prefix b1 b2) as maybe_prefix1_2.
   destruct maybe_prefix1_2.
-  - left.  apply prefix_implies_related. refine p.
+  - left.  
+    apply prefix_implies_related. 
+    apply (is_prefix_implies_prefix). 
+    auto.
   - remember (is_prefix b2 b1) as maybe_prefix2_1.
     destruct maybe_prefix2_1.
-    + left. apply related_symmetric. apply prefix_implies_related. refine p.
+    + left.  
+      apply related_symmetric.
+      apply prefix_implies_related. 
+      apply (is_prefix_implies_prefix). 
+      auto.
     + right.
       unfold Unrelated.
       unfold not.
@@ -553,23 +558,19 @@ Proof.
       destruct H. 
       ++ destruct H.
          apply prefix_implies_is_prefix in is_prefix0. 
-         destruct is_prefix0.
-         rewrite H in Heqmaybe_prefix1_2.
+         rewrite is_prefix0 in Heqmaybe_prefix1_2.
          inversion Heqmaybe_prefix1_2.
       ++ destruct H.
          apply prefix_implies_is_prefix in is_prefix0. 
-         destruct is_prefix0.
-         rewrite H in Heqmaybe_prefix2_1.
+         rewrite is_prefix0 in Heqmaybe_prefix2_1.
          inversion Heqmaybe_prefix2_1.
       ++ pose (eqb_implies_same_nat _ _ H) as same_nat.
          pose (eqb_blocks_are_prefix2 _ _ H same_nat) as H2.
          pose (prefix_of_cast_right b1 b2 same_nat H2) as H3.
          pose (prefix_implies_is_prefix _ _ H3) as H4.
-         destruct H4 as [p proof_prefix].
-         rewrite proof_prefix in Heqmaybe_prefix1_2.
+         rewrite H4 in Heqmaybe_prefix1_2.
          discriminate Heqmaybe_prefix1_2.
 Qed.
- *)
 
 Lemma different_blocks_of_same_height_are_unrelated : 
   forall n (block1 block2 :Block n) 
