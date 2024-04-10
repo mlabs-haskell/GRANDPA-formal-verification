@@ -60,11 +60,12 @@ Fixpoint eqb {n m} (block1:Block n) (block2:Block m) :=
   | _, _ => false
   end.
 
-Definition any_block_eqb (b1 b2: AnyBlock) : bool
+Definition anyblock_eqb (b1 b2: AnyBlock) : bool
   := 
     match b1 , b2 with 
     | (existT _ n1 b1'), (existT _ n2 b2') => eqb b1' b2'
     end.
+
 
 
 Lemma eqb_implies_same_nat {n} (block1: Block n): forall {m} (block2: Block m), eqb block1 block2 = true -> n = m .
@@ -86,8 +87,6 @@ Proof.
       rewrite same_number.
       trivial.
 Qed.
-
-
 
 Lemma eqb_reflexive {n} (block1: Block n)  :  eqb block1 block1 = true.
 Proof.
@@ -392,18 +391,12 @@ Proof.
   dependent induction block.
   - auto.
   - simpl.
-    destruct (Nat.ltb (S n) (S n)) eqn:Hineq.
-      + pose (PeanoNat.Nat.ltb_irrefl (S n)) as Hineq2.
-        rewrite Hineq2 in Hineq.
-        inversion Hineq.
-      + destruct (Nat.eqb n n) eqn:Heq.
-        ++ apply andb_true_intro.
-           split.
-           +++ apply PeanoNat.Nat.eqb_eq. reflexivity.
-           +++ apply eqb_reflexive.
-        ++ pose (PeanoNat.Nat.eqb_refl n) as Heq2.
-           rewrite Heq2 in Heq.
-           inversion Heq.
+    rewrite (PeanoNat.Nat.ltb_irrefl (S n)).
+    rewrite (PeanoNat.Nat.eqb_refl n).
+    apply andb_true_intro.
+    split.
+    + apply PeanoNat.Nat.eqb_refl.
+    + apply eqb_reflexive.
 Qed.
 
 Lemma prefix_of_cast_right {n} (block1 : Block n) 
@@ -449,15 +442,12 @@ Proof.
     + apply is_prefix_reflexive.
     + apply IHblock2 in H as is_prefix_1_2.
       simpl.
-      pose (prefix_height_is_below _ _ H) as n_leq_n0.
-      destruct (Nat.ltb n (S n0)) eqn:Hlet.
-      ++  auto.
-      ++  pose (PeanoNat.Nat.leb_le n n0) as Hineq.
-         rewrite <- Hineq in n_leq_n0.
-         unfold Nat.ltb in Hlet.
-         simpl in Hlet.
-         rewrite Hlet in n_leq_n0.
-         inversion n_leq_n0.
+      apply prefix_height_is_below in H as n_leq_n0.
+      apply (PeanoNat.Nat.leb_le) in n_leq_n0.
+      unfold Nat.ltb.
+      simpl.
+      rewrite n_leq_n0.
+      auto.
 Qed.
 
 Lemma is_prefix_implies_prefix {n} (block1 : Block n)
