@@ -101,7 +101,7 @@ Fixpoint get_all_precommit_votes{preview_number precommit_number : nat}
   | RoundStateUpdate _ _ _ _ _ old_state  _ _ new_precommit_votes => mergeVotes (get_all_precommit_votes old_state) new_precommit_votes
   end.
 
-Fixpoint voter_voted_in_preview {preview_number precommit_number : nat}
+Definition voter_voted_in_preview {preview_number precommit_number : nat}
   {preview_voters : Voters preview_number} 
   {precommit_voters: Voters precommit_number}
   {round_time:Time}
@@ -120,7 +120,7 @@ Fixpoint voter_voted_in_preview {preview_number precommit_number : nat}
     then voter_voted_in_votes voter preview_votes
     else true.
 
-Fixpoint voter_voted_in_precommit {preview_number precommit_number : nat}
+Definition  voter_voted_in_precommit {preview_number precommit_number : nat}
   {preview_voters : Voters preview_number} 
   {precommit_voters: Voters precommit_number}
   {round_time:Time}
@@ -405,9 +405,9 @@ Definition is_completable
 End State3.
 
 
-Definition const_source {X:Type} (x:X) : Source X := fun t r v => x.
+Definition Source (X:Type) := forall (t:Time) (r:nat) (v:Voter), X.
 
-Definition Voter_source (s:Source nat) : Source (Voter) := parameterize (F:=fun x => x) (fun x => x) s.
+Definition const_source {X:Type} (x:X) : Source X := fun t r v => x.
 
 Definition Voters_source (s_bizantine:Source nat) := forall t r v, Voters (s_bizantine t r v).
 
