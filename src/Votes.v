@@ -69,6 +69,11 @@ Definition in_Voters {bizantiners_number}
   :=
   List.In voter (voters_to_list voters).
 
+
+Definition in_Voters_bool {bizantiners_number} 
+  (voter : Voter) (voters:Voters bizantiners_number) 
+  := 0 <? (List.count_occ PeanoNat.Nat.eq_dec (voters_to_list voters) voter).
+
 (** * Votes
 *)
 
@@ -168,11 +173,19 @@ Definition votes_to_pair_list {bizantiners_number last_block_number}
   {voters: Voters bizantiners_number} {last_block:Block last_block_number}
   (votes: Votes voters last_block)
   : list (nat * (sigT (fun n => Block n)))
+  := List.map vote_to_pair (votes_to_list votes).
+
+Definition voter_voted_in_votes {bizantiners_number last_block_number}
+  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+  (voter: Voter)
+  (votes: Votes voters last_block)
   :=
-  match votes with 
-    | VotesC _ _ list => 
-        List.map vote_to_pair list
-  end.
+  0 <?
+    List.length(
+    List.filter 
+      (fun vote => Nat.eqb voter (vote_to_voter vote)) 
+      (votes_to_list votes)).
+
 
 Definition is_equivocate {bizantiners_number last_block_number } 
   {voters: Voters bizantiners_number}
@@ -286,7 +299,7 @@ Definition is_safe {bizantiners_number last_block_number }
   :=
   match split_voters_by_equivocation votes with
   | (equivocate_voters, non_equivocate_voters) =>
-     length equivocate_voters <? bizantiners_number
+     length equivocate_voters <=? bizantiners_number
   end.
 
 
@@ -583,6 +596,7 @@ Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
   {last_block : Block last_block_number}
   (S : Votes voters last_block) 
   (T : Votes voters last_block) 
+  (safe_proof: is_safe T=true)
   (is_subset: IsSubset S T)
   : forall anyblock anyblock_votes, 
       List.In (anyblock,anyblock_votes) (get_supermajority_blocks S)

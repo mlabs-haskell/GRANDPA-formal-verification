@@ -66,6 +66,7 @@ Definition get_precommit_votes
 
 End State1.
 
+
 Fixpoint get_all_preview_votes{preview_number precommit_number : nat}
   {preview_voters : Voters preview_number} 
   {precommit_voters: Voters precommit_number}
@@ -99,6 +100,44 @@ Fixpoint get_all_precommit_votes{preview_number precommit_number : nat}
   | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil 
   | RoundStateUpdate _ _ _ _ _ old_state  _ _ new_precommit_votes => mergeVotes (get_all_precommit_votes old_state) new_precommit_votes
   end.
+
+Fixpoint voter_voted_in_preview {preview_number precommit_number : nat}
+  {preview_voters : Voters preview_number} 
+  {precommit_voters: Voters precommit_number}
+  {round_time:Time}
+  {round_number:nat}
+  {last_block_number} 
+  {last_block : Block last_block_number} 
+  {time_increment: Time}
+  (voter:Voter)
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : 
+  bool
+  := 
+  let preview_votes := get_all_preview_votes round_state
+  in
+    if in_Voters_bool voter preview_voters 
+    then voter_voted_in_votes voter preview_votes
+    else true.
+
+Fixpoint voter_voted_in_precommit {preview_number precommit_number : nat}
+  {preview_voters : Voters preview_number} 
+  {precommit_voters: Voters precommit_number}
+  {round_time:Time}
+  {round_number:nat}
+  {last_block_number} 
+  {last_block : Block last_block_number} 
+  {time_increment: Time}
+  (voter:Voter)
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : 
+  bool
+  := 
+  let precommit_votes := get_all_precommit_votes round_state
+  in
+    if in_Voters_bool voter precommit_voters 
+    then voter_voted_in_votes voter precommit_votes
+    else true.
 
 
 
@@ -349,6 +388,7 @@ Variant Completable
 Definition try_to_complete_round
   (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
   : option (Completable round_state).
+(* needs to define possible and impossible supermajority*)
 Admitted.
 
 Definition is_completable 
@@ -361,25 +401,6 @@ Definition is_completable
   end.
 
 
-Definition Source (X:Type) := forall (t:Time) (round_number:nat) (voter:Voter), X.
-
-Definition parameterize {X:Type} {F:Type->Type} (P: X -> F X ) (source:  Source X)
-  : Source (F X)
-  := 
-  fun (t : Time) (r : nat) (v:Voter) =>
-    P (source t r v).
-
-Definition parameterizeDependent {X:Type} {F:X->Type} (P: forall x, F x ) (source:  Source X)
-  : forall t r v , (F (source t r v ))
-  := 
-  fun (t : Time) (r : nat) (v:Voter) =>
-    P (source t r v).
-
-
-Definition parameterize_function {X Y:Type} (f:X->Y) (s:Source X) : Source Y := 
-  fun t r v => f (s t r v).
-
-Definition para {X:Type} (f:X->Type) (s:Source X) := forall t r v, f (s t r v).
 
 End State3.
 
@@ -474,6 +495,8 @@ Definition Completable_source (t:Time) (r:nat) (v:Voter)
   )
   := Completable (s_roundstate t r v).
 
+
+
 Fixpoint voter_already_votes_in_all (t:Time) (r:nat) (v:Voter)
   {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
   {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
@@ -481,7 +504,7 @@ Fixpoint voter_already_votes_in_all (t:Time) (r:nat) (v:Voter)
   {s_round_start_time:Source Time }
   {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
   {s_time_increment:Source Time}
-  (s_roundstate:
+  (s_roundstate: forall t r v,
       RoundState
         (preview_number:= s_preview_voters_nat t r v)
         (precommit_number:= s_precommit_voters_nat t r v)
@@ -494,8 +517,15 @@ Fixpoint voter_already_votes_in_all (t:Time) (r:nat) (v:Voter)
         (s_time_increment t r v)
   )
   {struct r}
-  :bool.
-Proof. Admitted.
+  :bool
+:= 
+  match r with 
+  | 0 => true
+  | S r' => 
+      voter_voted_in_preview v (s_roundstate t r v)
+      && voter_voted_in_precommit v (s_roundstate t r v)
+      && voter_already_votes_in_all t r' v s_roundstate
+  end.
 
 Definition can_start_round (t:Time) (r:nat) (v:Voter) 
   {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
@@ -519,6 +549,6 @@ Definition can_start_round (t:Time) (r:nat) (v:Voter)
   :=
   match r with
     | 0 => true
-    | S r' =>  is_completable (s_roundstate t r' v) && voter_already_votes_in_all t r' v (s_roundstate t r' v)
+    | S r' =>  is_completable (s_roundstate t r' v) && voter_already_votes_in_all t r' v s_roundstate
   end.
 
