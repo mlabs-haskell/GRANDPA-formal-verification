@@ -129,6 +129,40 @@ Proof.
       ++ auto. 
 Qed.
 
+Lemma eqb_transitive {n} (b1:Block n)
+  :forall {m r}
+  (b2:Block m)
+  (b3:Block r),
+  b1 =? b2 = true -> b2 =? b3 = true -> b1 =? b3 = true.
+Proof.
+  induction b1.
+  - intros m r b2 b3 H1_2 H2_3.
+    destruct b3.
+    + reflexivity.
+    + destruct b2.
+      * inversion H2_3.
+      * inversion H1_2.
+  - intros m r b2 b3 H1_2 H2_3.
+    destruct b2.
+    + inversion H1_2.
+    + simpl in H1_2.
+      rewrite Bool.andb_true_iff in H1_2.
+      destruct H1_2 as [id1_id0 b1_b2].
+      destruct b3.
+      * inversion H2_3.
+      * simpl in H2_3.
+        rewrite Bool.andb_true_iff in H2_3.
+        destruct H2_3 as [id0_id1 b2_b3].
+        simpl.
+        apply Bool.andb_true_iff. 
+        split.
+        ++ rewrite Nat.eqb_eq in id1_id0.
+           rewrite Nat.eqb_eq in id0_id1.
+           rewrite Nat.eqb_eq.
+           transitivity id0;auto.
+        ++ apply (IHb1 _ _ b2 b3);auto.
+Qed.
+
 
 Lemma eqb_eq {n} (block1: Block n)  
   : forall (block2:Block n), block1 =? block2 = true <-> block1 = block2.
@@ -157,6 +191,37 @@ Proof.
     + intro H.
       rewrite H.
       apply eqb_reflexive.
+Qed.
+
+Lemma anyblock_eqb_reflexive (b1:AnyBlock)
+  : anyblock_eqb b1 b1 =true.
+Proof.
+  destruct b1 as [n b1'].
+  simpl.
+  apply eqb_reflexive.
+Qed.
+
+Lemma anyblock_eqb_transitive (b1 b2 b3:AnyBlock)
+  : anyblock_eqb b1 b2 =true 
+    -> anyblock_eqb b2 b3=true 
+    -> anyblock_eqb b1 b3=true.
+Proof.
+  destruct b1 as [n b1'].
+  destruct b2 as [m b2'].
+  destruct b3 as [r b3'].
+  simpl.
+  apply eqb_transitive.
+Qed.
+
+Lemma anyblock_eqb_symmetric (b1 b2:AnyBlock)
+  : anyblock_eqb b1 b2 =true -> anyblock_eqb b2 b1=true.
+Proof.
+  intro H.
+  destruct b1 as [n b1'].
+  destruct b2 as [m b2'].
+  simpl.
+  simpl in H.
+  apply eqb_symmetric, H.
 Qed.
 
 Definition get_block_number {n : nat} (block : Block n) : nat :=
