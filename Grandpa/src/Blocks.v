@@ -213,7 +213,7 @@ Proof.
   apply eqb_transitive.
 Qed.
 
-Lemma anyblock_eqb_symmetric (b1 b2:AnyBlock)
+Lemma anyblock_eqb_symmetric_true (b1 b2:AnyBlock)
   : anyblock_eqb b1 b2 =true -> anyblock_eqb b2 b1=true.
 Proof.
   intro H.
@@ -222,6 +222,17 @@ Proof.
   simpl.
   simpl in H.
   apply eqb_symmetric, H.
+Qed.
+
+Lemma anyblock_eqb_symmetric_false (b1 b2:AnyBlock)
+  : anyblock_eqb b1 b2 =false -> anyblock_eqb b2 b1=false.
+Proof.
+  intro H.
+  destruct (anyblock_eqb b2 b1) eqn:H2.
+  -  apply anyblock_eqb_symmetric_true in H2.
+    rewrite H2 in H.
+    inversion H.
+  - reflexivity.
 Qed.
 
 Definition get_block_number {n : nat} (block : Block n) : nat :=

@@ -345,6 +345,15 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma count_block_votes_well_formed b vl acc
+  : Dictionary.WellFormedDict anyblock_eqb acc
+    ->Dictionary.WellFormedDict anyblock_eqb (count_block_votes b vl acc).
+Proof.
+  intro H.
+  induction vl;apply Dictionary.WellFormedAdd;auto.
+Qed.
+
+
 (**
 Previously we used another version using List.filter
 but then we were require to proof that (length votes)
@@ -379,6 +388,23 @@ Fixpoint make_votes_dictionary_aux
         acc
   end.
 
+Lemma make_votes_dictionary_aux_well_formed_dict vl
+  : forall pl acc, Dictionary.WellFormedDict anyblock_eqb acc
+    -> Dictionary.WellFormedDict 
+      anyblock_eqb
+      (snd (make_votes_dictionary_aux vl pl acc)).
+Proof.
+  induction vl;intros pl acc H.
+  - apply H.
+  - simpl.
+    destruct (count anyblock_eqb a pl =? 0)%nat;
+    apply IHvl.
+    + apply count_block_votes_well_formed.
+      auto.
+    + auto.
+Qed.
+
+
 Lemma make_votes_dictionary_aux_step_cons_cons_destruct
   (b1 b2:AnyBlock)
   (votes:list AnyBlock) 
@@ -396,7 +422,6 @@ Proof.
     rewrite count_cons.
     destruct (anyblock_eqb a b2) eqn:a_b2.
     + simpl.
-      Search (?m + S ?n = S (?m + ?n) ).
       rewrite PeanoNat.Nat.add_succ_r.
       rewrite PeanoNat.Nat.add_succ_r.
       rewrite PeanoNat.Nat.add_succ_r.
@@ -432,6 +457,23 @@ Proof.
     ;destruct (count anyblock_eqb b2 (b1 :: l3) =? 0)%nat eqn:H2   
     ;destruct (count anyblock_eqb b2 l3 =? 0)%nat eqn:H3
     ;destruct (count anyblock_eqb b1 (b2 :: l3) =? 0)%nat eqn:H4.
+    + assert (anyblock_eqb b2 b1 = false) as H.
+      { unfold count in H2. 
+        simpl in H2. 
+        destruct (anyblock_eqb b2 b1).
+        - simpl in H2.
+          inversion H2.
+        -  reflexivity.
+      }
+      unfold count_block_votes.
+      unfold count.
+      simpl.
+      rewrite anyblock_eqb_reflexive.
+      rewrite anyblock_eqb_reflexive.
+      rewrite H.
+      apply anyblock_eqb_symmetric_false in H.
+      rewrite H.
+
     (*    2:{ simpl.
     + unfold make_votes_dictionary_aux.
       
@@ -448,7 +490,6 @@ Proof.
 
 
 
-Print count_after_filter_is_zero.
 Lemma make_votes_dictionary_aux_step 
   (block:AnyBlock)
   (votes:list AnyBlock) 
@@ -466,7 +507,7 @@ Proof.
       unfold count.
       simpl.
       rewrite block_eq_a.
-      apply anyblock_eqb_symmetric in block_eq_a.
+      apply anyblock_eqb_symmetric_true in block_eq_a.
       rewrite block_eq_a.
       simpl.
       intro acc.
@@ -476,6 +517,8 @@ Proof.
       unfold count_block_votes.
 
       unfold make_votes_dictionary_aux in IHvotes.
+
+      Admitted.
 
 
 
@@ -614,6 +657,7 @@ Proof.
     simpl in Hv.
     destruct (is_prefix block (projT2 (vote_to_block vote)))  eqn:Hprefix.
     + simpl.
+    Admitted.
 
 
 
@@ -635,10 +679,9 @@ Lemma voted_block_in_count_votes {bizantiners_number last_block_number}
       (existT _ block_number block,v) 
       (Dictionary.to_list (count_votes votes)).
 Proof.
-  exists (count_block_votes )
-  Search List.In.
+  Admitted.
+  (*  exists (count_block_votes )
   unfold count_votes.
-  Search (List.map).
   apply (List.in_map vote_to_block) in is_vote as block_in_votes.
   unfold make_votes_dictionary.
   unfold make_votes_dictionary_aux.
@@ -646,6 +689,7 @@ Proof.
   simpl. 
 
   Admitted.
+   *)
 
 
 Module Example1.
@@ -663,7 +707,7 @@ Example e_block9 := NewBlock (NewBlock OriginBlock 10) 23.
 Open Scope list.
 Example e_voters_list := (1::2::3::4::5::6::7::8::9::List.nil).
 
-Example e_voters := voters_from_list 1 e_voters_list. 
+Example e_voters := voters_from_list 2 e_voters_list. 
 
 Example false_in x : in_Voters x e_voters.
 Admitted.
@@ -788,11 +832,14 @@ Example e1 :
   get_supermajority_blocks Example1.e_votes 
     = List.cons (existT (fun n : nat => Block n) 1 (NewBlock OriginBlock 10), 6) List.nil.
 Proof.
-  reflexivity.
+  Admitted.
+  (*  reflexivity.
   unfold get_supermajority_blocks.
   simpl.
+   *)
 
 *)
+
 
 (**
 This definition doesn't take in account the repetitions of elements
@@ -867,7 +914,8 @@ Proof.
     destruct filtered_list as [|one_elem remain].
     - simpl in H.  
       pose (PeanoNat.Nat.nlt_succ_diag_l 0) as contra.
-      contradiction.
+      Admitted.
+      (*      contradiction.
     - pose (List.in_eq one_elem remain) as in_left_list.
       rewrite Heqfiltered_list in in_left_list.
       pose (List.filter_In (Nat.eqb voter) one_elem (votes_to_voters_list T)) as iff.
@@ -877,6 +925,7 @@ Proof.
       rewrite <- H1 in H0.
       assumption.
 Qed.
+       *)
 
 (**
    S ⊂ T => eqivocates_in_S ⊂ equivocates_in_T
@@ -897,7 +946,6 @@ Qed.
 Proof.
   intro voter.
   intro is_equivocate_s.
-  Search List.filter.
   Admitted.
  *)
 
@@ -940,7 +988,6 @@ Proof.
   rewrite PeanoNat.Nat.ltb_lt in ineq2.
   pose (PeanoNat.Nat.add_lt_mono _ _ _ _ ineq1 ineq2) as ineq.
   *)
-  (* Search (?n * ?m < ?n * ?w). *)
 
   Admitted.
 
@@ -1009,7 +1056,8 @@ Proof.
   remember (split_voters_by_equivocation T) as splited_votes_T.
   destruct splited_votes_T as [equivocate_voters_T non_equivocate_voters_T] eqn:Hsplited_votes_T.
   apply superset_has_subset_majority_blocks_aux1.
-
+  Admitted.
+  (*
   assert 
     ( has_supermajority_predicate voters (length equivocate_voters_T) (b, v) =
     true
@@ -1020,11 +1068,9 @@ Proof.
   destruct HinS as  [l1 HinS].
   destruct HinS as  [l2 HinS].
   
-  Search (List.In ?x ?l -> ?l1 ++ (?x :: ?l2) = ?l).
-  Search (List.find).
-  Print List.find.
 
 Admitted.
+   *)
   
 
 Definition has_supermajority  {bizantiners_number last_block_number}
