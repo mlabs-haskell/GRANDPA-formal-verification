@@ -5,10 +5,12 @@ Section Dictionary.
 
 Context {K V:Type}.
 
-Variant Dictionary K V: Type :=
-  | DictionaryC (l : list (K*V)) : Dictionary K V.
+Variant Dictionary T1 T2: Type :=
+  | DictionaryC (l : list (T1*T2)) : Dictionary T1 T2.
 
-Definition empty:= DictionaryC K V nil.
+Arguments DictionaryC {T1 T2}.
+
+Definition empty:= @DictionaryC K V nil.
 
 Variable eqb_k: K -> K -> bool.
 Axiom eqb_k_reflexive : forall {k:K}, eqb_k k k = true.
@@ -23,7 +25,7 @@ Definition eqb_kv (p1 p2:K*V):bool
 Definition  to_list (dict:Dictionary K V): list (K*V)
   := 
   match dict with
-  | DictionaryC _ _ l => l
+  | DictionaryC l => l
   end.
 
 Fixpoint add_aux (element: K*V) (dict:list (K*V)): list (K*V)
@@ -39,8 +41,33 @@ Fixpoint add_aux (element: K*V) (dict:list (K*V)): list (K*V)
         (k',v'):: add_aux element remain
   end.
 
+Lemma add_aux_adds_new_at_end (k:K) (v:V) (l:list(K*V))
+  : (forall k' , In k' (List.map fst l) -> eqb_k k k' = false)
+  -> add_aux (k,v) l = l++((k,v)::nil). 
+Proof.
+  induction l as [|[k3 v3] l HInd];intro Hin.
+  - reflexivity.
+  - simpl.
+    assert (eqb_k k k3 = false) as H.
+    {
+     + apply Hin.
+       simpl.
+       left.
+       reflexivity.
+    }
+    + rewrite H.
+      rewrite HInd.
+      * reflexivity.
+      * intros k4 H2.
+        apply Hin.
+        simpl.
+        right.
+        apply H2.
+Qed.
+
+
 Definition add (k:K) (v:V) (dict:Dictionary K V): Dictionary K V
- := DictionaryC _ _ (add_aux (k,v) (to_list dict)).
+ := DictionaryC (add_aux (k,v) (to_list dict)).
 
 
 Definition lookup (k:K) (dict: Dictionary K V): option V
@@ -80,7 +107,7 @@ Definition  update_with (k:K) (v:V) (f:option V -> V -> V) (dict:Dictionary K V)
 
 Inductive WellFormedDict : Dictionary K V -> Prop
   := 
-    | WellFormedNil : WellFormedDict (DictionaryC _ _ nil)
+    | WellFormedNil : WellFormedDict (DictionaryC nil)
     | WellFormedAdd k v (d: Dictionary K V) (d_well_formed: WellFormedDict d) : WellFormedDict (add k v d).
 
 
@@ -98,7 +125,6 @@ Proof.
   - simpl.
     auto using WellFormedAdd.
 Qed.
-
 
 
 Fixpoint eqb_aux (l: list (K * V)) (d:Dictionary K V) : bool
