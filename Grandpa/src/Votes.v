@@ -692,66 +692,6 @@ Proof.
    *)
 
 
-Module Example1.
-
-Example e_block1 := NewBlock OriginBlock 10.
-Example e_block2 := NewBlock OriginBlock 11.
-Example e_block3 := NewBlock OriginBlock 12.
-Example e_block4 := NewBlock OriginBlock 10.
-Example e_block5 := NewBlock OriginBlock 10.
-Example e_block6 := NewBlock OriginBlock 10.
-Example e_block7 := NewBlock (NewBlock OriginBlock 10) 22.
-Example e_block8 := NewBlock (NewBlock OriginBlock 11) 22.
-Example e_block9 := NewBlock (NewBlock OriginBlock 10) 23.
-
-Open Scope list.
-Example e_voters_list := (1::2::3::4::5::6::7::8::9::List.nil).
-
-Example e_voters := voters_from_list 2 e_voters_list. 
-
-Example false_in x : in_Voters x e_voters.
-Admitted.
-
-Definition mk {m} n (b: Block m) := 
-  VoteC e_voters OriginBlock n (false_in n) b (originBlock_is_always_prefix b).
-
-Example votes_list := 
-  (
-  mk 1 e_block1
-  :: mk 2 e_block2
-  ::mk 3 e_block3
-  ::mk 4 e_block4
-  ::mk 5 e_block5
-  ::mk 6 e_block6
-  ::mk 7 e_block7
-  ::mk 8 e_block8
-  ::mk 9 e_block9
-  :: List.nil
-  ).
-
-Example e_votes := VotesC e_voters OriginBlock votes_list.
-
-(**
-[Compute count_votes e_votes.
-= Dictionary.DictionaryC AnyBlock nat
-         ((existT (fun n : nat => Block n) 2
-             (NewBlock (NewBlock OriginBlock 10) 23), 1)
-          :: (existT (fun n : nat => Block n) 1 (NewBlock OriginBlock 10), 6)
-             :: (existT (fun n : nat => Block n) 2
-                   (NewBlock (NewBlock OriginBlock 11) 22), 1)
-                :: (existT (fun n : nat => Block n) 1
-                      (NewBlock OriginBlock 11), 2)
-                   :: (existT (fun n : nat => Block n) 2
-                         (NewBlock (NewBlock OriginBlock 10) 22), 1)
-                      :: (existT (fun n : nat => Block n) 1
-                            (NewBlock OriginBlock 12), 1) :: nil)
-     : BlockDictionary
-]
-*)
-
-Close Scope list.
-
-End Example1.
 
 (**
   This is the core function implementing supermajority.
@@ -819,26 +759,6 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
       (Dictionary.to_list count)
   in
     blocks_with_super_majority.
-
-(*
-Compute split_voters_by_equivocation Example1.e_votes .
-Compute count_votes Example1.e_votes.
-Compute voters_length Example1.e_voters.
-
-Compute get_supermajority_blocks Example1.e_votes .
-
-
-Example e1 : 
-  get_supermajority_blocks Example1.e_votes 
-    = List.cons (existT (fun n : nat => Block n) 1 (NewBlock OriginBlock 10), 6) List.nil.
-Proof.
-  Admitted.
-  (*  reflexivity.
-  unfold get_supermajority_blocks.
-  simpl.
-   *)
-
-*)
 
 
 (**
