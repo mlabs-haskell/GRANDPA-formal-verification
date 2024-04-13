@@ -15,6 +15,7 @@ Definition empty:= @DictionaryC K V nil.
 Variable eqb_k: K -> K -> bool.
 Axiom eqb_k_reflexive : forall {k:K}, eqb_k k k = true.
 Axiom eqb_k_symmetric: forall {k1 k2:K} {b}, eqb_k k1 k2 =b -> eqb_k k2 k1 = b.
+Axiom eqb_k_transitive: forall {k1 k2 k3:K}, eqb_k k1 k2 =true -> eqb_k k2 k3 = true -> eqb_k k1 k3 = true.
 Variable eqb_v: V -> V -> bool.
 Axiom eqb_v_reflexive : forall v:V, eqb_v v v = true.
 Axiom eqb_v_symetric : forall {v1 v2:V} {b}, eqb_v v1 v2 =b -> eqb_v v2 v1 = b.
@@ -77,6 +78,31 @@ Definition lookup (k:K) (dict: Dictionary K V): option V
   | None => None
   end.
 
+Lemma lookup_eqb_rewrite {k1 k2} d:
+  eqb_k k1 k2 = true -> lookup k1 d = lookup k2 d.
+Proof.
+  intro eqH.
+  destruct d as [l].
+  induction l as [| (k3,v) remain].
+  - reflexivity.
+  - unfold lookup.
+    simpl.
+    destruct (eqb_k k1 k3) eqn:k1_k3.
+    + apply eqb_k_symmetric in eqH.
+      rewrite (eqb_k_transitive eqH k1_k3).
+      reflexivity.
+    + enough(
+       eqb_k k2 k3 = false
+      ) as Hend.
+      rewrite Hend.
+      assumption.
+      destruct (eqb_k k2 k3) eqn:H4.
+      * pose (eqb_k_transitive eqH H4) as H5.
+        rewrite H5 in k1_k3.
+        assumption.
+      * reflexivity.
+Qed.
+
 Lemma add_really_adds d :
    forall k v, lookup k (add k v d) = Some v.
 Proof.
@@ -95,6 +121,30 @@ Proof.
       apply Hind.
 Qed.
 
+Lemma add_really_adds_eqb_k d :
+  forall k1 k2 v,
+  eqb_k k1 k2 = true ->
+   lookup k1 (add k2 v d) = Some v.
+Proof.
+  destruct d as [l].
+  unfold lookup.
+  simpl.
+  induction l as [|[k v'] remain Hind];intros k1 k2 v H;simpl.
+  - rewrite H.
+    reflexivity.
+  - destruct (eqb_k k2 k) eqn:k2_eq_k.
+    + simpl.
+      rewrite H.
+      reflexivity.
+    + simpl.
+      destruct (eqb_k k1 k) eqn:k1_eq_k.
+      * pose (eqb_k_symmetric H) as H2.
+        pose (eqb_k_transitive H2 k1_eq_k) as H3.
+        rewrite k2_eq_k in H3.
+        inversion H3.
+      * apply Hind.
+        assumption.
+Qed.
 
 Definition from_list (l:list (K*V)): Dictionary K V
   :=
@@ -103,6 +153,26 @@ Definition from_list (l:list (K*V)): Dictionary K V
 
 Definition  update_with (k:K) (v:V) (f:option V -> V -> V) (dict:Dictionary K V): Dictionary K V
   := add k (f (lookup k dict) v) dict.
+
+
+Lemma update_lookup k v f d :
+ lookup k (update_with k v f d)= Some (f (lookup k d) v).
+Proof.
+  unfold update_with.
+  rewrite add_really_adds.
+  reflexivity.
+Qed.
+
+Lemma update_lookup_k_eqb k1 k2 v f d :
+eqb_k k1 k2 = true ->
+ lookup k1 (update_with k2 v f d)= Some (f (lookup k2 d) v).
+Proof.
+  intro H.
+  unfold update_with.
+  rewrite (add_really_adds_eqb_k).
+  reflexivity.
+  assumption.
+Qed.
 
 
 Inductive WellFormedDict : Dictionary K V -> Prop

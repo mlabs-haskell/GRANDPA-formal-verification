@@ -317,234 +317,113 @@ Definition BlockDictionary := Dictionary.Dictionary AnyBlock nat.
 *)
 
 
-(**
-  This function takes a block and a list of blocks 
-   and counts all the times the block appears in it.
- *)
-Definition count_block_votes
-  (block: AnyBlock) 
-  (votes_as_list : list AnyBlock)
-  (acc: BlockDictionary): BlockDictionary
-  :=
-    let number_of_votes_for_block 
-      := count Blocks.anyblock_eqb block votes_as_list
-    in
-      Dictionary.add Blocks.anyblock_eqb block number_of_votes_for_block acc.
-
-
-Lemma count_block_votes_permutation 
-  (block: AnyBlock) 
-  :forall l1 l2 b1 b2 (acc: BlockDictionary),
-    count_block_votes block (l1++b1::b2::l2) acc
-    =count_block_votes block (l1++b2::b1::l2) acc.
-Proof.
-  intros.
-  simpl.
-  unfold count_block_votes.
-  rewrite count_permutation.
-  reflexivity.
-Qed.
-
-Lemma count_block_votes_well_formed b vl acc
-  : Dictionary.WellFormedDict anyblock_eqb acc
-    ->Dictionary.WellFormedDict anyblock_eqb (count_block_votes b vl acc).
-Proof.
-  intro H.
-  induction vl;apply Dictionary.WellFormedAdd;auto.
-Qed.
-
-
-(**
-Previously we used another version using List.filter
-but then we were require to proof that (length votes)
-decreases and that makes the resultant function unmanageable.
-
-[Definition aux2
-  (block:AnyBlock) (remain_blocks:list AnyBlock)
-  := List.filter 
-      (fun b => negb (Blocks.anyblock_eqb block b)) remain_blocks.
-]
-*)
-Fixpoint make_votes_dictionary_aux
-  (votes:list AnyBlock) (previous:list AnyBlock) (acc: BlockDictionary)
-  :(list AnyBlock) * BlockDictionary
-  :=
-  match votes with
-  | List.nil => (List.nil, acc)
-  | List.cons block remain_blocks => 
-    if (count anyblock_eqb block previous =? 0)%nat
-    then
-      let updated_dict := 
-        count_block_votes block votes acc
-      in
-      make_votes_dictionary_aux
-        remain_blocks
-        (block :: previous)
-        updated_dict
-    else
-      make_votes_dictionary_aux
-        remain_blocks
-        (block :: previous)
-        acc
+Definition aux_vote_update (old_votes: option nat) (new_votes:nat)
+  := 
+  match old_votes with
+  | None => new_votes
+  | Some v' => new_votes+v'
   end.
 
-Lemma make_votes_dictionary_aux_well_formed_dict vl
-  : forall pl acc, Dictionary.WellFormedDict anyblock_eqb acc
-    -> Dictionary.WellFormedDict 
-      anyblock_eqb
-      (snd (make_votes_dictionary_aux vl pl acc)).
-Proof.
-  induction vl;intros pl acc H.
-  - apply H.
-  - simpl.
-    destruct (count anyblock_eqb a pl =? 0)%nat;
-    apply IHvl.
-    + apply count_block_votes_well_formed.
-      auto.
-    + auto.
-Qed.
-
-
-Lemma make_votes_dictionary_aux_step_cons_cons_destruct
-  (b1 b2:AnyBlock)
-  (votes:list AnyBlock) 
-  :forall (acc: BlockDictionary) l1 l2, anyblock_eqb b1 b2=true
-  -> make_votes_dictionary_aux votes (l1 ++ b1::b2::l2) acc
-    =  make_votes_dictionary_aux votes (l1++b2::l2) acc.
-Proof.
-  induction votes.
-  - reflexivity.
-  - intros acc l1 l2 b1_eq_b2. 
-    simpl.
-    rewrite count_concat.
-    rewrite count_concat.
-    rewrite count_cons.
-    rewrite count_cons.
-    destruct (anyblock_eqb a b2) eqn:a_b2.
-    + simpl.
-      rewrite PeanoNat.Nat.add_succ_r.
-      rewrite PeanoNat.Nat.add_succ_r.
-      rewrite PeanoNat.Nat.add_succ_r.
-      simpl.
-      apply (IHvotes acc (a::l1)%list l2).
-      auto.
-    + simpl.
-      assert (anyblock_eqb a b1 = false).
-        {
-          destruct (anyblock_eqb a b1) eqn:Hab2.
-          - pose (anyblock_eqb_transitive a b1 b2 Hab2 b1_eq_b2) as contra.
-            rewrite contra in a_b2.
-            auto.
-          - auto.
-        }
-      rewrite H.
-      simpl.
-      destruct (count anyblock_eqb a l1 + count anyblock_eqb a l2 =? 0)%nat;
-      apply (IHvotes _ (a::l1)%list l2 );auto.
-Qed.
-
-Lemma make_votes_dictionary_aux_commutative
-  (b1:AnyBlock)
-  : 
-    forall  l1 l3 (acc: BlockDictionary) b2
-    ,make_votes_dictionary_aux (l1++b1::b2 :: nil) l3 acc
-    = make_votes_dictionary_aux (l1++b2::b1::nil) l3 acc.
-Proof.
-  induction l1.
-  - simpl.
-    intros.
-    destruct (count anyblock_eqb b1 l3 =? 0)%nat eqn:H1
-    ;destruct (count anyblock_eqb b2 (b1 :: l3) =? 0)%nat eqn:H2   
-    ;destruct (count anyblock_eqb b2 l3 =? 0)%nat eqn:H3
-    ;destruct (count anyblock_eqb b1 (b2 :: l3) =? 0)%nat eqn:H4.
-    + assert (anyblock_eqb b2 b1 = false) as H.
-      { unfold count in H2. 
-        simpl in H2. 
-        destruct (anyblock_eqb b2 b1).
-        - simpl in H2.
-          inversion H2.
-        -  reflexivity.
-      }
-      unfold count_block_votes.
-      unfold count.
-      simpl.
-      rewrite anyblock_eqb_reflexive.
-      rewrite anyblock_eqb_reflexive.
-      rewrite H.
-      apply anyblock_eqb_symmetric_false in H.
-      rewrite H.
-
-    (*    2:{ simpl.
-    + unfold make_votes_dictionary_aux.
-      
-
-  - simpl.
-    intros.
-    destruct (count anyblock_eqb a l3 =? 0)%nat.
-    + simpl.
-    rewrite (IHl1 l2 (a::l3)%list _).
-    rewrite (count_block_votes_permutation a (a::l1) l2 b1 b2  ).
-    reflexivity.
-    *)
-    Admitted.
-
-
-
-Lemma make_votes_dictionary_aux_step 
+Definition update_with_vote_to_block (d:BlockDictionary)
   (block:AnyBlock)
-  (votes:list AnyBlock) 
-  : forall (acc: BlockDictionary),
-  make_votes_dictionary_aux (block :: votes) nil acc
-    = make_votes_dictionary_aux 
-        (List.filter (fun block2 =>negb ( anyblock_eqb block block2 )) votes)  
-        nil
-        (count_block_votes block (block ::votes ) acc).
-Proof.
-  induction votes.
-  - intros *. reflexivity.
-  - destruct (anyblock_eqb block a) eqn:block_eq_a.
-    + simpl.
-      unfold count.
-      simpl.
-      rewrite block_eq_a.
-      apply anyblock_eqb_symmetric_true in block_eq_a.
-      rewrite block_eq_a.
-      simpl.
-      intro acc.
-      rewrite (make_votes_dictionary_aux_step_cons_cons_destruct a block votes _ nil nil block_eq_a).
-      simpl.
-      simpl in IHvotes.
-      unfold count_block_votes.
-
-      unfold make_votes_dictionary_aux in IHvotes.
-
-      Admitted.
-
-
+  : BlockDictionary
+  := Dictionary.update_with anyblock_eqb block 1 aux_vote_update d.
 
 (*
   This function takes the list of votes (befor flatten)
    and counts the number of votes for every vote
 *)
-
 Definition make_votes_dictionary
-  (votes:list AnyBlock)  (acc: BlockDictionary)
+  (votes:list AnyBlock)(acc: BlockDictionary)
   : BlockDictionary
-  := snd (make_votes_dictionary_aux votes List.nil acc).
+  :=
+  List.fold_left 
+  update_with_vote_to_block
+  votes
+  acc.
 
+Lemma make_votes_dictionary_step_empty
+  (votes:list AnyBlock) block
+  : make_votes_dictionary (block::votes) Dictionary.empty
+    = make_votes_dictionary votes (Dictionary.from_list anyblock_eqb ((block,1)::nil)%list).
+Proof.
+  simpl.
+  enough (
+    update_with_vote_to_block Dictionary.empty block
+    =
+    Dictionary.add anyblock_eqb block 1 Dictionary.empty
+  ). auto.
+  unfold update_with_vote_to_block.
+  reflexivity.
+Qed.
 
-Lemma make_votes_dictionary_votes_end_empty_aux 
-   (votes:list AnyBlock)
-    : forall (acc: BlockDictionary) l, fst (make_votes_dictionary_aux votes l acc) = nil.
+(*Lemma make_votes_dictionary_step
+  (votes:list AnyBlock) block d
+  : make_votes_dictionary (block::votes) d
+    = make_votes_dictionary votes (update_with_vote_to_block d block).
+Proof.
+  simpl.
+  enough (
+    update_with_vote_to_block Dictionary.empty block
+    =
+    Dictionary.add anyblock_eqb block 1 Dictionary.empty
+  ). auto.
+  unfold update_with_vote_to_block.
+  reflexivity.
+Qed.
+ *)
+
+Definition some_to_nat (x:option nat)
+  := 
+  match x with
+     | Some y => y
+     | None => 0
+  end.
+
+Require Import Lia.
+Lemma make_votes_dictionary_counts_right 
+  (votes:list AnyBlock)
+  : forall block votes_value d,
+    Dictionary.lookup anyblock_eqb block (make_votes_dictionary votes d)
+      = Some votes_value
+    -> votes_value = count anyblock_eqb block votes 
+      + some_to_nat (Dictionary.lookup anyblock_eqb block d). 
 Proof.
   induction votes.
-  - auto.
-  - simpl.
-    intros acc l.
-    destruct (count anyblock_eqb a l =? 0)%nat.
-    + apply IHvotes.
-    + apply IHvotes.
-Qed.
+  - intros block v d H.
+    simpl.
+    simpl in H.
+    rewrite H.
+    reflexivity.
+  - intros block v d H.
+    simpl in H.
+    apply IHvotes in H.
+    rewrite count_cons.
+    enough (
+      some_to_nat(
+        Dictionary.lookup 
+          anyblock_eqb block 
+          (update_with_vote_to_block d a)
+      )
+      =
+      (if anyblock_eqb block a then 1 else 0)
+        +
+      some_to_nat(Dictionary.lookup anyblock_eqb block d)
+    ) as H2.
+    + rewrite H2 in H.
+      lia.
+    + unfold update_with_vote_to_block.
+      unfold update_with_vote_to_block in H.
+      destruct (anyblock_eqb block a) eqn:block_a.
+      * rewrite (Dictionary.update_lookup_k_eqb).
+        2: assumption.
+        simpl.
+        unfold aux_vote_update.
+        Print Dictionary.lookup_eqb_rewrite.
+        rewrite (Dictionary.lookup_eqb_rewrite anyblock_eqb d (k1:=block) (k2:=a) block_a).
+        destruct (Dictionary.lookup anyblock_eqb a d);auto.
+      * simpl.
+
 
 
 (**
