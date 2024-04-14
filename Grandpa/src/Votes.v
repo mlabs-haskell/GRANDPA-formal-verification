@@ -2,6 +2,7 @@ Require List.
 Require Import  Nat.
 Require Import Coq.Program.Equality.
 Require Coq.Program.Wf.
+Require Import Lia.
 
 Require Dictionary.
 Require Import Blocks.
@@ -380,8 +381,7 @@ Definition some_to_nat (x:option nat)
      | None => 0
   end.
 
-Require Import Lia.
-Lemma make_votes_dictionary_counts_right 
+Lemma make_votes_dictionary_counts_right_aux 
   (votes:list AnyBlock)
   : forall block votes_value d,
     Dictionary.lookup anyblock_eqb block (make_votes_dictionary votes d)
@@ -419,11 +419,68 @@ Proof.
         2: assumption.
         simpl.
         unfold aux_vote_update.
-        Print Dictionary.lookup_eqb_rewrite.
         rewrite (Dictionary.lookup_eqb_rewrite anyblock_eqb d (k1:=block) (k2:=a) block_a).
         destruct (Dictionary.lookup anyblock_eqb a d);auto.
       * simpl.
+        rewrite Dictionary.update_lookup_keeps_others_k_eqb.
+        reflexivity.
+        assumption.
+Qed.
 
+Lemma make_votes_dictionary_counts_right_aux2
+  (votes:list AnyBlock)
+  : forall block d,
+    some_to_nat (Dictionary.lookup anyblock_eqb block (make_votes_dictionary votes d))
+    = count anyblock_eqb block votes 
+      + some_to_nat (Dictionary.lookup anyblock_eqb block d). 
+Proof.
+  induction votes.
+  - intros block d.
+    simpl.
+    reflexivity.
+  - intros block d.
+    simpl.
+    rewrite count_cons.
+    rewrite IHvotes.
+    enough (
+      some_to_nat(
+        Dictionary.lookup 
+          anyblock_eqb block 
+          (update_with_vote_to_block d a)
+      )
+      =
+      (if anyblock_eqb block a then 1 else 0)
+        +
+      some_to_nat(Dictionary.lookup anyblock_eqb block d)
+    ) as H2.
+    + rewrite H2.
+      lia.
+    + unfold update_with_vote_to_block.
+      destruct (anyblock_eqb block a) eqn:block_a.
+      * rewrite (Dictionary.update_lookup_k_eqb).
+        2: assumption.
+        simpl.
+        unfold aux_vote_update.
+        rewrite (Dictionary.lookup_eqb_rewrite anyblock_eqb d (k1:=block) (k2:=a) block_a).
+        destruct (Dictionary.lookup anyblock_eqb a d);auto.
+      * simpl.
+        rewrite Dictionary.update_lookup_keeps_others_k_eqb.
+        reflexivity.
+        assumption.
+Qed.
+
+Lemma make_votes_dictionary_counts_right
+  (votes:list AnyBlock)
+  : forall (block:AnyBlock),
+    some_to_nat (Dictionary.lookup anyblock_eqb block (make_votes_dictionary votes Dictionary.empty))
+    = count anyblock_eqb block votes.
+Proof.
+  intro block.
+  rewrite (make_votes_dictionary_counts_right_aux2 votes block Dictionary.empty).
+  - simpl.
+    rewrite <- plus_n_O.
+    reflexivity.
+Qed.
 
 
 (**
@@ -510,6 +567,33 @@ Lemma count_votes_works {bizantiners_number last_block_number}
   (block: Block block_number)
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
+  (votes:Votes voters last_block)
+  :
+  some_to_nat(
+    Dictionary.lookup 
+    anyblock_eqb
+    (existT _ block_number block) 
+    (count_votes votes)
+  )
+  =length (
+       List.filter (
+         fun vote => is_prefix block (projT2 (vote_to_block vote))
+       ) 
+       (votes_to_list votes) 
+      ).
+Proof.
+  unfold count_votes.
+  (* TODO: use this rewrite make_votes_dictionary_counts_right.*)
+  Admitted.
+
+
+(* Deprecated
+
+     Lemma count_votes_works {bizantiners_number last_block_number}
+  {block_number:nat}
+  (block: Block block_number)
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
   :forall (votes: list (Vote  voters last_block))
   (v:nat)
   , 
@@ -538,7 +622,7 @@ Proof.
     + simpl.
     Admitted.
 
-
+*)
 
 
 Lemma voted_block_in_count_votes {bizantiners_number last_block_number}
@@ -655,7 +739,7 @@ Definition IsSubset {bizantiners_number last_block_number}
     (count vote_eqb vote  (votes_to_list S)
     <= count vote_eqb vote (votes_to_list T))%nat.
 
-Lemma aux {A} (l l1 l2:list A) p 
+Lemma equivocates_are_voters_aux {A} (l l1 l2:list A) p 
   : 
   List.partition p l = (l1,l2) 
   -> forall x, List.In x l1 
@@ -697,7 +781,7 @@ Proof.
     assumption.
   }
   pose 
-    (aux 
+    (equivocates_are_voters_aux 
       (voters_to_list voters) 
       equivocate_voters 
       non_equivocate_voters 

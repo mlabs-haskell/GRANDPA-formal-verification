@@ -175,6 +175,50 @@ Proof.
 Qed.
 
 
+Lemma update_lookup_keeps_others_k_eqb k1 v f d  
+  :  forall k2, eqb_k k2 k1 = false -> 
+  lookup k2 (update_with k1 v f d) = lookup k2 d.
+Proof.
+  destruct d as [l].
+  induction l as [|(k3,v3) remain Hind].
+  - intros k2 H.
+    unfold update_with.
+    unfold lookup.
+    simpl.
+    rewrite H.
+    reflexivity.
+  - intros k2 H.
+    unfold update_with.
+    unfold lookup.
+    simpl.
+    destruct (eqb_k k1 k3) eqn:k1_k3.
+    + assert (eqb_k k2 k3 = false) as k2_k3.
+      {
+        destruct (eqb_k k2 k3) eqn:k2_k3.
+        - apply (eqb_k_symmetric) in k2_k3.
+          pose (eqb_k_transitive k1_k3 k2_k3) as contra.
+          apply (eqb_k_symmetric) in contra.
+          rewrite contra in H.
+          exact H.
+        - reflexivity.
+      }
+      rewrite k2_k3.
+      simpl.
+      rewrite H.
+      reflexivity.
+    + simpl.
+      destruct (eqb_k k2 k3) eqn:k2_k3. 
+      * reflexivity.
+      * unfold lookup in Hind.
+        unfold update_with in Hind.
+        simpl in Hind.
+        unfold lookup in Hind.
+        simpl in Hind.
+        apply Hind.
+        assumption.
+Qed.
+
+
 Inductive WellFormedDict : Dictionary K V -> Prop
   := 
     | WellFormedNil : WellFormedDict (DictionaryC nil)
