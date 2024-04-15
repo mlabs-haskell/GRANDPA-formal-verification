@@ -7,99 +7,126 @@ Require Import Votes.
 
 
 Definition find_highest_block_join
+  (acc:list AnyBlock)
   (existencial:AnyBlock) 
-  (acc:option AnyBlock)
-  : option AnyBlock
+  : list AnyBlock
     := 
-    match acc with
-    | None =>Some existencial
-    | Some h =>
-        if projT1 h <?  projT1 existencial 
-        then Some existencial
-        else Some h
-    end.
+  match acc with
+  | List.nil => List.cons existencial List.nil
+  | List.cons (existT _ h_block_number _) others =>
+    match existencial with
+    | existT _ block_number block =>
+         if h_block_number <? block_number 
+         then List.cons existencial List.nil
+         else 
+          if Nat.eqb h_block_number  block_number 
+          then List.cons existencial acc
+          else
+            acc
+    end
+  end.
 
-Lemma find_highest_block_join_never_none (existencial:AnyBlock) (block: option AnyBlock) 
-  : find_highest_block_join existencial block <> None.
+Lemma find_highest_block_join_never_none (existencial:AnyBlock) (blocks: list AnyBlock) 
+  : find_highest_block_join blocks existencial <> nil.
 Proof.
   intro H.
-  destruct block as [x|];simpl in H.
-  - destruct (projT1 x <? projT1 existencial);inversion H.
+  destruct blocks as [|[h_block_number] remain];simpl in H.
   - inversion H.
+  - destruct existencial as [block_number].
+    destruct (h_block_number <? block_number).
+    + inversion H.
+    + destruct (h_block_number =? block_number);inversion H.
 Qed.
 
-Lemma find_highest_block_join_monotone (existencial:AnyBlock) (block: AnyBlock) 
-  {block_result : AnyBlock}
-  : find_highest_block_join existencial (Some block) = Some block_result
-  -> projT1 existencial <= projT1 block_result /\ projT1 block <= projT1 block_result.
+Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock) 
+  {block_results : list AnyBlock}
+  : find_highest_block_join blocks existencial = block_results
+  -> forall result_block, 
+    List.In result_block block_results 
+      -> projT1 existencial <= projT1 result_block
+          /\ 
+          forall block, List.In block blocks 
+            -> projT1 block <= projT1 result_block.
 Proof.
-  intro H.
-  simpl in H.
-  destruct (projT1 block <? projT1 existencial) eqn:Hineq.
-  - split.
-    + injection H as H.
-      rewrite H.
-      auto.
-    + injection H as H.
-      rewrite <- H.
-      apply PeanoNat.Nat.ltb_lt in Hineq.
-      unfold lt in Hineq.
-      apply Arith_base.le_S_gt_stt in Hineq.
-      simpl in Hineq.
-      Admitted.
-      (* apply PeanoNat.Nat.S_lt_n.*)
+  intros H result_block H2.
+  split.
+  Admitted.
 
-
-
-Definition find_highest_block (blocks:list AnyBlock): option AnyBlock
+Definition find_highest_blocks (blocks:list AnyBlock): list AnyBlock
   := 
-  List.fold_right find_highest_block_join None blocks.
+  List.fold_left find_highest_block_join blocks List.nil .
 
 
 Lemma find_highest_blocks_none_iff_nil (blocks: list AnyBlock) 
-  : find_highest_block blocks = None <-> blocks = nil.
+  : find_highest_blocks blocks = nil <-> blocks = nil.
 Proof.
   split.
   - intro H.
-    unfold find_highest_block in H.
+    unfold find_highest_blocks in H.
     destruct blocks as [|block blocks].
     + reflexivity.
-    + simpl in H.
-      apply find_highest_block_join_never_none in H.
-      contradiction.
-  - intro H.
-    rewrite H.
-    auto.
-Qed.
+    +
+      Search List.fold_right.
+      rewrite <- List.fold_left_rev_right in H.
+      simpl in H.
+      Admitted.
 
 
 Lemma find_highest_blocks_works (blocks: list AnyBlock) 
-  :forall (n:nat) (block1:Block n)
-    , find_highest_block blocks = Some (existT _ n block1) 
-    -> forall (m:nat) (block2:Block m)
-      ,List.In (existT _ m block2) blocks
+  :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
+    ,List.In (existT _ m block2) blocks
       -> m <= n.
 Proof.
   intros n b1 Hb1.
   induction blocks as [| h_block remain_blocks HInd].
-  - simpl. 
-    intros m b2 f.
-    contradiction.
-  - intros m b2 H.
-    destruct remain_blocks.
-    + simpl in Hb1.
-      inversion Hb1.
-      simpl in H.
-      destruct H.
-      ++ rewrite H in H1.
-         inversion H1.
-         auto.
-      ++ contradiction.
-    + simpl in HInd.
-    simpl in H.
-    destruct H as [is_head|in_remain].
-    2:{ simpl in Hb1. Admitted.
+  Admitted.
 
+Lemma find_highest_blocks_have_same_lenght blocks 
+  :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
+    ,List.In (existT _ n block1) blocks
+    -> List.In (existT _ m block2) blocks
+      -> n = m.
+Proof.
+  Admitted.
+
+Lemma find_highest_blocks_is_part_of_blocks (blocks:list AnyBlock)
+  : forall block, List.In block (find_highest_blocks blocks) -> List.In block blocks.
+Proof.
+  Admitted.
+
+Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
+  b 
+  : ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=0.
+Proof.
+  Admitted.
+
+Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T : Votes voters last_block) 
+  (is_safe_t: is_safe T = true)
+  : length (find_highest_blocks (List.map fst (get_supermajority_blocks T))) <=1.
+Proof.
+  destruct (find_highest_blocks (List.map fst (get_supermajority_blocks T))) as [|b1 remain] eqn:H.
+  + auto.
+  + destruct remain as [| b2 remain2] eqn:H2.
+    - auto.
+    - simpl.
+      pose (List.in_eq b1 remain) as  b1_in.
+      pose (List.in_eq b2 (remain2)) as  b2_in2.
+      pose (List.in_cons b1 b2 _ b2_in2) as  b2_in.
+      rewrite H2 in b1_in.
+      rewrite <- H in b1_in.
+      rewrite <- H in b2_in.
+      apply find_highest_blocks_is_part_of_blocks in b1_in as b1_in_gt.
+      apply find_highest_blocks_is_part_of_blocks in b2_in as b2_in_gt.
+      rewrite List.in_map_iff in b1_in_gt.
+      rewrite List.in_map_iff in b2_in_gt.
+      (* TODO use the supermajority to get that both blocks are related
+         then use "find_highest_blocks_have_same_lenght"
+         conclude that blocks can't be related, contradiction.
+       *)
+      Admitted.
 
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
@@ -111,7 +138,10 @@ Definition g {bizantiners_number last_block_number}
   let blocks_with_super_majority 
     := get_supermajority_blocks T
   in
-    find_highest_block (List.map fst blocks_with_super_majority). 
+    match find_highest_blocks (List.map fst blocks_with_super_majority) with
+    | List.cons block List.nil => Some block
+    | _ => None
+    end.
 
 
 Lemma gt_some_implies_supermajority_not_empty {bizantiners_number last_block_number}
@@ -142,24 +172,37 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {gs_block_number: nat}
   (gs : Block gs_block_number)
   (gs_is_result : g S = Some (existT _ gs_block_number gs))
-  : {gt_block_number & 
-      {gt : Block gt_block_number 
-        & (g T = Some (existT _ gt_block_number gt)) * (Prefix gs gt)}
-    }.
+  : {gt_block &
+      (g T = Some gt_block) * (Prefix gs (projT2 gt_block))}.
 Proof.
   remember (g T) as gt_out eqn:is_gt.
   remember (get_supermajority_blocks S) as super_s eqn:Hsuper_s.
   unfold g in is_gt.
   pose (superset_has_subset_majority_blocks S T is_safe_t  is_sub_set) as supermajority_s_subset_t.
-  pose (gt_some_implies_supermajority_not_empty S gs gs_is_result) 
-    as supermajority_s_not_nil.
   unfold g in gs_is_result.
-  rewrite <- Hsuper_s in supermajority_s_not_nil.
   rewrite <- Hsuper_s in gs_is_result.
+  assert (List.In (existT _ gs_block_number gs) (find_highest_blocks (List.map fst super_s))) as H.
+  {
+    destruct (find_highest_blocks (List.map fst super_s) ) as [|s remain_s] eqn:H2.
+    + inversion gs_is_result.
+    + destruct remain_s as [].
+      - simpl.
+        left.
+        injection gs_is_result.
+        auto.
+      - inversion gs_is_result.
+    }
+  apply find_highest_blocks_is_part_of_blocks in H.
+  apply List.in_map_iff in H.
+Require Import Coq.Program.Equality.
+  Admitted.
+  (*  inversion H.
+  dependent destruction H.
   destruct super_s.
   - contradiction.
   - simpl in gs_is_result.
 Admitted.
+   *)
 (* - pose (supermajority_s_subset_t (projT1 p) (projT2 p)). *)
 
 (*
