@@ -846,8 +846,8 @@ from an equivocating voter.
 Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
-  (* TODO: add is_safe hip *)
   (T : Votes voters last_block) 
+  (is_safe_t: is_safe T = true)
   : forall (block1 block2:AnyBlock) (v1 v2:nat), 
     List.In (block1,v1) (get_supermajority_blocks T)
     -> List.In (block2,v2) (get_supermajority_blocks T)
@@ -926,8 +926,8 @@ Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
   (is_subset: IsSubset S T)
   : forall anyblock anyblock_votes, 
       List.In (anyblock,anyblock_votes) (get_supermajority_blocks S)
-      -> exists anyblock_votes_in_t 
-          , List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks T).
+      -> {anyblock_votes_in_t 
+          & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks T)}.
 Proof.
   intros b b_votes_number HinS.
   unfold get_supermajority_blocks in HinS.
@@ -938,9 +938,9 @@ Proof.
   unfold get_supermajority_blocks.
   remember (split_voters_by_equivocation T) as splited_votes_T.
   destruct splited_votes_T as [equivocate_voters_T non_equivocate_voters_T] eqn:Hsplited_votes_T.
-  apply superset_has_subset_majority_blocks_aux1.
   Admitted.
   (*
+  apply superset_has_subset_majority_blocks_aux1.
   assert 
     ( has_supermajority_predicate voters (length equivocate_voters_T) (b, v) =
     true

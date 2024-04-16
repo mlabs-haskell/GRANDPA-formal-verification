@@ -7,8 +7,8 @@ Require Import Votes.
 
 
 Definition find_highest_block_join
-  (acc:list AnyBlock)
   (existencial:AnyBlock) 
+  (acc:list AnyBlock)
   : list AnyBlock
     := 
   match acc with
@@ -26,8 +26,8 @@ Definition find_highest_block_join
     end
   end.
 
-Lemma find_highest_block_join_never_none (existencial:AnyBlock) (blocks: list AnyBlock) 
-  : find_highest_block_join blocks existencial <> nil.
+Lemma find_highest_block_join_never_nil (existencial:AnyBlock) (blocks: list AnyBlock) 
+  : find_highest_block_join existencial blocks <> nil.
 Proof.
   intro H.
   destruct blocks as [|[h_block_number] remain];simpl in H.
@@ -40,7 +40,7 @@ Qed.
 
 Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock) 
   {block_results : list AnyBlock}
-  : find_highest_block_join blocks existencial = block_results
+  : find_highest_block_join existencial blocks = block_results
   -> forall result_block, 
     List.In result_block block_results 
       -> projT1 existencial <= projT1 result_block
@@ -54,10 +54,10 @@ Proof.
 
 Definition find_highest_blocks (blocks:list AnyBlock): list AnyBlock
   := 
-  List.fold_left find_highest_block_join blocks List.nil .
+  List.fold_right find_highest_block_join List.nil blocks .
 
 
-Lemma find_highest_blocks_none_iff_nil (blocks: list AnyBlock) 
+Lemma find_highest_blocks_nil_iff_nil (blocks: list AnyBlock) 
   : find_highest_blocks blocks = nil <-> blocks = nil.
 Proof.
   split.
@@ -66,10 +66,14 @@ Proof.
     destruct blocks as [|block blocks].
     + reflexivity.
     +
-      Search List.fold_right.
-      rewrite <- List.fold_left_rev_right in H.
       simpl in H.
-      Admitted.
+      apply find_highest_block_join_never_nil in H.
+      inversion H.
+  - intros H.
+    rewrite H.
+    simpl.
+    reflexivity.
+Qed.
 
 
 Lemma find_highest_blocks_works (blocks: list AnyBlock) 
@@ -79,6 +83,10 @@ Lemma find_highest_blocks_works (blocks: list AnyBlock)
 Proof.
   intros n b1 Hb1.
   induction blocks as [| h_block remain_blocks HInd].
+  - intros b2 H.
+    simpl in H.
+    contradiction.
+  - intros b2 H.
   Admitted.
 
 Lemma find_highest_blocks_have_same_lenght blocks 
@@ -87,20 +95,29 @@ Lemma find_highest_blocks_have_same_lenght blocks
     -> List.In (existT _ m block2) blocks
       -> n = m.
 Proof.
+  (* 
+    consequence of find_highest_blocks_works
+  *)
   Admitted.
 
 Lemma find_highest_blocks_is_part_of_blocks (blocks:list AnyBlock)
   : forall block, List.In block (find_highest_blocks blocks) -> List.In block blocks.
 Proof.
+  (*
+    all functions refine the list of blocks, trivial.
+  *)
   Admitted.
 
 Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
   b 
-  : ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=0.
+  : ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=1.
 Proof.
+  (* Consequence of being the from_list of a dictionary and such dictionary 
+      is build in a way that make it WellFoundedDictionary.
+   *)
   Admitted.
 
-Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
+Lemma find_highest_blocks_on_safe_set_lenght {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T : Votes voters last_block) 
@@ -127,6 +144,34 @@ Proof.
          conclude that blocks can't be related, contradiction.
        *)
       Admitted.
+
+Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T : Votes voters last_block) 
+  (is_safe_t: is_safe T = true)
+  : get_supermajority_blocks T <> nil 
+    -> {b & 
+        find_highest_blocks 
+          (List.map fst (get_supermajority_blocks T)) = b::nil 
+      }.
+Proof.
+  intro Hnil.
+  destruct (find_highest_blocks (List.map fst (get_supermajority_blocks T))) as [| b ls] eqn:Hn.
+  - pose (find_highest_blocks_nil_iff_nil (List.map fst (get_supermajority_blocks T)) ) as nil_iff.
+    rewrite nil_iff in Hn.
+    apply List.map_eq_nil in Hn.
+    contradiction.
+  - destruct ls as [| contrah contra].
+    + refine (existT _ b _ ).
+      reflexivity.
+    + pose (find_highest_blocks_on_safe_set_lenght T is_safe_t) as H.
+      rewrite Hn in H.
+      simpl in H.
+      apply le_S_n in H.
+      apply PeanoNat.Nat.nle_succ_0 in H.
+      contradiction.
+Qed.
 
 (* Función g *)
 Definition g {bizantiners_number last_block_number}
@@ -161,6 +206,51 @@ Proof.
   discriminate gt_is_result.
 Qed.
 
+
+(**
+  The one in List.in_map_iff is of type Prop, this means 
+   we can't destruct the generated term.
+*)
+Lemma in_map {A B} (f : A -> B) (l : list A) (y : B)
+  : List.In y (List.map f l) -> {x : A & f x = y /\ List.In x l}.
+Admitted.
+
+Lemma map_in {A B} (f : A -> B) (l : list A) (y : B) (x : A)
+  : (f x = y /\ List.In x l) ->List.In y (List.map f l).
+Admitted.
+
+Lemma from_g_to_votes_safe_set {bizantiners_number last_block_number}
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (T: Votes voters last_block)
+  (is_safe_t:is_safe T = true)
+  (gt_anyblock:AnyBlock)
+  (gt_is_result : g T = Some gt_anyblock)
+  : {vote_number:nat & List.In (gt_anyblock,vote_number) (get_supermajority_blocks T)}.
+Proof.
+  destruct gt_anyblock as [gt_block_number gt_block] eqn:Hremember.
+  pose (gt_some_implies_supermajority_not_empty T gt_block gt_is_result) as super_t_not_nil.
+  pose (find_highest_blocks_on_safe_set T is_safe_t super_t_not_nil) as g_t_result.
+  destruct g_t_result as [b eq_b].
+  unfold g in gt_is_result.
+  clear super_t_not_nil.
+  rewrite eq_b in gt_is_result.
+  injection gt_is_result as b_is_gt.
+  rewrite <- Hremember in b_is_gt.
+  rewrite b_is_gt  in eq_b.
+  pose (List.in_eq gt_anyblock nil) as gt_in_find.
+  rewrite <- eq_b in gt_in_find.
+  apply (find_highest_blocks_is_part_of_blocks (List.map fst (get_supermajority_blocks T)) gt_anyblock) in gt_in_find.
+  apply in_map in gt_in_find.
+  destruct gt_in_find as [[gt_anyblock2 gt_votes] [gt_eq gt_in_super_t] ].
+  simpl in gt_eq.
+  rewrite gt_eq in gt_in_super_t.
+  rewrite Hremember in gt_in_super_t.
+  refine (existT _ gt_votes gt_in_super_t).
+Qed.
+
+
+
 Open Scope type_scope.
 Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
@@ -173,11 +263,9 @@ Lemma lemma_2_5_2 {bizantiners_number last_block_number}
   (gs : Block gs_block_number)
   (gs_is_result : g S = Some (existT _ gs_block_number gs))
   : {gt_block &
-      (g T = Some gt_block) * (Prefix gs (projT2 gt_block))}.
+    (g T = Some gt_block) * (Related gs (projT2 gt_block) * (gs_block_number <= projT1 gt_block))}.
 Proof.
-  remember (g T) as gt_out eqn:is_gt.
   remember (get_supermajority_blocks S) as super_s eqn:Hsuper_s.
-  unfold g in is_gt.
   pose (superset_has_subset_majority_blocks S T is_safe_t  is_sub_set) as supermajority_s_subset_t.
   unfold g in gs_is_result.
   rewrite <- Hsuper_s in gs_is_result.
@@ -192,32 +280,74 @@ Proof.
         auto.
       - inversion gs_is_result.
     }
-  apply find_highest_blocks_is_part_of_blocks in H.
-  apply List.in_map_iff in H.
-Require Import Coq.Program.Equality.
-  Admitted.
-  (*  inversion H.
-  dependent destruction H.
-  destruct super_s.
-  - contradiction.
-  - simpl in gs_is_result.
-Admitted.
-   *)
-(* - pose (supermajority_s_subset_t (projT1 p) (projT2 p)). *)
+  apply find_highest_blocks_is_part_of_blocks in H as H2.
+  apply in_map in H2.
+  destruct H2 as [[gs_anyblock gs_votes] [gs_eq gs_in_super]].
+  rewrite Hsuper_s in gs_in_super.
+  apply supermajority_s_subset_t in gs_in_super.
+  destruct gs_in_super as [gs_votes_in_t gs_in_super_t].
+  remember (gs_anyblock,gs_votes_in_t) as gs_with_votes_in_t.
+  assert (fst gs_with_votes_in_t = existT (fun n : nat => Block n) gs_block_number gs) as Haux1.
+  {
+    rewrite Heqgs_with_votes_in_t.
+    simpl.
+    simpl in gs_eq.
+    assumption.
+    }
+  assert (
+   fst gs_with_votes_in_t = gs_anyblock /\ List.In gs_with_votes_in_t (get_supermajority_blocks T)) as Haux2.
+   {
+     split.
+     - simpl in gs_eq.
+       rewrite gs_eq.
+       assumption.
+     - assumption.
+     }
+  pose (map_in fst (get_supermajority_blocks T) gs_anyblock gs_with_votes_in_t Haux2) as gs_anyblock_in_map_t.
+  assert (get_supermajority_blocks T <> nil) as super_t_not_nil.
+  {
+    unfold not.
+    intros H3.
+    rewrite H3 in gs_in_super_t.
+    apply (List.in_nil gs_in_super_t).
+  }
+  pose (find_highest_blocks_on_safe_set T is_safe_t super_t_not_nil) as g_t_result.
+  destruct g_t_result as [gt_anyblock gt_eq].
+  assert (g T = Some gt_anyblock ) as gt_result.
+  {
+    unfold g.
+    rewrite gt_eq.
+    reflexivity.
+  } 
+  (* pose (from_g_to_votes_safe_set T is_safe_t _ gt_result ) as gt_in_super_t. *)
+  pose (List.in_eq gt_anyblock nil) as gt_in_find.
+  rewrite <- gt_eq in gt_in_find.
+  apply find_highest_blocks_is_part_of_blocks in gt_in_find.
+  apply in_map in gt_in_find.
+  destruct gt_in_find as [[gt_block gt_votes] [gt_eq2 gt_in_super_t] ].
+  simpl in gt_eq2.
+  rewrite gt_eq2 in gt_in_super_t.
+  rewrite Heqgs_with_votes_in_t in gs_in_super_t.
+  pose (blocks_with_super_majority_are_related T is_safe_t gs_anyblock gt_anyblock gs_votes_in_t gt_votes gs_in_super_t gt_in_super_t) as related.
+  simpl in gs_eq.
+  rewrite gs_eq in related.
+  simpl in related.
+  rewrite gs_eq in gs_anyblock_in_map_t.
+  pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) (projT1 gt_anyblock) (projT2 gt_anyblock ) gs_block_number gs gs_anyblock_in_map_t) as gs_number_leq_gt_number.
+  refine (existT _ gt_anyblock (gt_result, (related, gs_number_leq_gt_number))).
+Qed.
+  
 
-(*
-plan:
-   - Probar que si dos bloques B1 y B2 no estan relacionados pero tienen
-   supermajoria en S entonces decendidendo por la funcion de supermajorya 
-   eventualmente llegamos a que en conjunto hay al menos n + f +1 -f =  n+1 votos
-   contradiccion, por lo que todos los bloques con supermajoria estan 
-   en una misma cadena.
-   - Para esto agregar la propiedad  de decibilidad de ser prefijo de bloques
-   - Para finalizar la prueba is la lista que se contruye en g para buscar 
-      el bloque de mayor tamano, es no vacia y tiene mas de un elemento
-      , entonces estan no relacionados, pero ambos vienen de supermajoria 
-   contradiciendo el inicio.
- *)
+  (* TODO 
+    use that "find_highest_blocks_on_safe_set" to get a single block in 
+     find_highest_blocks output
+    destructure gt until we conclude gt in get_supermajority_blocks T.
+    find that they must be related.
+    by "find_highest_blocks_works" they can be the same or gs < gt.
+  *)
+  
+
+
 
 Close Scope type_scope.
 
