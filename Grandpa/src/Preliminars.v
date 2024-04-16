@@ -39,17 +39,18 @@ Proof.
 Qed.
 
 Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock) 
-  {block_results : list AnyBlock}
-  : find_highest_block_join existencial blocks = block_results
-  -> forall result_block, 
-    List.In result_block block_results 
+  (blocks_has_same_height: exists n, forall block, List.In block blocks -> (projT1 block) = n )
+  :forall result_block, 
+    List.In result_block (find_highest_block_join existencial blocks)
       -> projT1 existencial <= projT1 result_block
           /\ 
           forall block, List.In block blocks 
             -> projT1 block <= projT1 result_block.
 Proof.
-  intros H result_block H2.
-  split.
+  intros [block_number block] H.
+  destruct existencial as [e_block_number e_block].
+  destruct blocks_has_same_height as [n blocks_has_same_height].
+  simpl in H.
   Admitted.
 
 Definition find_highest_blocks (blocks:list AnyBlock): list AnyBlock
@@ -76,27 +77,28 @@ Proof.
 Qed.
 
 
-Lemma find_highest_blocks_works (blocks: list AnyBlock) 
-  :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
-    ,List.In (existT _ m block2) blocks
-      -> m <= n.
+Lemma find_highest_blocks_works (blocks: list AnyBlock) (b1 b2:AnyBlock)
+    :List.In b1 (find_highest_blocks blocks)
+    -> List.In b2 blocks
+      -> projT1 b2 <= projT1 b1.
 Proof.
-  intros n b1 Hb1.
+  intros Hb1.
   induction blocks as [| h_block remain_blocks HInd].
-  - intros b2 H.
+  - intros H.
     simpl in H.
     contradiction.
-  - intros b2 H.
+  - intros H.
   Admitted.
 
 Lemma find_highest_blocks_have_same_lenght blocks 
   :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
-    ,List.In (existT _ n block1) blocks
-    -> List.In (existT _ m block2) blocks
+    ,List.In (existT _ n block1) (find_highest_blocks blocks)
+    -> List.In (existT _ m block2) (find_highest_blocks blocks)
       -> n = m.
 Proof.
   (* 
     consequence of find_highest_blocks_works
+     (maybe we need to prove this to proof find_highest_blocks_works ?)
   *)
   Admitted.
 
@@ -110,11 +112,9 @@ Proof.
 
 Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
   b 
-  : ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=1.
+  : forall n, ListFacts.count anyblock_eqb b blocks <=n
+   -> ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=1.
 Proof.
-  (* Consequence of being the from_list of a dictionary and such dictionary 
-      is build in a way that make it WellFoundedDictionary.
-   *)
   Admitted.
 
 Lemma find_highest_blocks_on_safe_set_lenght {bizantiners_number last_block_number}
@@ -128,7 +128,8 @@ Proof.
   + auto.
   + destruct remain as [| b2 remain2] eqn:H2.
     - auto.
-    - simpl.
+    - exfalso.
+      simpl.
       pose (List.in_eq b1 remain) as  b1_in.
       pose (List.in_eq b2 (remain2)) as  b2_in2.
       pose (List.in_cons b1 b2 _ b2_in2) as  b2_in.
@@ -139,10 +140,46 @@ Proof.
       apply find_highest_blocks_is_part_of_blocks in b2_in as b2_in_gt.
       rewrite List.in_map_iff in b1_in_gt.
       rewrite List.in_map_iff in b2_in_gt.
-      (* TODO use the supermajority to get that both blocks are related
-         then use "find_highest_blocks_have_same_lenght"
-         conclude that blocks can't be related, contradiction.
-       *)
+      destruct b1_in_gt as [[b1_2 b1_votes] [b1_with_votes_fst_eq b1_with_votes_in ]].
+      simpl in b1_with_votes_fst_eq.
+      rewrite b1_with_votes_fst_eq in b1_with_votes_in.
+      destruct b2_in_gt as [[b2_2 b2_votes] [b2_with_votes_fst_eq b2_with_votes_in ]].
+      simpl in b2_with_votes_fst_eq.
+      rewrite b2_with_votes_fst_eq in b2_with_votes_in.
+      pose (blocks_with_super_majority_are_related T is_safe_t b1 b2 _ _ b1_with_votes_in b2_with_votes_in) as related.
+      destruct b1 as [b1_number b1_block].
+      destruct b2 as [b2_number b2_block].
+      pose (find_highest_blocks_have_same_lenght _ _ b1_block _ b2_block b1_in b2_in) as b1_number_eq_b2_number.
+      destruct related as [related|related|related].
+      * destruct related.
+        simpl in block_number_is_above.
+        rewrite b1_number_eq_b2_number in block_number_is_above.
+        apply (PeanoNat.Nat.lt_irrefl _ block_number_is_above).
+      * destruct related.
+        simpl in block_number_is_above.
+        rewrite b1_number_eq_b2_number in block_number_is_above.
+        apply (PeanoNat.Nat.lt_irrefl _ block_number_is_above).
+      * assert (1< ListFacts.count anyblock_eqb (existT _ b1_number b1_block)  (find_highest_blocks (List.map fst (get_supermajority_blocks T)))) as contra1.
+        {
+          rewrite H.
+          unfold ListFacts.count.
+          simpl.
+          rewrite eqb_reflexive.
+          simpl.
+          simpl in related.
+          rewrite related.
+          simpl.
+          unfold lt.
+          apply le_n_S.
+          apply le_n_S.
+          apply le_0_n.
+        }
+      pose (find_highest_blocks_outpu_is_unique (List.map fst (get_supermajority_blocks T)) (existT _ b1_number b1_block) 1) as contra2.
+      apply (Arith_base.lt_not_le_stt 1 _ contra1).
+      apply contra2.
+      unfold get_supermajority_blocks.
+      (* use Dictionary.wellformed_means_unique_elements
+         and the fact that (not proved yet) filter is monotone with respect to count.*)
       Admitted.
 
 Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
@@ -322,9 +359,9 @@ Proof.
   (* pose (from_g_to_votes_safe_set T is_safe_t _ gt_result ) as gt_in_super_t. *)
   pose (List.in_eq gt_anyblock nil) as gt_in_find.
   rewrite <- gt_eq in gt_in_find.
-  apply find_highest_blocks_is_part_of_blocks in gt_in_find.
-  apply in_map in gt_in_find.
-  destruct gt_in_find as [[gt_block gt_votes] [gt_eq2 gt_in_super_t] ].
+  apply find_highest_blocks_is_part_of_blocks in gt_in_find as gt_in_map.
+  apply in_map in gt_in_map.
+  destruct gt_in_map as [[gt_block gt_votes] [gt_eq2 gt_in_super_t] ].
   simpl in gt_eq2.
   rewrite gt_eq2 in gt_in_super_t.
   rewrite Heqgs_with_votes_in_t in gs_in_super_t.
@@ -333,7 +370,7 @@ Proof.
   rewrite gs_eq in related.
   simpl in related.
   rewrite gs_eq in gs_anyblock_in_map_t.
-  pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) (projT1 gt_anyblock) (projT2 gt_anyblock ) gs_block_number gs gs_anyblock_in_map_t) as gs_number_leq_gt_number.
+  pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) gt_anyblock (existT _ gs_block_number gs) gt_in_find gs_anyblock_in_map_t) as gs_number_leq_gt_number.
   refine (existT _ gt_anyblock (gt_result, (related, gs_number_leq_gt_number))).
 Qed.
   
