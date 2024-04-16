@@ -241,6 +241,26 @@ Proof.
 Qed.
 
 
+Lemma wellformed_means_unique_elements d (wf:WellFormedDict d) 
+  : forall k, 
+    count eqb_k k (map fst (to_list d)) <= 1.
+Proof.
+  destruct d as [l].
+  intro k.
+  induction l as [|[k2 v2] l Hind].
+  - simpl.
+    unfold count.
+    auto.
+  - simpl.
+    rewrite count_cons.
+    (*
+       proof 
+       WellFormedDict (DictionaryC l) -> DictionaryC l = from_list (rev l)
+       and use it with ++ in 
+       l = l1 ++ (k,v) :: l2 
+    *)
+    Admitted.
+
 Fixpoint eqb_aux (l: list (K * V)) (d:Dictionary K V) : bool
   :=
   match l with
