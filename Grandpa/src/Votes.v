@@ -842,6 +842,7 @@ for [B] so does [T] , while being able to ignore yet more equivocating votes
 from an equivocating voter.
 >>
   
+TODO: Really important
 *)
 Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
@@ -917,6 +918,8 @@ Proof.
   auto.
 Qed.
 
+
+(* TODO:  Really important *)
 Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}

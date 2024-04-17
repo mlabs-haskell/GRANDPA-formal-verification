@@ -393,22 +393,29 @@ Variant ImpossibleSupermajority {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T: Votes voters last_block)
-  {new_block_number: nat}
-  (new_block: Block new_block_number)
+  {block_number: nat}
+  (block: Block block_number)
   :Prop
   := 
-  | ImpossibleByOtherChain {other_block_number:nat} (other_block: Block other_block_number) (*TODO: fill this*) : ImpossibleSupermajority T new_block
-  | ImpossibleByEquivocations (*TODO FIll this*) : ImpossibleSupermajority T new_block.
+  | ImpossibleByOtherChain l (non_related_proof:forall anyblock, List.In anyblock l 
+        -> Unrelated (projT2 anyblock) block /\ block_number <= get_block_number block)
+      :
+          (length (voters_to_list voters) + bizantiners_number + 1) 
+          < 
+          2 * (length l + length (fst (split_voters_by_equivocation T)))
+        ->
+      ImpossibleSupermajority T block.
 
 
 Definition PossibleSupermajority {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (T: Votes voters last_block)
-  {new_block_number: nat}
-  (new_block: Block new_block_number)
-  :Prop
-  := not (ImpossibleSupermajority T new_block).
+  {block_number: nat}
+  (block: Block block_number)
+  : Prop 
+  := not (ImpossibleSupermajority T block ).
+        
 
 
 Lemma lemma_2_6_1 {bizantiners_number last_block_number}
@@ -418,9 +425,14 @@ Lemma lemma_2_6_1 {bizantiners_number last_block_number}
   {block1_number block2_number: nat}
   (block1: Block block1_number)
   (block2: Block block2_number)
-  (is_prefix: Prefix block1 block2)
+  (is_prefix_b1_b2: Prefix block1 block2)
   : ImpossibleSupermajority S block1 -> ImpossibleSupermajority S block2.
-Admitted.
+Proof.
+  intro H.
+  assert (forall n {b:Block n}, Unrelated b block1 -> Unrelated b block2).
+  {
+    inversion H.
+  Admitted.
 
 Lemma lemma_2_6_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}

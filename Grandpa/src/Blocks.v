@@ -6,6 +6,7 @@ Require Import Setoid.
 Require Import PeanoNat.
 
 Declare Scope blocks_scope.
+Delimit Scope blocks_scope with blocks.
 Open Scope blocks_scope.
 
 (** 
