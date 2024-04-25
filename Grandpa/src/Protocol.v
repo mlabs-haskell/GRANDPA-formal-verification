@@ -549,6 +549,63 @@ Definition can_start_round (t:Time) (r:nat) (v:Voter)
   :=
   match r with
     | 0 => true
-    | S r' =>  is_completable (s_roundstate t r' v) && voter_already_votes_in_all t r' v s_roundstate
+    | S r' 
+      =>is_completable (s_roundstate t r' v) 
+        && voter_already_votes_in_all t r' v s_roundstate
   end.
 
+ 
+CoFixpoint decision 
+  :=
+  if can_start_round t r v s_round then 
+    let t_initial := t 
+    in
+    if is_primary t_initial r v v s_round then
+      if not_finalized estimate_last_round then
+        propagate estimate_last_round 
+      else 
+        if finalized estimate_last_round then 
+          propagate estimate_last_round
+        else 
+          real_round t_initial r v s_round
+    else 
+      real_round t_initial r v s_round
+  else 
+    decision (t+1) r v s_round.
+    
+Fixpoint prevoter_round t_initial t r v s_round {measure (t -t_initial - (2*GlobalTime)) <}
+  := 
+    if is_completable (s_roundstate t r v) || t_initial + 2 * GlobalTime <= t then
+      let maybe_block := got_block_from_primary v t r s_round 
+      in
+      match maybe_block with
+      | Some block => 
+          match g V_previous with
+            Some V => if is_prefix block V_previous && is_prefix estimate_previous block then 
+              lookup_best_chain_for block 
+              else 
+                lookup_best_chain_for estimate_previous
+            _ => 
+                lookup_best_chain_for estimate_previous
+      | _ => lookup_best_chain_for estimate_previous
+    else 
+      real_round t_initial t r v s_round.
+
+
+Definition real_round t_initial t r v s_round
+  :=
+  if is_prevoter v t r s_round then 
+    let prevote_result:= prevoter_round t_initial t r v s_round
+    in
+    if is_precommitvoter v t r s_round then 
+      let precommit_result := precommit_round t r v s_round
+      in
+        update_round t r v s_round (Some prevote_result) (Some precommit_result)
+    else
+
+  (* We asume that every particiapant in a round is either a prevoter or precommit voter. *)
+  else 
+      let result := precommit_round t r v s_round 
+      in 
+        update_round t r v  s_round None (Some result)
+    
