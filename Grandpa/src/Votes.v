@@ -739,6 +739,37 @@ Definition IsSubset {bizantiners_number last_block_number}
     (count vote_eqb vote  (votes_to_list S)
     <= count vote_eqb vote (votes_to_list T))%nat.
 
+Definition intersection {bizantiners_number last_block_number} 
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S : Votes voters last_block)
+  (T : Votes voters last_block)
+  : Votes voters last_block.
+Admitted.
+
+Definition difference {bizantiners_number last_block_number} 
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S : Votes voters last_block)
+  (T : Votes voters last_block)
+  : Votes voters last_block.
+Admitted.
+
+Lemma is_subset_transitive {bizantiners_number last_block_number} 
+  {voters:Voters bizantiners_number}
+  {last_block : Block last_block_number}
+  (S1 S2 S3 : Votes voters last_block)
+  (s1_s2 : IsSubset S1 S2)
+  (s2_s3 : IsSubset S2 S3)
+  : IsSubset S1 S3.
+Proof.
+  unfold IsSubset.
+  intro vote. 
+  pose (s1_s2 vote) as ineq1.
+  pose (s2_s3 vote) as ineq2.
+  transitivity (count vote_eqb vote (votes_to_list S2));auto.
+Qed.
+
 Lemma equivocates_are_voters_aux {A} (l l1 l2:list A) p 
   : 
   List.partition p l = (l1,l2) 
