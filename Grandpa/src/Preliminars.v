@@ -375,15 +375,6 @@ Proof.
 Qed.
   
 
-  (* TODO 
-    use that "find_highest_blocks_on_safe_set" to get a single block in 
-     find_highest_blocks output
-    destructure gt until we conclude gt in get_supermajority_blocks T.
-    find that they must be related.
-    by "find_highest_blocks_works" they can be the same or gs < gt.
-  *)
-  
-
 
 
 Close Scope type_scope.
@@ -397,12 +388,22 @@ Variant ImpossibleSupermajority {bizantiners_number last_block_number}
   (block: Block block_number)
   :Prop
   := 
-  | ImpossibleByOtherChain l (non_related_proof:forall anyblock, List.In anyblock l 
-        -> Unrelated (projT2 anyblock) block /\ block_number <= get_block_number block)
+  | ImpossibleSupermajorityC
+    (S: Votes voters last_block)
+    (subset_proof:IsSubset S T)
+    (non_related_proof:forall anyblock, 
+      List.In anyblock (List.map vote_to_block (votes_to_list S)) 
+      -> (Prefix (projT2 anyblock) block * False) )
       :
-          (length (voters_to_list voters) + bizantiners_number + 1) 
+      (length (voters_to_list voters) + bizantiners_number + 1) 
+      + 
+      (* This condition must be changed, we want to 
+         have here the intersection of S and the 
+         equivocate set of voters
+      *)
+        (2* length (votes_to_list (intersection T  S))) 
           < 
-          2 * (length l + length (fst (split_voters_by_equivocation T)))
+          2 * (length (votes_to_list S) + length (fst (split_voters_by_equivocation T))) 
         ->
       ImpossibleSupermajority T block.
 
@@ -421,26 +422,40 @@ Definition PossibleSupermajority {bizantiners_number last_block_number}
 Lemma lemma_2_6_1 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
-  (S: Votes voters last_block)
+  (T: Votes voters last_block)
   {block1_number block2_number: nat}
   (block1: Block block1_number)
   (block2: Block block2_number)
   (is_prefix_b1_b2: Prefix block1 block2)
-  : ImpossibleSupermajority S block1 -> ImpossibleSupermajority S block2.
+  : ImpossibleSupermajority T block1 -> ImpossibleSupermajority T block2.
 Proof.
   intro H.
-  assert (forall n {b:Block n}, Unrelated b block1 -> Unrelated b block2).
-  {
-    inversion H.
-  Admitted.
+  destruct H as [S subset_proof non_related_proof ineq].
+  enough (forall anyblock, 
+      List.In anyblock (List.map vote_to_block (votes_to_list S)) 
+      -> Prefix (projT2 anyblock) block2 * False ).
+  {apply (ImpossibleSupermajorityC T block2 S subset_proof H ineq). }
+  intros anyblock any_in_list.
+  destruct (non_related_proof anyblock any_in_list) as [ any_prefix_b1  false1].
+  remember (projT2 anyblock) as b3.
+  pose (prefix_transitive _ _ _ any_prefix_b1 is_prefix_b1_b2 ) as left1.
+  auto.
+Qed.
 
 Lemma lemma_2_6_2 {bizantiners_number last_block_number}
   {voters:Voters bizantiners_number}
   {last_block : Block last_block_number}
   (S T: Votes voters last_block)
+  (is_sub_set: IsSubset S T )
   {block_number : nat}
   (block: Block block_number)
   : ImpossibleSupermajority S block -> ImpossibleSupermajority T block.
+Proof.
+  intro H.
+  destruct H as [S2 subset_proof non_related_proof ineq].
+  pose (is_subset_transitive S2 S T subset_proof is_sub_set) as s2_subset_t. 
+(* 
+ *)
 Admitted.
 
 Lemma lemma_2_6_3 {bizantiners_number last_block_number}

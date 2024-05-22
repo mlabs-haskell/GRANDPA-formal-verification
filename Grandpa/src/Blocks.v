@@ -680,4 +680,42 @@ Proof.
     contradiction.
 Qed.
 
+Lemma same_bound_implies_related {n1 n2 n3} 
+  {b1: Block n1}
+  {b2: Block n2}
+  {b3: Block n3}
+  (b1_b2:b1 <= b2)
+  (b3_b2:b3 <= b2)
+  : b1 ~ b3.
+Proof.
+  Admitted.
+
+Lemma prefixed_block_of_unrelated_is_unrelated {n1 n2 n3}
+  {b1: Block n1}
+  {b2: Block n2}
+  {b3: Block n3}
+  (prefix_proof:b1 <= b2)
+  (unrelated: Unrelated b1 b3 )
+  : Unrelated b2 b3. 
+Proof.
+  unfold Unrelated.
+  unfold not. 
+  intro contra. 
+  inversion contra. 
+  - destruct H.
+    pose (prefix_transitive _ _ _ prefix_proof is_prefix0) as b1_b3.
+    pose (prefix_implies_related _ _ b1_b3) as related_contra.
+    unfold Unrelated in unrelated.
+    contradiction.
+  - destruct H as [prefix_proof_b3_b2].
+    pose (same_bound_implies_related prefix_proof prefix_proof_b3_b2) as contra2.
+    contradiction.
+  - pose (eqb_symmetric _ _ H) as b3_b2.
+    pose (eqb_implies_same_nat _ _ b3_b2) as same_nat .
+    pose  (eqb_blocks_are_prefix2 b3 b2 b3_b2 same_nat) as b3_b2_cast.
+    pose (prefix_of_cast_right _ _ same_nat b3_b2_cast) as b3_prefix_b2. 
+    pose (same_bound_implies_related prefix_proof b3_prefix_b2) as contra2.
+    contradiction.
+Qed.
+
 Close Scope blocks_scope.

@@ -554,8 +554,124 @@ Definition can_start_round (t:Time) (r:nat) (v:Voter)
         && voter_already_votes_in_all t r' v s_roundstate
   end.
 
+Definition is_primary (t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_roundstate: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  ):bool.
+Admitted.
+
+Definition GlobalTime : nat . Admitted.
+
+(* TODO: make block_producer a interface instead of this harcorde*)
+
+Definition block_producer {n} (last_block:Block n) 
+  : list {b:AnyBlock & Prefix last_block (projT2 b)}.
+Admitted.
+
+Lemma block_producer_not_emtpy {n} {last_block:Block n} 
+  : block_producer(last_block) <> nil.
+Admitted.
+
+Variant VoterCategory  :=
+  | Bizantine (voter:Voter)
+  | Honest (voter:Voter).
+
+Definition count_bizantines (l:list VoterCategory) : nat.
+Admitted.
+
+Definition count_honest (l:list VoterCategory) : nat.
+Admitted.
+
+Variant RealWorld (t:Time) := RealWorldC.
+
+Definition get_available_voters_aux {t:Time} (w:RealWorld t)
+  :list VoterCategory.
+Admitted.
+
+Definition get_available_voters (t:Time) 
+  : Voters (count_bizantines (@get_available_voters_aux t (@RealWorldC t))).
+Admitted.
+
+
+(*
+  This will be deprecated  in the milestone 2, so we are delaying the completion
+   for now, but its important to have it as a guide.
+
+[Fixpoint prevoter_round t_initial (t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_round: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  ) 
+  (*
+     {measure (t -t_initial - (2*GlobalTime))}
+  *)
+  := 
+    if is_completable (s_round t r v) || t_initial + 2 * GlobalTime <= t then
+      let maybe_block := got_block_from_primary v t r s_round 
+      in
+      match maybe_block with
+      | Some block => 
+          match g V_previous with
+          |Some V => if is_prefix block V_previous && is_prefix estimate_previous block then 
+              lookup_best_chain_for block 
+              else 
+                lookup_best_chain_for estimate_previous
+          | _ => 
+                lookup_best_chain_for estimate_previous
+          end
+      | _ => lookup_best_chain_for estimate_previous
+      end
+    else 
+      real_round t_initial t r v s_round
+    
+  with  real_round t_initial t r v s_round
+  :=
+  if is_prevoter v t r s_round then 
+    let prevote_result:= prevoter_round t_initial t r v s_round
+    in
+    if is_precommitvoter v t r s_round then 
+      let precommit_result := precommit_round t r v s_round
+      in
+        update_round t r v s_round (Some prevote_result) (Some precommit_result)
+    else
+        update_round t r v s_round (Some prevote_result) None
+  (* We asume that every particiapant in a round is either a prevoter or precommit voter. *)
+  else 
+      let result := precommit_round t r v s_round 
+      in 
+        update_round t r v  s_round None (Some result).
+  
  
-CoFixpoint decision 
+CoFixpoint decision t r v s_round
   :=
   if can_start_round t r v s_round then 
     let t_initial := t 
@@ -571,41 +687,6 @@ CoFixpoint decision
     else 
       real_round t_initial r v s_round
   else 
-    decision (t+1) r v s_round.
+    decision (t+1) r v s_round.]
     
-Fixpoint prevoter_round t_initial t r v s_round {measure (t -t_initial - (2*GlobalTime)) <}
-  := 
-    if is_completable (s_roundstate t r v) || t_initial + 2 * GlobalTime <= t then
-      let maybe_block := got_block_from_primary v t r s_round 
-      in
-      match maybe_block with
-      | Some block => 
-          match g V_previous with
-            Some V => if is_prefix block V_previous && is_prefix estimate_previous block then 
-              lookup_best_chain_for block 
-              else 
-                lookup_best_chain_for estimate_previous
-            _ => 
-                lookup_best_chain_for estimate_previous
-      | _ => lookup_best_chain_for estimate_previous
-    else 
-      real_round t_initial t r v s_round.
-
-
-Definition real_round t_initial t r v s_round
-  :=
-  if is_prevoter v t r s_round then 
-    let prevote_result:= prevoter_round t_initial t r v s_round
-    in
-    if is_precommitvoter v t r s_round then 
-      let precommit_result := precommit_round t r v s_round
-      in
-        update_round t r v s_round (Some prevote_result) (Some precommit_result)
-    else
-
-  (* We asume that every particiapant in a round is either a prevoter or precommit voter. *)
-  else 
-      let result := precommit_round t r v s_round 
-      in 
-        update_round t r v  s_round None (Some result)
-    
+*)
