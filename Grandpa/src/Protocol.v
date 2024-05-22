@@ -611,8 +611,9 @@ Admitted.
 (*
   This will be deprecated  in the milestone 2, so we are delaying the completion
    for now, but its important to have it as a guide.
+  *)
 
-[Fixpoint prevoter_round t_initial (t:Time) (r:nat) (v:Voter) 
+Definition prevoter_round (t_initial   t:Time) (r:nat) (v:Voter) 
   {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
   {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
   {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
@@ -631,6 +632,9 @@ Admitted.
         r
         (s_time_increment t r v)
   ) 
+  :nat.
+Admitted.
+(*
   (*
      {measure (t -t_initial - (2*GlobalTime))}
   *)
@@ -652,8 +656,30 @@ Admitted.
       end
     else 
       real_round t_initial t r v s_round
+*)
     
-  with  real_round t_initial t r v s_round
+Definition real_round (t_initial   t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_round: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  ) 
+  :nat.
+Admitted.
+(*
   :=
   if is_prevoter v t r s_round then 
     let prevote_result:= prevoter_round t_initial t r v s_round
@@ -669,9 +695,32 @@ Admitted.
       let result := precommit_round t r v s_round 
       in 
         update_round t r v  s_round None (Some result).
-  
+]
+*)
  
-CoFixpoint decision t r v s_round
+Definition decision (t_initial   t:Time) (r:nat) (v:Voter) 
+  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
+  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
+  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
+  {s_round_start_time:Source Time }
+  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
+  {s_time_increment:Source Time}
+  (s_round: forall t r v,
+      RoundState
+        (preview_number:= s_preview_voters_nat t r v)
+        (precommit_number:= s_precommit_voters_nat t r v)
+        (last_block_number:=s_last_block_nat t r v)
+        (s_preview_voters t r v) 
+        (s_precommit_voters t r v) 
+        (s_round_start_time t r v) 
+        (s_last_block t r v) 
+        r
+        (s_time_increment t r v)
+  ) 
+  :nat.
+Admitted.
+
+(*
   :=
   if can_start_round t r v s_round then 
     let t_initial := t 
