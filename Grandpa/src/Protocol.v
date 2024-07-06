@@ -9,6 +9,7 @@ Require Import Message.
 
 Require Import Functors.
 Require Import Vectors.
+Require Import Sets.
 
 Require Import Nat.
 Require Import Program.Equality.
@@ -33,139 +34,94 @@ Class Io := {
 }.
 
 Definition process_round_voters_step 
-  (acc: ((nat*list Voter)*(nat*list Voter)))
+  (acc: nat*(list Voter)*(list Voter) )
   (value:Voter*VoterKind)
-  : ((nat*list Voter)*(nat*list Voter))
+  : (nat*list Voter *list Voter)
   :=
-  let (l,r) := acc
-  in
-  let (prevote_bizantines,prevote_voters)
-    := l
-  in
-  let (precommit_bizantines,precommit_voters)
-    := r
-  in
-  match value with
-  | (voter,kind)
+  match acc with
+  | (bizantiners_number, prevote_voters, precommit_voters) 
     =>
-    match kind with
-    | VoterKindC Bizantine VotePrevote 
-        => (
-          (prevote_bizantines+1, voter::prevote_voters),
-          (precommit_bizantines, precommit_voters)
-          )
-    | VoterKindC Bizantine VotePrecommit
-        => (
-          (prevote_bizantines, prevote_voters),
-          (precommit_bizantines+1, voter::precommit_voters)
-          )
-    | VoterKindC Bizantine VoteBoth
-        => (
-          (prevote_bizantines+1, voter::prevote_voters),
-          (precommit_bizantines+1, voter::precommit_voters)
-          )
-    | VoterKindC Honest VotePrevote 
-        => (
-          (prevote_bizantines, voter::prevote_voters),
-          (precommit_bizantines, precommit_voters)
-          )
-    | VoterKindC Honest VotePrecommit
-        => (
-          (prevote_bizantines, prevote_voters),
-          (precommit_bizantines, voter::precommit_voters)
-          )
-    | VoterKindC Honest VoteBoth 
-        => (
-          (prevote_bizantines, voter::prevote_voters),
-          (precommit_bizantines, voter::precommit_voters)
-          )
+    match value with
+    | (voter,kind)
+      =>
+      match kind with
+      | VoterKindC Bizantine VotePrevote 
+          => (bizantiners_number+1, voter::prevote_voters,precommit_voters)
+      | VoterKindC Bizantine VotePrecommit
+          => (bizantiners_number+1, prevote_voters,voter::precommit_voters)
+      | VoterKindC Bizantine VoteBoth
+          => (bizantiners_number+1, voter::prevote_voters,voter::precommit_voters)
+      | VoterKindC Honest VotePrevote 
+          => (bizantiners_number, voter::prevote_voters,precommit_voters)
+      | VoterKindC Honest VotePrecommit
+          => (bizantiners_number,prevote_voters,voter::precommit_voters)
+      | VoterKindC Honest VoteBoth 
+          => (bizantiners_number, voter::prevote_voters,voter::precommit_voters)
+      end
     end
   end.
 
 Definition process_round_voters `{Io} (r:nat)
-  : ((nat*list Voter)*(nat*list Voter))
+  : (nat*list Voter *list Voter)
   :=
   let as_list :=Dictionary.to_list (io_get_round_voters r) 
   in
-  List.fold_left process_round_voters_step as_list ((0,List.nil),(0,List.nil)).
-
-
-
+  List.fold_left process_round_voters_step as_list ((0,List.nil,List.nil)).
 
 Definition init_next_round_voter_state `{Io}
   (time:Time)
-  (last_block:AnyBlock) 
   (vs:VoterState)
   :VoterState 
   := 
   let round_number := S vs.(VoterState.round_number)
   in
-  let (prevote_info,precommit_info) 
-    := process_round_voters round_number
-  in
-  let (prevote_number,prevote_voters_list)
-    := prevote_info
-  in
-  let (precommit_number,precommit_voters_list)
-    := precommit_info
-  in
-  let prevote_voters 
-    :=  
-    VotersC 
-      prevote_number
-      (Dictionary.from_list 
-        Nat.eqb 
-        (map (fun x => (x,UnitC)) prevote_voters_list) 
+  match process_round_voters round_number with
+  | (bizantiners_number, prevote_voters_list, precommit_voters_list) 
+    =>
+    let prevote_voters 
+      := Votes.voters_from_list prevote_voters_list
+    in
+    let precommit_voters 
+      := Votes.voters_from_list precommit_voters_list
+    in
+    let round := 
+      OpaqueRound.OpaqueRoundStateC(
+        InitialRoundState 
+          bizantiners_number
+          prevote_voters 
+          precommit_voters 
+          time
+          round_number
       )
-  in
-  let precommit_voters 
-    :=  
-    VotersC 
-      precommit_number
-      (Dictionary.from_list 
-        Nat.eqb 
-        (map (fun x => (x,UnitC)) precommit_voters_list) 
-      )
-  in
-  let (n,block) := last_block
-  in
-  let round := 
-    OpaqueRound.OpaqueRoundStateC(
-      InitialRoundState 
-        prevote_voters 
-        precommit_voters 
-        time
-        block
-        round_number
-    )
-  in
-  let rounds : Vectors.Vec OpaqueRound.OpaqueRoundState round_number
-    := Coq.Vectors.VectorDef.cons _ round _ vs.(rounds)
-  in
-  let  voter_state 
-    :=
-    {|
-    round_number := round_number
-    ;prevoted_block := None
-    ;precommited_block := None
-    ;last_brodcasted_block := None
-    ;rounds :=  rounds
-    ;pending_messages 
-      := vs.(pending_messages)
-    |}
-  in
-  (* We only process the pending messages for this round 
-    In theory there shouldnt be previous messages,
-     but if any, the main updater process of messages 
-     would take care of them.
-  *)
-  match Dictionary.lookup Nat.eqb round_number vs.(pending_messages) with
-  | Some pending =>
-    List.fold_left 
-      update_with_msg 
-      pending
-      voter_state
-  | None => voter_state
+    in
+    let rounds : Vectors.Vec OpaqueRound.OpaqueRoundState round_number
+      := Coq.Vectors.VectorDef.cons _ round _ vs.(rounds)
+    in
+    let  voter_state 
+      :=
+      {|
+      round_number := round_number
+      ;prevoted_block := None
+      ;precommited_block := None
+      ;last_brodcasted_block := None
+      ;rounds :=  rounds
+      ;pending_messages 
+        := vs.(pending_messages)
+      |}
+    in
+    (* We only process the pending messages for this round 
+      In theory there shouldnt be previous messages,
+       but if any, the main updater process of messages 
+       would take care of them.
+    *)
+    match Dictionary.lookup Nat.eqb round_number vs.(pending_messages) with
+    | Some pending =>
+      List.fold_left 
+        update_with_msg 
+        pending
+        voter_state
+    | None => voter_state
+    end
   end.
 
 Record State :={

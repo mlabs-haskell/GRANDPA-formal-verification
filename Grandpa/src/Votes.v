@@ -8,6 +8,8 @@ Require Dictionary.
 Require Import Blocks.
 Require Import ListFacts.
 
+Require Import Sets.
+
 Open Scope bool.
 Open Scope blocks_scope.
 
@@ -26,66 +28,34 @@ Definition Voter : Type := nat.
 
 
 (**
-  The bizantiners_number parameter isn't used 
-   in the definition of the type, we 
-   leave it open to any assumption. 
-   Previously we had a constraint but 
-   it wasn't useful and only complicate things.
-
-  Ideally a Voters must be proper set, but we 
-   don't want to complicate much the types.
-  We may add a constraint in the constructor 
-   to ensure that no voter is repeated in the 
-   list, but it may complicate construction of 
-   voters.
-
-  Why not [Definition Voters nat := list Voter]?
-  this would be equivalent to [list nat]. 
-   We are going to work with multiple things 
-   that are equivalent to [list nat]. This 
-   means we should use the newtype pattern here.
-
   Note: Coq doesn't have a newtype syntax as 
    in Haskell, so we should use a variant.
 *)
 
-Variant Unit := | UnitC.
+Record Voters : Type 
+  := {get_voters_dictionary: DictionarySet Voter}.
 
-Variant Voters (bizantiners_number:nat) : Type 
-  := 
-    | VotersC (voters: Dictionary.Dictionary Voter Unit) 
-      : Voters  bizantiners_number .
+Definition voters_to_list (voters:Voters)
+  := Sets.to_list (get_voters_dictionary voters).
 
-Definition voters_to_list {bizantiners_number} (voters:Voters bizantiners_number)
-  := 
-  match voters with
-  | VotersC _ d => List.map fst (Dictionary.to_list d)
-  end.
-
-Definition voters_length {bizantiners_number} (voters:Voters bizantiners_number)
+Definition voters_length (voters:Voters)
   := 
   length (voters_to_list voters).
 
-Definition voters_from_list (bizantiners_number:nat) (voters:list Voter)
-  : Voters bizantiners_number
-  :=
-  VotersC bizantiners_number 
-    (Dictionary.from_list Nat.eqb (List.map (fun n => (n,UnitC)) voters)).
+Definition voters_from_list (voters:list Voter)
+  : Voters
+  := {| get_voters_dictionary:= Sets.from_list Nat.eqb voters|}.
 
 
-Definition voters_eqb {bizantiners_number} 
-  (v1 v2:Voters bizantiners_number)
-  : bool
-  := list_beq nat Nat.eqb (voters_to_list v1) (voters_to_list v2).
-
-Definition in_Voters {bizantiners_number} 
-  (voter : Voter) (voters:Voters bizantiners_number) 
+Definition in_Voters
+  (voter : Voter) 
+  (voters:Voters) 
   :=
   List.In voter (voters_to_list voters).
 
 
-Definition in_Voters_bool {bizantiners_number} 
-  (voter : Voter) (voters:Voters bizantiners_number) 
+Definition in_Voters_bool  
+  (voter : Voter) (voters:Voters) 
   := 0 <? (List.count_occ PeanoNat.Nat.eq_dec (voters_to_list voters) voter).
 
 (** * Votes
@@ -109,72 +79,59 @@ Round number would be added later when we add Time and Rounds, this
 
 We don't have types for votes, instead when needed, we distinguish
 them by maintaining two different set of votes, one for precommits 
-and other for previews.
+and other for prevotes.
 
 However, we want to tie a Vote with a particular set of Voters 
 and to ensure that the Vote is coherent.
-
-Additionally a Vote depends on the [last_block], this is 
-we are only interested in the blocks that are children of 
-[last_block]. 
-
-This means that [last_block] can be often interpreter as the 
-_last_block_finalized_.
-However this may not be the case in particular situations.
 *)
 
-Variant Vote {bizantiners_number last_block_number}
-  (voters: Voters bizantiners_number )
-  (original_chain:Block last_block_number)
+Variant Vote
+  (voters: Voters)
   :Type 
   := 
-    | VoteC {m}  (voter : Voter) 
+  | VoteC {m} (voter : Voter) 
       (is_voter: in_Voters voter voters ) 
-      (block: Block m) (is_prefix: original_chain <= block)
-      : Vote voters original_chain.
+      (block: Block m) 
+      : Vote voters.
 
-Definition vote_to_voter {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number}
-  {original_chain:Block last_block_number}
-  (vote: Vote voters original_chain)
+Definition vote_to_voter 
+  {voters: Voters }
+  (vote: Vote voters)
   : Voter
   :=
   match vote with 
-  | VoteC _ _ voter _ _ _ => 
+  | VoteC _ voter _ _ => 
       voter
   end.
 
 
-Definition vote_to_pair  {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number}
-  {original_chain:Block last_block_number}
-  (vote: Vote voters original_chain)
-  : (nat * (sigT (fun n => Block n)))
+Definition vote_to_pair 
+  {voters: Voters}
+  (vote:Vote voters)
+  : Voter * AnyBlock 
   :=
   match vote with 
-  | VoteC _ _ voter _ block _ => 
+  | VoteC _ voter _ block => 
         (voter , existT _ _ block)
   end.
 
-Definition vote_to_block  {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number}
-  {original_chain:Block last_block_number}
-  (vote: Vote voters original_chain)
-  : (sigT (fun n => Block n))
+Definition vote_to_block  
+  {voters: Voters }
+  (vote: Vote voters )
+  : AnyBlock
   :=
   match vote with 
-  | VoteC _ _ voter _ block _ => 
+  | VoteC _ voter _ block => 
         existT _ _ block
   end.
 
-Definition vote_eqb {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number}
-  {original_chain:Block last_block_number}
-  (vote1 vote2: Vote voters original_chain)
+Definition vote_eqb 
+  {voters: Voters}
+  (vote1 vote2: Vote voters)
   : bool
   :=
   match vote1,vote2 with
-  | VoteC _ _ voter1' _ block1 _ , VoteC _ _ voter2' _ block2 _
+  | VoteC _ voter1' _ block1 , VoteC _ voter2' _ block2
       =>
       (voter1' =? voter2')%nat && (block1 =? block2)
   end.
@@ -183,72 +140,71 @@ Definition vote_eqb {bizantiners_number last_block_number}
 (** ** Votes
   As with [Voters], we choose to use the newtype pattern here.
 *)
-Inductive Votes  {bizantiners_number last_block_number}
-  (voters: Voters bizantiners_number) (last_block:Block last_block_number)
+Inductive Votes  
+  (voters: Voters) 
   :Type 
   := 
     | VotesC
-      (votes_list:list (Vote voters last_block))
-      : Votes voters last_block.
+      (votes_list:list (Vote voters))
+      : Votes voters.
 
-Definition votes_to_list {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
-  (votes: Votes voters last_block)
-  : list (Vote voters last_block)
+Definition votes_to_list 
+  {voters: Voters} 
+  (votes: Votes voters)
+  : list (Vote voters)
   := 
   match votes with
-  | VotesC _ _ l => l
+  | VotesC _ l => l
   end.
 
-Definition votes_to_voters_list {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
-  (votes: Votes voters last_block)
+Definition votes_to_voters_list 
+  {voters: Voters} 
+  (votes: Votes voters)
   : list Voter
   := List.map vote_to_voter (votes_to_list votes).
 
-Definition votes_to_pair_list {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
-  (votes: Votes voters last_block)
-  : list (nat * (sigT (fun n => Block n)))
+Definition votes_to_pair_list 
+  {voters: Voters} 
+  (votes: Votes voters )
+  : list (nat * AnyBlock)
   := List.map vote_to_pair (votes_to_list votes).
 
-Definition voter_voted_in_votes {bizantiners_number last_block_number}
-  {voters: Voters bizantiners_number} {last_block:Block last_block_number}
+Definition voter_voted_in_votes 
+  {voters: Voters} 
   (voter: Voter)
-  (votes: Votes voters last_block)
+  (votes: Votes voters)
   :=
   0 <? count Nat.eqb voter (votes_to_voters_list votes).
 
-Definition is_equivocate {bizantiners_number last_block_number } 
-  {voters: Voters bizantiners_number}
-  {last_block : Block last_block_number}
+
+(**
+   Since Votes is a wrap around a list, this function wraps [++].
+*)
+Definition mergeVotes 
+  {voters:Voters }
+  (votes1 :Votes voters)
+  (votes2 :Votes voters)
+  : Votes voters
+  :=
+    match votes1, votes2 with
+      | VotesC _ list1, VotesC _ list2 => VotesC _ (list1 ++ list2)
+      end.
+
+Definition is_equivocate  
+  {voters: Voters}
   (voter: Voter)
-  (votes: Votes voters last_block)
+  (votes: Votes voters)
   : bool
   := 1 <? count Nat.eqb voter ( votes_to_voters_list votes).
 
 (**
 The first element are the equivocate voters 
 and the second one are the voters that only voted once.
-
-
-Why?
-
-In Purescript the partition funtion returns a record like:
-
-<<
-  {success: _ , failures: _} 
->>
-
-Then you can do [out.success] and [out.failures]. 
-
-In coq that may be not worth the effort.
 *)
 
-Definition split_voters_by_equivocation {bizantiners_number last_block_number } 
-  {voters: Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block)
+Definition split_voters_by_equivocation 
+  {voters: Voters}
+  (votes: Votes voters)
   : list Voter * list Voter
   :=
     let voters_list := voters_to_list voters
@@ -262,12 +218,10 @@ Section Some.
    to avoid having big predicates.
    But sometimes we may need to close a section since 
    coq interprets in a erroneous way what we write.
-   We immediately open a section again when this happen.
+   We immediately open a section again when this happens.
 *)
-Context {bizantiners_number last_block_number : nat}.
-Variable voters: Voters bizantiners_number.
-Variable last_block  :Block last_block_number.
-Variable votes: Votes voters last_block.
+Variable voters: Voters.
+Variable votes: Votes voters.
 
 Definition in_nat_list (n:nat) (l:list nat) :bool := 
   match List.find (fun m => (n =? m)%nat) l with
@@ -275,8 +229,8 @@ Definition in_nat_list (n:nat) (l:list nat) :bool :=
   | _ => true
   end.
 
-Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number ) 
-  : Votes voters last_block
+Definition filter_votes_by_voters_subset (subset : Voters) 
+  : Votes voters
   := 
   let votes_list := votes_to_list votes
   in
@@ -284,16 +238,16 @@ Definition filter_votes_by_voters_subset (subset : Voters bizantiners_number )
   in
   let vote_predicate vote := in_nat_list (vote_to_voter vote) voters_as_nat_list
   in
-    VotesC voters last_block (List.filter vote_predicate  votes_list).
+    VotesC voters (List.filter vote_predicate  votes_list).
     
 End Some.
 
 
 
-Definition is_safe {bizantiners_number last_block_number } 
-  {voters: Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block)
+Definition is_safe  
+  {voters: Voters }
+  (votes: Votes voters)
+  (bizantiners_number:nat)
   :bool
   :=
   match split_voters_by_equivocation votes with
@@ -310,10 +264,10 @@ Definition BlockDictionary := Dictionary.Dictionary AnyBlock nat.
    non equivocate voters
 - We count the total votes for all the block that 
   were votes (that is, we don't count the 
-   blocks b such that   b < b'  and last_block < b
+   blocks b such that   b < b'
    when some voter voted for b' but not for b)
 - Then we do a "flatten" it means for every 
-  voted block b, if b' < b and last_block < b
+  voted block b, if b' < b
    then we add the votes for b to the votes for b'.
 *)
 
@@ -485,38 +439,32 @@ Qed.
 
 (**
   A vote for [B: Block n] is also a vote for [B':Block n'] 
-   as long as [B' <= B] and last_block <= B'. 
+   as long as [B' <= B]. 
 *)
 Fixpoint flat_votes_aux {m}
-  (last_block_number:nat) 
   (block:Block m)
   (voter_number:nat)
   (acc: BlockDictionary): BlockDictionary
   :=
-  if last_block_number <? m 
-  then 
-    match block with  
-    | OriginBlock => acc
-    | NewBlock older_block id 
-        =>
-       let update_vote maybe_old_value v := 
-         match maybe_old_value with
-         | None => v
-         | Some v2 => v+v2
-         end
-       in
-       let updated_acc := 
-            Dictionary.update_with 
-              Blocks.anyblock_eqb
-              (existT _ m block) voter_number update_vote acc
-       in 
-        flat_votes_aux last_block_number older_block voter_number updated_acc
-    end
-  else
-    acc.
+  match block with  
+  | OriginBlock => acc
+  | NewBlock older_block id 
+      =>
+     let update_vote maybe_old_value v := 
+       match maybe_old_value with
+       | None => v
+       | Some v2 => v+v2
+       end
+     in
+     let updated_acc := 
+          Dictionary.update_with 
+            Blocks.anyblock_eqb
+            (existT _ m block) voter_number update_vote acc
+     in 
+      flat_votes_aux older_block voter_number updated_acc
+  end.
 
 Definition flat_votes_dictionary 
-  (last_block_number:nat) 
   (acc:BlockDictionary) : BlockDictionary
   := 
   List.fold_right 
@@ -526,7 +474,7 @@ Definition flat_votes_dictionary
       match anyblock with
       | (block,votes_for_block)
           => flat_votes_aux 
-            last_block_number (projT2 block) votes_for_block updated_dict
+            (projT2 block) votes_for_block updated_dict
       end
     )
     Dictionary.empty
@@ -540,19 +488,17 @@ Definition flat_votes_dictionary
   We have to use AnyBlock here since the Dictionary 
    contains blocks of different lengths.
 *)
-Definition count_votes {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block): BlockDictionary
+Definition count_votes 
+  {voters:Voters}
+  (votes: Votes voters): BlockDictionary
   :=
   match make_votes_dictionary (List.map vote_to_block (votes_to_list votes)) Dictionary.empty with
-  | out => flat_votes_dictionary last_block_number out
+  | out => flat_votes_dictionary out
   end.
 
-Lemma count_votes_nil_is_zero {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block)
+Lemma count_votes_nil_is_zero 
+  {voters:Voters}
+  (votes: Votes voters)
   : votes_to_list votes = nil 
     -> Dictionary.to_list (count_votes votes) = nil.
 Proof.
@@ -562,12 +508,11 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma count_votes_works {bizantiners_number last_block_number}
+Lemma count_votes_works 
   {block_number:nat}
   (block: Block block_number)
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes:Votes voters last_block)
+  {voters:Voters}
+  (votes:Votes voters)
   :
   some_to_nat(
     Dictionary.lookup 
@@ -587,55 +532,16 @@ Proof.
   Admitted.
 
 
-(* Deprecated
 
-     Lemma count_votes_works {bizantiners_number last_block_number}
-  {block_number:nat}
-  (block: Block block_number)
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  :forall (votes: list (Vote  voters last_block))
-  (v:nat)
-  , 
-   List.In 
-     (existT _ block_number block,v) 
-     (Dictionary.to_list (count_votes (VotesC voters last_block votes)))
-     ->
-     v = length (
-       List.filter (
-         fun vote => is_prefix block (projT2 (vote_to_block vote))
-       ) 
-       (votes_to_list (VotesC voters last_block votes)) 
-      ).
-Proof.
-  induction votes as [|vote remain_votes] eqn:eq_votes_list.
-  - intros v Hv. 
-    inversion Hv.
-  - intros v Hv.
-    simpl.
-    unfold count_votes in Hv.
-    simpl in Hv.
-    unfold make_votes_dictionary in Hv.
-    unfold make_votes_dictionary_aux in Hv.
-    simpl in Hv.
-    destruct (is_prefix block (projT2 (vote_to_block vote)))  eqn:Hprefix.
-    + simpl.
-    Admitted.
-
-*)
-
-
-Lemma voted_block_in_count_votes {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes: Votes voters last_block)
+Lemma voted_block_in_count_votes 
+  {voters:Voters }
+  (votes: Votes voters)
   {voter:Voter }
   {is_voter: in_Voters voter voters}
   {block_number:nat}
   {block: Block block_number}
-  {is_prefix_proof: last_block <= block}
-  (vote: Vote voters last_block)
-  {vote_is: vote = VoteC voters last_block voter is_voter block is_prefix_proof}
+  (vote: Vote voters)
+  {vote_is: vote = VoteC voters voter is_voter block}
   (is_vote : List.In vote (votes_to_list votes))
   : exists v:nat
     , List.In 
@@ -681,8 +587,9 @@ Our implementation aproach is as follows:
       In this case [n:=length voters] and [f:= bizantiners_number]
 *)
 
-Definition has_supermajority_predicate {bizantiners_number}
-  (voters:Voters bizantiners_number)
+Definition has_supermajority_predicate 
+  (voters:Voters)
+  (bizantiners_number:nat)
   (number_of_equivocates:nat)
   (block_and_vote:AnyBlock*nat) : bool:= 
     match block_and_vote with
@@ -694,10 +601,10 @@ Definition has_supermajority_predicate {bizantiners_number}
 
 
 
-Definition get_supermajority_blocks {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
+Definition get_supermajority_blocks 
+  {voters:Voters}
+  (bizantiners_number:nat)
+  (T : Votes voters) 
   : list (AnyBlock * nat)
   := 
   let (equivocate_voters, non_equivocate_voters) 
@@ -710,15 +617,14 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
     count_votes  
       (filter_votes_by_voters_subset 
         voters 
-        last_block 
         T 
-        (voters_from_list bizantiners_number non_equivocate_voters)
+        (voters_from_list non_equivocate_voters)
       )
   in
   let blocks_with_super_majority 
     := 
     List.filter 
-      (has_supermajority_predicate voters number_of_equivocates)
+      (has_supermajority_predicate voters bizantiners_number number_of_equivocates)
       (Dictionary.to_list count)
   in
     blocks_with_super_majority.
@@ -728,47 +634,6 @@ Definition get_supermajority_blocks {bizantiners_number last_block_number}
 This definition doesn't take in account the repetitions of elements
 *)
 
-Definition IsSubset {bizantiners_number last_block_number} 
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block)
-  (T : Votes voters last_block) 
-  :Prop
-  :=
-  forall (vote: Vote voters last_block), 
-    (count vote_eqb vote  (votes_to_list S)
-    <= count vote_eqb vote (votes_to_list T))%nat.
-
-Definition intersection {bizantiners_number last_block_number} 
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block)
-  (T : Votes voters last_block)
-  : Votes voters last_block.
-Admitted.
-
-Definition difference {bizantiners_number last_block_number} 
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block)
-  (T : Votes voters last_block)
-  : Votes voters last_block.
-Admitted.
-
-Lemma is_subset_transitive {bizantiners_number last_block_number} 
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S1 S2 S3 : Votes voters last_block)
-  (s1_s2 : IsSubset S1 S2)
-  (s2_s3 : IsSubset S2 S3)
-  : IsSubset S1 S3.
-Proof.
-  unfold IsSubset.
-  intro vote. 
-  pose (s1_s2 vote) as ineq1.
-  pose (s2_s3 vote) as ineq2.
-  transitivity (count vote_eqb vote (votes_to_list S2));auto.
-Qed.
 
 Lemma equivocates_are_voters_aux {A} (l l1 l2:list A) p 
   : 
@@ -787,10 +652,9 @@ Proof.
 Qed.
 
 
-Lemma equivocates_are_voters {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
+Lemma equivocates_are_voters 
+  {voters:Voters}
+  (T : Votes voters) 
   {equivocate_voters non_equivocate_voters: list Voter}
   {split_result: split_voters_by_equivocation T = (equivocate_voters,non_equivocate_voters)}
   : forall (voter:Voter), 
@@ -841,27 +705,6 @@ Proof.
 Qed.
        *)
 
-(**
-   S ⊂ T => eqivocates_in_S ⊂ equivocates_in_T
-*)
-(*Lemma superset_has_equivocates_of_subset {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block) 
-  (T : Votes voters last_block) 
-  (is_subset: IsSubset S T)
-  {equivocate_voters_s non_equivocate_voters_s: list Voter}
-  {equivocate_voters_t non_equivocate_voters_t: list Voter}
-  {split_s_result:(equivocate_voters_s,non_equivocate_voters_s) = split_voters_by_equivocation S}
-  {split_t_result:(equivocate_voters_t,non_equivocate_voters_t) = split_voters_by_equivocation T}
-  : forall (voter:Voter), 
-    List.In voter equivocate_voters_s 
-    -> List.In voter equivocate_voters_t.
-Proof.
-  intro voter.
-  intro is_equivocate_s.
-  Admitted.
- *)
 
 (**
 From the paper:
@@ -875,21 +718,21 @@ from an equivocating voter.
   
 TODO: Really important
 *)
-Lemma blocks_with_super_majority_are_related {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
-  (is_safe_t: is_safe T = true)
+Lemma blocks_with_super_majority_are_related 
+  {voters:Voters}
+  (T : Votes voters) 
+  (bizantiners_number:nat)
+  (is_safe_t: is_safe T bizantiners_number = true)
   : forall (block1 block2:AnyBlock) (v1 v2:nat), 
-    List.In (block1,v1) (get_supermajority_blocks T)
-    -> List.In (block2,v2) (get_supermajority_blocks T)
+    List.In (block1,v1) (get_supermajority_blocks bizantiners_number T)
+    -> List.In (block2,v2) (get_supermajority_blocks bizantiners_number T)
     -> (projT2 block1) ~ (projT2 block2).
 Proof.
   intros ab1 ab2 v1 v2 H1 H2.
   destruct ab1 as [n1 b1] eqn:Hab1.
   destruct ab2 as [n2 b2] eqn:Hab2.
   simpl.
-  remember (get_supermajority_blocks T) as gt eqn:Heq_gt.
+  remember (get_supermajority_blocks bizantiners_number T) as gt eqn:Heq_gt.
   unfold get_supermajority_blocks in Heq_gt.
   remember (split_voters_by_equivocation T) as splitedT.
   destruct splitedT as [equivocated_voters non_equivocate_voters].
@@ -949,19 +792,57 @@ Proof.
   auto.
 Qed.
 
+Definition VotesIsSubset  
+  {voters:Voters }
+  (S : Votes voters )
+  (T : Votes voters) 
+  :Prop
+  :=
+  forall (vote: Vote voters), 
+    (count vote_eqb vote  (votes_to_list S)
+    <= count vote_eqb vote (votes_to_list T))%nat.
+
+Definition intersection  
+  {voters:Voters }
+  (S : Votes voters)
+  (T : Votes voters)
+  : Votes voters.
+Admitted.
+
+Definition difference  
+  {voters:Voters}
+  (S : Votes voters)
+  (T : Votes voters)
+  : Votes voters.
+Admitted.
+
+Lemma is_votes_subset_transitive  
+  {voters:Voters}
+  (S1 S2 S3 : Votes voters)
+  (s1_s2 : VotesIsSubset S1 S2)
+  (s2_s3 : VotesIsSubset S2 S3)
+  : VotesIsSubset S1 S3.
+Proof.
+  unfold VotesIsSubset.
+  intro vote. 
+  pose (s1_s2 vote) as ineq1.
+  pose (s2_s3 vote) as ineq2.
+  transitivity (count vote_eqb vote (votes_to_list S2));auto.
+Qed.
+
 
 (* TODO:  Really important *)
-Lemma superset_has_subset_majority_blocks {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block) 
-  (T : Votes voters last_block) 
-  (safe_proof: is_safe T=true)
-  (is_subset: IsSubset S T)
+Lemma superset_has_subset_majority_blocks 
+  {voters:Voters}
+  (bizantiners_number:nat)
+  (S : Votes voters) 
+  (T : Votes voters) 
+  (safe_proof: is_safe T bizantiners_number =true)
+  (is_subset: VotesIsSubset S T)
   : forall anyblock anyblock_votes, 
-      List.In (anyblock,anyblock_votes) (get_supermajority_blocks S)
+      List.In (anyblock,anyblock_votes) (get_supermajority_blocks bizantiners_number S)
       -> {anyblock_votes_in_t 
-          & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks T)}.
+          & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks bizantiners_number T)}.
 Proof.
   intros b b_votes_number HinS.
   unfold get_supermajority_blocks in HinS.
@@ -990,27 +871,12 @@ Admitted.
    *)
   
 
-Definition has_supermajority  {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S : Votes voters last_block) 
+Definition has_supermajority 
+  {voters:Voters}
+  (bizantiners_number:nat)
+  (S : Votes voters)
   : bool
   := 
-  0 <? length (get_supermajority_blocks S) .
-
-
-(**
-   Since Votes is a wrap around a list, this function wraps [++].
-*)
-Definition mergeVotes {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (votes1 :Votes voters last_block)
-  (votes2 :Votes voters last_block)
-  : Votes voters last_block
-  :=
-    match votes1, votes2 with
-      | VotesC _ _ list1, VotesC _ _ list2 => VotesC _ _ (list1 ++ list2)
-      end.
+  0 <? length (get_supermajority_blocks bizantiners_number S) .
 
 Close Scope blocks_scope.

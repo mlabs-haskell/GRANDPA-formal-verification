@@ -25,7 +25,7 @@ Variant VoterKind : Type :=
 
 (**
 A voter has 3 states:
-  - Waiting to emit prevote (called preview in code) [prevoted_block = None] [precommited_block=None]
+  - Waiting to emit prevote  [prevoted_block = None] [precommited_block=None]
    - Waiting to emit precommit  [precommited_block = None]
    - Waiting to start a new round [prevoted_block] and [precommited_block] can be anything
 We use the VoterKind to know the state.
@@ -172,7 +172,7 @@ Definition update_with_msg (vs:VoterState) (msg:Message)
         match msg.(Message.kind) with 
           | PreCommitMessage 
               => update_votes_with_msg vs msg
-          | PreViewMessage 
+          | PreVoteMessage 
               => update_votes_with_msg vs msg
           | EstimateMessage 
               => update_last_block vs msg.(Message.block)

@@ -1,6 +1,7 @@
 Require Import Blocks.
 Require Import Votes.
 Require Import Dictionary.
+Require Import Sets.
 
 Require Import Nat.
 Require Import Coq.Arith.Arith.
@@ -9,13 +10,13 @@ Require Import List.
 Variant MessageKind : Type
   :=
   | PreCommitMessage : MessageKind
-  | PreViewMessage : MessageKind
+  | PreVoteMessage : MessageKind
   | EstimateMessage: MessageKind
   | FinalizationMessage: MessageKind.
 
 Record Message :=
    { id:nat 
-    ;block:{n & Block n}
+    ;block:AnyBlock
     ;kind: MessageKind
     ;round:nat
     ;time:nat
@@ -37,10 +38,8 @@ Definition update_message_proccessed (msg:Message) (v:Voter) :=
 
 
 Lemma message_to_vote_aux (msg:Message) 
-  {bizantiners_number last_block_number: nat} 
-  (voters: Voters bizantiners_number )
-  (last_block:Block last_block_number)
-  : option (Vote voters last_block).
+  (voters: Voters)
+  : option (Vote voters).
 Proof.
   destruct msg eqn:msg_eq.
   pose (List.find (Nat.eqb voter0) (voters_to_list voters)) as find_eq.
@@ -51,30 +50,23 @@ Proof.
   destruct find_is as [in_proof is_voter].
   rewrite Nat.eqb_eq in is_voter.
   rewrite <- is_voter in in_proof.
-  destruct (is_prefix last_block (projT2 block0)) eqn:blocks_eq.
-  2: refine None.
-  apply is_prefix_implies_prefix in blocks_eq.
-  refine (Some(VoteC _ last_block voter0 in_proof _ blocks_eq)).
+  refine (Some(VoteC _ voter0 in_proof  (projT2 msg.(block)))).
 Qed.
   
 (* Expected to be used in messages with precommit votes*)
 Definition message_to_precommit_vote (msg:Message) 
-  {bizantiners_number last_block_number: nat} 
-  (voters: Voters bizantiners_number )
-  (last_block:Block last_block_number)
-  : option(Vote voters last_block ) := 
+  (voters: Voters)
+  : option(Vote voters) := 
   match msg.(kind) with
-  | PreCommitMessage => message_to_vote_aux msg voters last_block
+  | PreCommitMessage => message_to_vote_aux msg voters
   | _ => None
   end.
 
-Definition message_to_preview_vote (msg:Message) 
-  {bizantiners_number last_block_number: nat} 
-  (voters: Voters bizantiners_number )
-  (last_block:Block last_block_number)
-  : option(Vote voters last_block ) := 
+Definition message_to_prevote_vote (msg:Message) 
+  (voters: Voters)
+  : option(Vote voters) := 
   match msg.(kind) with
-  | PreViewMessage => message_to_vote_aux msg voters last_block
+  | PreVoteMessage => message_to_vote_aux msg voters
   | _ => None
   end.
 

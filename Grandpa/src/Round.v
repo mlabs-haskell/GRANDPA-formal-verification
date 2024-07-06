@@ -3,39 +3,32 @@ Require Import Votes.
 
 Definition Time := nat.
 
-(**
-We end accidentally nmin preview instead of prevote.
-We later correct this in Protocol, but keep preview in other modules.
-**)
-
 Inductive RoundState 
-      {preview_number precommit_number last_block_number}
-  (preview_voters:Voters preview_number) 
-  (precommit_voters: Voters precommit_number)
+  (bizantiners_number:nat)
+  (prevote_voters:Voters ) 
+  (precommit_voters: Voters )
   (round_start_time:Time) 
-  (last_block: Block last_block_number)
   (round_number: nat)
   : Time ->  Type :=
   | InitialRoundState 
-    : RoundState preview_voters precommit_voters round_start_time last_block round_number 0
+    : RoundState bizantiners_number prevote_voters precommit_voters round_start_time round_number 0
   | RoundStateUpdate 
     {old_time_increment: Time}
-    (old_state: RoundState 
-      preview_voters precommit_voters 
-      round_start_time last_block round_number old_time_increment)
+    (old_state: RoundState bizantiners_number
+      prevote_voters precommit_voters 
+      round_start_time round_number old_time_increment)
     (time_increment: Time)
-    (new_preview_votes: Votes preview_voters last_block)
-    (new_precommit_votes: Votes precommit_voters last_block)
-    : RoundState preview_voters precommit_voters round_start_time last_block 
+    (new_prevote_votes: Votes prevote_voters)
+    (new_precommit_votes: Votes precommit_voters)
+    : RoundState bizantiners_number prevote_voters precommit_voters round_start_time
       round_number
       (time_increment+ old_time_increment).
 
 Section State1.
 
-Context {preview_number precommit_number last_block_number : nat}.
-Context {preview_voters:Voters preview_number }.
-Context {precommit_voters: Voters precommit_number}.
-Context {last_block: Block last_block_number}.
+Context {bizantiners_number:nat}.
+Context {prevote_voters:Voters  }.
+Context {precommit_voters: Voters }.
 Context {round_time : Time}.
 Context {round_number: nat}.
 Context {time_increment: nat}.
@@ -43,125 +36,119 @@ Context {time_increment: nat}.
 
 
 
-Definition get_preview_votes
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+Definition get_prevote_votes
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
-  (Votes preview_voters last_block)
+  (Votes prevote_voters )
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ _ => VotesC _ _ List.nil 
-  | RoundStateUpdate _ _ _ _ _ _ _ new_preview_votes _ => new_preview_votes
+  | InitialRoundState _ _ _ _ _ => VotesC _ List.nil 
+  | RoundStateUpdate _ _ _ _ _ _ _ new_prevote_votes _ => new_prevote_votes
   end.
 
 Definition get_precommit_votes
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
-  (Votes precommit_voters last_block)
+  (Votes precommit_voters )
   :=
   match round_state with
-  | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil (* No votes in initial round state *)
+  | InitialRoundState _ _ _ _ _=> VotesC _ List.nil (* No votes in initial round state *)
   | RoundStateUpdate _ _ _ _ _ _ _ _ new_precommit_votes => new_precommit_votes
   end.
   
 
-Definition get_preview_voters
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
-  :Voters preview_number
-  := preview_voters.
+Definition get_prevote_voters
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  :Voters 
+  := prevote_voters.
 
 Definition get_precommit_voters
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
-  :Voters precommit_number
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  :Voters 
   := precommit_voters.
 
-Definition get_last_block
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
-  : 
-  Block last_block_number
-  := 
-  last_block.
-
 Definition get_start_time 
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : Time
   := round_time.
 
 Definition get_round_number
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : nat
   := round_number.
 
 Definition get_time_increment
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : Time
   := time_increment.
+
+Definition get_bizantiners_number
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  : nat
+  := bizantiners_number.
 
 End State1.
 
 
-Fixpoint get_all_preview_votes{preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
+Fixpoint get_all_prevote_votes
+  {bizantiners_number:nat}
+  {prevote_voters : Voters } 
+  {precommit_voters: Voters }
   {round_time:Time}
   {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   {time_increment: Time}
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
-  (Votes preview_voters last_block)
+  (Votes prevote_voters )
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ _ => VotesC _ _ List.nil 
-  | RoundStateUpdate _ _ _ _ _ old_state  _ new_preview_votes _ => mergeVotes (get_all_preview_votes old_state) new_preview_votes
+  | InitialRoundState _ _ _ _ _ => VotesC _ List.nil 
+  | RoundStateUpdate _ _ _ _ _ old_state  _ new_prevote_votes _ => mergeVotes (get_all_prevote_votes old_state) new_prevote_votes
   end.
 
-Fixpoint get_all_precommit_votes{preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
+Fixpoint get_all_precommit_votes
+  {bizantiners_number:nat}
+  {prevote_voters : Voters } 
+  {precommit_voters: Voters }
   {round_time:Time}
   {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   {time_increment: Time}
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
-  (Votes precommit_voters last_block)
+  (Votes precommit_voters )
   := 
   match round_state with
-  | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil 
+  | InitialRoundState _ _ _ _ _=> VotesC _ List.nil 
   | RoundStateUpdate _ _ _ _ _ old_state  _ _ new_precommit_votes => mergeVotes (get_all_precommit_votes old_state) new_precommit_votes
   end.
 
-Definition voter_voted_in_preview {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
+Definition voter_voted_in_prevote
+  {bizantiners_number:nat}
+  {prevote_voters : Voters } 
+  {precommit_voters: Voters }
   {round_time:Time}
   {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   {time_increment: Time}
   (voter:Voter)
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
   bool
   := 
-  let preview_votes := get_all_preview_votes round_state
+  let prevote_votes := get_all_prevote_votes round_state
   in
-    if in_Voters_bool voter preview_voters 
-    then voter_voted_in_votes voter preview_votes
+    if in_Voters_bool voter prevote_voters 
+    then voter_voted_in_votes voter prevote_votes
     else true.
 
-Definition  voter_voted_in_precommit {preview_number precommit_number : nat}
-  {preview_voters : Voters preview_number} 
-  {precommit_voters: Voters precommit_number}
+Definition  voter_voted_in_precommit 
+  {bizantiners_number:nat}
+  {prevote_voters : Voters } 
+  {precommit_voters: Voters }
   {round_time:Time}
   {round_number:nat}
-  {last_block_number} 
-  {last_block : Block last_block_number} 
   {time_increment: Time}
   (voter:Voter)
-  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
   bool
   := 
