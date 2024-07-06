@@ -370,6 +370,9 @@ Proof.
 Qed.
 *)
 
+Definition delete (k:K) (dict:Dictionary K V): Dictionary K V:=
+  from_list (List.filter (fun t => eqb_k k (fst t))  (to_list dict)).
+
 
 End Dictionary.
 

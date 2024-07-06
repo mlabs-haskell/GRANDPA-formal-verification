@@ -2,6 +2,7 @@ Require Import Blocks.
 Require Import Votes.                  
 Require Import Preliminars.
 Require List.
+Require Import Functors.
 
 Require Import Nat.
 Require Arith.Compare_dec.
@@ -404,338 +405,495 @@ Definition is_completable
 
 End State3.
 
-
-Definition Source (X:Type) := forall (t:Time) (r:nat) (v:Voter), X.
-
-Definition const_source {X:Type} (x:X) : Source X := fun t r v => x.
-
-Definition Voters_source (s_bizantine:Source nat) := forall t r v, Voters (s_bizantine t r v).
-
-Definition Block_source (s:Source nat) := forall t r v, Block (s t r v).
-
-Definition Vote_source (t:Time) (r:nat) (v:Voter) {s_voters_nat: Source nat} 
-  (s_voters: forall t r v, Voters (s_voters_nat t r v)) 
-  {s_blocks_nat: Source nat} (s_blocks : Block_source s_blocks_nat)
-  :=  
-    Vote (s_voters t r v) (s_blocks t r v).
-
-Definition Votes_source  (t:Time) (r:nat) (v:Voter) {s_voters_nat: Source nat} 
-  (s_voters: forall t r v, Voters (s_voters_nat t r v)) 
-  {s_blocks_nat: Source nat} (s_blocks : Block_source s_blocks_nat)
-  := Votes (s_voters t r v) (s_blocks t r v).
-
-Definition RoundState_source (t:Time) (r:nat) (v:Voter) {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  (s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)) 
-  (s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)) 
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} (s_last_block : Block_source s_last_block_nat)
-  {s_time_increment:Source Time }
-  := 
-  RoundState
-    (preview_number:= s_preview_voters_nat t r v)
-    (precommit_number:= s_precommit_voters_nat t r v)
-    (last_block_number:=s_last_block_nat t r v)
-    (s_preview_voters t r v) 
-    (s_precommit_voters t r v) 
-    (s_round_start_time t r v) 
-    (s_last_block t r v) 
-    r
-    (s_time_increment t r v).
-
-Definition Estimate_source (t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_roundstate:
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r 
-        (s_time_increment t r v)
-  )
-  := Estimate
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (preview_voters:=s_preview_voters t r v) 
-        (precommit_voters:=s_precommit_voters t r v) 
-        (round_time:=s_round_start_time t r v) 
-        (round_number:=r) 
-        (last_block_number:=s_last_block_nat t r v)
-        (last_block:=s_last_block t r v) 
-        (time_increment:=s_time_increment t r v)
-        s_roundstate.
-
-
-Definition Completable_source (t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_roundstate: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  )
-  := Completable (s_roundstate t r v).
-
-
-
-Fixpoint voter_already_votes_in_all (t:Time) (r:nat) (v:Voter)
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_roundstate: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  )
-  {struct r}
-  :bool
-:= 
-  match r with 
-  | 0 => true
-  | S r' => 
-      voter_voted_in_preview v (s_roundstate t r v)
-      && voter_voted_in_precommit v (s_roundstate t r v)
-      && voter_already_votes_in_all t r' v s_roundstate
-  end.
-
-Definition can_start_round (t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_roundstate: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  ):bool
-  :=
-  match r with
-    | 0 => true
-    | S r' 
-      =>is_completable (s_roundstate t r' v) 
-        && voter_already_votes_in_all t r' v s_roundstate
-  end.
-
-Definition is_primary (t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_roundstate: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  ):bool.
-Admitted.
-
-Definition GlobalTime : nat . Admitted.
-
-(* TODO: make block_producer a interface instead of this harcorde*)
-
-Definition block_producer {n} (last_block:Block n) 
-  : list {b:AnyBlock & Prefix last_block (projT2 b)}.
-Admitted.
-
-Lemma block_producer_not_emtpy {n} {last_block:Block n} 
-  : block_producer(last_block) <> nil.
-Admitted.
+Require Import Message.
 
 Variant VoterCategory  :=
-  | Bizantine (voter:Voter)
-  | Honest (voter:Voter).
+  | Bizantine
+  | Honest.
 
-Definition count_bizantines (l:list VoterCategory) : nat.
-Admitted.
+Variant VoterVoteRight := 
+  | VotePrecommit
+  | VotePrevote
+  | VoteBoth.
 
-Definition count_honest (l:list VoterCategory) : nat.
-Admitted.
+Variant VoterKind : Type := 
+  | VoterVoteKindC (category:VoterCategory) (right: VoterVoteRight).
 
-Variant RealWorld (t:Time) := RealWorldC.
+Class Io := {
+  global_time_constant: nat;
+  block_producer {n} (last_block:Block n) : 
+    list {b:AnyBlock & Prefix last_block (projT2 b)};
+  io_accept_vote : Time -> Message -> Voter -> bool;
+  (* the nat is the round number*)
+  io_get_round_voters:  nat -> Dictionary.Dictionary nat VoterKind;
+  io_get_round_primary : nat -> Voter;
+  block_producer_not_emtpy{n} {last_block:Block n} 
+  : block_producer(last_block) <> nil;
+  primary_consistent 
+    : forall r , 
+        List.In 
+        (io_get_round_primary r) 
+        (List.map fst (Dictionary.to_list (io_get_round_voters r )));
+}.
 
-Definition get_available_voters_aux {t:Time} (w:RealWorld t)
-  :list VoterCategory.
-Admitted.
+Variant OpaqueRoundState: Type := 
+  | OpaqueRoundStateC {preview_number precommit_number last_block_number round_number}
+    {preview_voters:Voters preview_number}
+    {precommit_voters: Voters precommit_number}
+    {round_start_time:Time}
+    {last_block: Block last_block_number}
+    {time:Time}
+    (round_state: 
+      RoundState 
+        preview_voters precommit_voters round_start_time last_block round_number time 
+    ).
 
-Definition get_available_voters (t:Time) 
-  : Voters (count_bizantines (@get_available_voters_aux t (@RealWorldC t))).
-Admitted.
+Definition Vec := Vector.t.
 
+Definition RoundTower  
+  := Vec OpaqueRoundState .
 
-(*
-  This will be deprecated  in the milestone 2, so we are delaying the completion
-   for now, but its important to have it as a guide.
-  *)
+(**
+A voter has 3 states:
+   - Waiting to emit prevote (called preview in code) [prevoted_block = None] [precommited_block=None]
+   - Waiting to emit precommit  [precommited_block = None]
+   - Waiting to start a new round [prevoted_block] and [precommited_block] can be anything
+We use the VoterKind to know the state.
 
-Definition prevoter_round (t_initial   t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_round: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  ) 
-  :nat.
-Admitted.
-(*
-  (*
-     {measure (t -t_initial - (2*GlobalTime))}
-  *)
+Additionally the primary has to handle the broadcast of a 
+finalized block, but this is done separately in the simulation
+**)
+
+Record VoterState := {
+  voter_round_number : nat 
+  ;prevoted_block : option AnyBlock
+  ;precommited_block : option AnyBlock
+  (** We only store the last block received from a primary and we only keep the highest and latest (in that order)**)
+  ;last_brodcasted_block : AnyBlock 
+  ;voter_last_round_know: nat
+  ;voter_rounds : RoundTower voter_last_round_know
+  }.
+
+Definition update_voter_state_with_last_block  (vs:VoterState) (block: AnyBlock)
+  : VoterState
   := 
-    if is_completable (s_round t r v) || t_initial + 2 * GlobalTime <= t then
-      let maybe_block := got_block_from_primary v t r s_round 
-      in
-      match maybe_block with
-      | Some block => 
-          match g V_previous with
-          |Some V => if is_prefix block V_previous && is_prefix estimate_previous block then 
-              lookup_best_chain_for block 
-              else 
-                lookup_best_chain_for estimate_previous
-          | _ => 
-                lookup_best_chain_for estimate_previous
-          end
-      | _ => lookup_best_chain_for estimate_previous
-      end
-    else 
-      real_round t_initial t r v s_round
-*)
-    
-Definition real_round (t_initial   t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_round: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  ) 
-  :nat.
-Admitted.
-(*
-  :=
-  if is_prevoter v t r s_round then 
-    let prevote_result:= prevoter_round t_initial t r v s_round
+    let (old_level,_) := vs.(last_brodcasted_block)
     in
-    if is_precommitvoter v t r s_round then 
-      let precommit_result := precommit_round t r v s_round
-      in
-        update_round t r v s_round (Some prevote_result) (Some precommit_result)
+    let (block_level,_) := block
+    in
+    if old_level <? block_level then  
+      {|
+        voter_round_number := vs.(voter_round_number)
+        ;prevoted_block := vs.(prevoted_block)
+        ;precommited_block := vs.(precommited_block)
+        ;last_brodcasted_block := block
+        ;voter_last_round_know:= vs.(voter_last_round_know)
+        ;voter_rounds := vs.(voter_rounds)
+        |}
     else
-        update_round t r v s_round (Some prevote_result) None
-  (* We asume that every particiapant in a round is either a prevoter or precommit voter. *)
+      vs.
+
+Lemma aux_nat_to_fin (n:nat) (upper_bound:nat) 
+  : option (Vectors.Fin.t upper_bound).
+Proof.
+  destruct (Vectors.Fin.of_nat n upper_bound).
+  - refine (Some t).
+  - refine None.
+Qed.
+
+
+(*TODO: merge precommit and preview logic in a single function *)
+Definition update_round_with_precommit_message 
+  {preview_number precommit_number last_block_number round_number :nat}
+  {preview_voters:Voters preview_number }
+  {precommit_voters: Voters precommit_number}
+  {last_block: Block last_block_number}
+  {round_start_time : Time}
+  {time_increment:Time}
+  (r:RoundState preview_voters precommit_voters round_start_time last_block round_number time_increment) 
+  (msg:Message)
+  : OpaqueRoundState
+  :=
+  match Message.message_to_precommit_vote msg precommit_voters last_block with
+  | Some new_votes => 
+      let new_time_increment := msg.(Message.time) - (round_start_time + time_increment)
+      in
+        OpaqueRoundStateC (
+          RoundStateUpdate 
+            preview_voters 
+            precommit_voters 
+            round_start_time 
+            last_block 
+            round_number 
+            r 
+            new_time_increment 
+            (VotesC preview_voters last_block List.nil) 
+            (VotesC precommit_voters last_block (List.cons new_votes List.nil))
+          )
+  | _ => OpaqueRoundStateC r
+  end.
+
+Definition update_round_with_preview_message 
+  {preview_number precommit_number last_block_number round_number :nat}
+  {preview_voters:Voters preview_number }
+  {precommit_voters: Voters precommit_number}
+  {last_block: Block last_block_number}
+  {round_start_time : Time}
+  {time_increment:Time}
+  (r:RoundState preview_voters precommit_voters round_start_time last_block round_number time_increment) 
+  (msg:Message)
+  : OpaqueRoundState
+  :=
+  match Message.message_to_preview_vote msg preview_voters last_block with
+  | Some new_votes => 
+      let new_time_increment := msg.(Message.time) - (round_start_time + time_increment)
+      in
+        OpaqueRoundStateC (
+          RoundStateUpdate 
+            preview_voters 
+            precommit_voters 
+            round_start_time 
+            last_block 
+            round_number 
+            r 
+            new_time_increment 
+            (VotesC preview_voters last_block (List.cons new_votes List.nil))
+            (VotesC precommit_voters last_block List.nil) 
+          )
+  | _ => OpaqueRoundStateC r
+  end.
+
+
+Definition update_opaqueRound_with_precommit_message
+  (opaque:OpaqueRoundState)
+  (msg:Message)
+  : OpaqueRoundState
+  :=
+  match opaque with
+  | OpaqueRoundStateC r => update_round_with_precommit_message r msg
+  end.
+
+Definition update_opaqueRound_with_preview_message
+  (opaque:OpaqueRoundState)
+  (msg:Message)
+  : OpaqueRoundState
+  :=
+  match opaque with
+  | OpaqueRoundStateC r => update_round_with_preview_message r msg
+  end.
+
+
+
+Definition update_voter_state_with_precommit  (msg:Message) (vs: VoterState) 
+  : VoterState
+  :=
+  let maybe_index 
+    : option (Vectors.Fin.t vs.(voter_last_round_know) ) 
+    := aux_nat_to_fin 
+    msg.(Message.round) vs.(voter_last_round_know)
+  in 
+  let maybe_round 
+      : option OpaqueRoundState 
+      :=  (map (Vectors.VectorDef.nth vs.(voter_rounds)) maybe_index)
+  in
+  let maybe_updated 
+      : option OpaqueRoundState
+      :=
+    map (fun f => f msg ) (map
+        update_opaqueRound_with_precommit_message 
+        maybe_round)
+  in
+  let maybe_update_function 
+    : option (OpaqueRoundState -> VectorDef.t OpaqueRoundState (voter_last_round_know vs))
+      := map (f:=option) (Vectors.VectorDef.replace vs.(voter_rounds)) maybe_index
+  in
+  match maybe_update_function  with
+  | Some f =>
+    match maybe_updated with
+    |Some updated => 
+        let new_tower := f updated
+        in
+        {|
+        voter_round_number := vs.(voter_round_number)
+        ;prevoted_block := vs.(prevoted_block)
+        ;precommited_block := vs.(precommited_block)
+        ;last_brodcasted_block := vs.(last_brodcasted_block)
+        ;voter_last_round_know:= vs.(voter_last_round_know)
+        ;voter_rounds := new_tower 
+        |}
+    | _ => vs
+    end
+  | _ => vs
+  end.
+
+Definition update_voter_state_with_preview  (msg:Message) (vs: VoterState) 
+  : VoterState
+  :=
+  let maybe_index 
+    : option (Vectors.Fin.t vs.(voter_last_round_know) ) 
+    := aux_nat_to_fin 
+    msg.(Message.round) vs.(voter_last_round_know)
+  in 
+  let maybe_round 
+      : option OpaqueRoundState 
+      :=  (map (Vectors.VectorDef.nth vs.(voter_rounds)) maybe_index)
+  in
+  let maybe_updated 
+      : option OpaqueRoundState
+      :=
+    map (fun f => f msg ) (map
+        update_opaqueRound_with_preview_message 
+        maybe_round)
+  in
+  let maybe_update_function 
+    : option (OpaqueRoundState -> VectorDef.t OpaqueRoundState (voter_last_round_know vs))
+      := map (f:=option) (Vectors.VectorDef.replace vs.(voter_rounds)) maybe_index
+  in
+  match maybe_update_function  with
+  | Some f =>
+    match maybe_updated with
+    |Some updated => 
+        let new_tower := f updated
+        in
+        {|
+        voter_round_number := vs.(voter_round_number)
+        ;prevoted_block := vs.(prevoted_block)
+        ;precommited_block := vs.(precommited_block)
+        ;last_brodcasted_block := vs.(last_brodcasted_block)
+        ;voter_last_round_know:= vs.(voter_last_round_know)
+        ;voter_rounds := new_tower 
+        |}
+    | _ => vs
+    end
+  | _ => vs
+  end.
+
+Record State :={
+  message_count:nat
+  (* The key nat in the Dictionary is the message id *)
+  ;pending_messages:Dictionary.Dictionary nat Message 
+  ;voters_state:Dictionary.Dictionary nat VoterState
+  ;commited_blocks: list (AnyBlock * Time * nat)
+  }.
+
+Definition empty_state : State :=
+  {|
+    message_count:=0
+    ;pending_messages:=Dictionary.empty
+    ;voters_state:=Dictionary.empty
+    ;commited_blocks := List.nil
+  |}.
+
+
+Definition update_message (state:State) (msg:Message) : State :=
+  {|
+    message_count:=state.(message_count)
+    ;pending_messages:=Dictionary.add Nat.eqb msg.(id) msg state.(pending_messages)
+    ;voters_state:=state.(voters_state)
+    ;commited_blocks:=state.(commited_blocks)
+  |}.
+
+Definition update_voter_state (state:State) (voter:Voter) (vs:VoterState) : State :=
+  {|
+    message_count:=state.(message_count)
+    ;pending_messages:=state.(pending_messages)
+    ;voters_state:=Dictionary.add Nat.eqb voter vs state.(voters_state)
+    ;commited_blocks:=state.(commited_blocks)
+  |}.
+
+Definition remove_message (state:State) (msg:Message): State :=
+  {|
+    message_count:=state.(message_count)
+    ;pending_messages:=Dictionary.delete Nat.eqb msg.(id) state.(pending_messages)
+    ;voters_state:=state.(voters_state)
+    ;commited_blocks:=state.(commited_blocks)
+  |}.
+
+Definition set_as_processed_by (v:Voter) (msg:Message) (state:State): State :=
+  update_message state (Message.update_message_proccessed msg v).
+
+
+Definition is_processed_by(state:State) (msg:Message) (v:Voter) : bool:= 
+  match Dictionary.lookup Nat.eqb msg.(id) state.(pending_messages) with
+  | Some _ => true
+  | None => false
+  end.
+
+Definition accept_vote (state:State) (voter:Voter) (msg:Message): State :=
+  match Dictionary.lookup Nat.eqb voter state.(voters_state)with
+  | Some voter_state_ => 
+      match msg.(Message.kind) with 
+      | PreCommitMessage 
+          => update_voter_state 
+              state 
+              voter 
+              (update_voter_state_with_precommit msg voter_state_)
+      | PreViewMessage 
+          => 
+          update_voter_state 
+          state 
+          voter 
+          (update_voter_state_with_preview msg voter_state_)
+      | EstimateMessage 
+          => 
+          update_voter_state 
+          state 
+          voter 
+          (update_voter_state_with_last_block voter_state_ msg.(Message.block))
+      | FinalizationMessage 
+          =>
+          update_voter_state 
+          state 
+          voter 
+          (update_voter_state_with_last_block voter_state_ msg.(Message.block))
+      end
+  (* None means that a message for participant outside of the simulation is tried *)
+  (* we expect this to never happend*)
+  | _ => state
+  end.
+
+Definition update_vote_for_voter `{Io} (t:Time) (voter:Voter) (state:State) (msg:Message) : State :=
+  if is_processed_by state msg voter then  
+    state 
   else 
-      let result := precommit_round t r v s_round 
-      in 
-        update_round t r v  s_round None (Some result).
-]
-*)
- 
-Definition decision (t_initial   t:Time) (r:nat) (v:Voter) 
-  {s_preview_voters_nat s_precommit_voters_nat: Source nat} 
-  {s_preview_voters: forall t r v, Voters (s_preview_voters_nat t r v)}
-  {s_precommit_voters: forall t r v, Voters (s_precommit_voters_nat t r v)}
-  {s_round_start_time:Source Time }
-  {s_last_block_nat: Source nat} {s_last_block : Block_source s_last_block_nat}
-  {s_time_increment:Source Time}
-  (s_round: forall t r v,
-      RoundState
-        (preview_number:= s_preview_voters_nat t r v)
-        (precommit_number:= s_precommit_voters_nat t r v)
-        (last_block_number:=s_last_block_nat t r v)
-        (s_preview_voters t r v) 
-        (s_precommit_voters t r v) 
-        (s_round_start_time t r v) 
-        (s_last_block t r v) 
-        r
-        (s_time_increment t r v)
-  ) 
-  :nat.
-Admitted.
+    if io_accept_vote t msg  voter
+    then
+      accept_vote state voter msg
+    else
+        if Nat.leb t (msg.(Message.time)+ global_time_constant)
+        then accept_vote state voter msg else state.
+
+Definition upate_votes_for_voter `{Io} (t:Time) (state:State) (voter:Voter) : State :=
+  let messages := List.map snd (Dictionary.to_list (pending_messages state))
+  in
+  let f := update_vote_for_voter t voter 
+  in
+    List.fold_left f messages state.
+
+
+Definition prune_message `{Io} (state:State) (msg:Message) : State := 
+  let round_participants := io_get_round_voters (Message.round msg)
+  in
+  if 
+      List.fold_left 
+        (fun acc v => andb acc (is_processed_by state msg v) ) 
+        (List.map fst (Dictionary.to_list round_participants))
+        true
+  then
+    remove_message state msg 
+  else 
+    state .
+
+Definition prune_messages `{Io} (state:State): State:=
+  List.fold_left prune_message (List.map snd (Dictionary.to_list state.(pending_messages)) ) state.
+
+Definition update_votes `{Io} (t:Time) (state:State) : State:=
+  let state_votes_updated
+    := 
+    List.fold_left 
+      (upate_votes_for_voter t ) 
+      (List.map fst (Dictionary.to_list state.(voters_state)))
+      state 
+  in
+  prune_messages state_votes_updated.
+
+
+Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
+  match Dictionary.lookup Nat.eqb voter state.(voters_state)with
+  | Some voter_state_ => state 
+  (*This shouldn't happen, we set all participants at the begining!*)
+  | _ => state
+  (* TODO:
+  - get current voter state 
+  - look for it's kind, 
+  - look for what it have done this round 
+  - advance or wait and end step
+  match state.(voters_state) 
+  *)
+  end.
+
+Definition voters_round_step `{Io} (t:Time) (state:State): State :=
+  let voters := List.map fst (Dictionary.to_list state.(voters_state))
+  in 
+    List.fold_left (voter_round_step t) voters state .
+
+
+
+CoInductive CoList (T:Type) :Type :=
+  | CoCons : T -> CoList T -> CoList T.
+
+Fixpoint get_last {T} (n:nat) (colist:CoList T): T
+  := 
+  match n with 
+  | 0 => match colist  with 
+         | CoCons _ element _ =>
+             element
+          end
+  | S m => match colist with 
+          | CoCons _ _ remain => get_last m remain
+          end
+  end.
+
+
+CoFixpoint produce_states `{Io} (t:Time) (state:State): CoList State :=
+  let new_state := voters_round_step t (update_votes t state)
+  in
+    CoCons State new_state  (produce_states (t+1) new_state).
+
+
+Definition get_state_up_to `{Io} (t:Time): State :=   
+  get_last t (produce_states 0 empty_state). 
 
 (*
-  :=
-  if can_start_round t r v s_round then 
-    let t_initial := t 
-    in
-    if is_primary t_initial r v v s_round then
-      if not_finalized estimate_last_round then
-        propagate estimate_last_round 
-      else 
-        if finalized estimate_last_round then 
-          propagate estimate_last_round
-        else 
-          real_round t_initial r v s_round
-    else 
-      real_round t_initial r v s_round
-  else 
-    decision (t+1) r v s_round.]
-    
+Compute get_state_up_to 10. 
 *)
+
+
+Lemma get_commited_blocks_are_related (state:State)
+  (b1 b2 : AnyBlock) 
+  (b1_in 
+    : List.In b1 (List.map ( fun x => fst (fst x)) state.(commited_blocks)))
+  (b2_in 
+    : List.In b2 (List.map ( fun x => fst (fst x)) state.(commited_blocks)))
+  : Related (projT2 b1) (projT2 b2).
+Admitted.
+
+Definition voted (v:Voter) (r:nat) (state:State) (b:AnyBlock):Prop.
+Admitted.
+
+
+
+
+(* for some reason /\ is disabled as notation *)
+
+Open Scope type_scope.
+
+(* TODO add a time and a state number and state that the working state is the state given by produce_states *)
+Theorem theorem_4_1 {n1 n2 bizantine_number:nat} (b1:Block n1) (b2:Block n2) 
+  (un_related:Unrelated b1 b2)
+  (state:State)
+  (b1_in:List.In (to_any b1) (List.map ( fun x => fst (fst x)) (commited_blocks state)))
+  (b2_in:List.In (to_any b2) (List.map ( fun x => fst (fst x)) (commited_blocks state)))
+  : exists r b (d:Dictionary.Dictionary Voter Unit), 
+    (
+      (length (List.map fst (Dictionary.to_list d)) >= bizantine_number +1) 
+      /\
+      (forall v, List.In v (List.map fst (Dictionary.to_list d)) -> voted v r state b)
+      /\ (b = to_any b1  \/  b = to_any b2)
+    ).
+Proof.
+  dependent induction b1. 
+  - pose (originBlock_is_always_prefix b2) as contra.
+    apply (prefix_implies_related _ _) in contra.
+    contradiction.
+  - dependent destruction b2.
+    +  pose (originBlock_is_always_prefix (NewBlock b1 id)) as contra.  
+       apply (prefix_implies_related _ _) in contra.
+       apply related_symmetric in contra.
+       contradiction.
+Admitted.
+(*    + Search List.In. *)
+      (* List.in_split*)
+      (* List.in_map*)
+(* if n < n0 *)
+Close Scope type_scope.

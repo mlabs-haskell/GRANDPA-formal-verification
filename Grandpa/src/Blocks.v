@@ -38,6 +38,8 @@ Inductive Block : nat -> Type:=
 *)
 Definition AnyBlock := {n & Block n}.
 
+Definition to_any {n:nat} (b: Block n) : AnyBlock
+  := existT _ n b.
 
 (** 
 Example:
