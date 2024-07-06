@@ -412,8 +412,8 @@ Variant VoterCategory  :=
   | Honest.
 
 Variant VoterVoteRight := 
-  | VotePrecommit
   | VotePrevote
+  | VotePrecommit
   | VoteBoth.
 
 Variant VoterKind : Type := 
@@ -455,7 +455,7 @@ Definition RoundTower
 
 (**
 A voter has 3 states:
-   - Waiting to emit prevote (called preview in code) [prevoted_block = None] [precommited_block=None]
+  - Waiting to emit prevote (called preview in code) [prevoted_block = None] [precommited_block=None]
    - Waiting to emit precommit  [precommited_block = None]
    - Waiting to start a new round [prevoted_block] and [precommited_block] can be anything
 We use the VoterKind to know the state.
@@ -479,7 +479,7 @@ Definition update_voter_state_with_last_block  (vs:VoterState) (block: AnyBlock)
   := 
     let (old_level,_) := vs.(last_brodcasted_block)
     in
-    let (block_level,_) := block
+  let (block_level,_) := block
     in
     if old_level <? block_level then  
       {|
@@ -492,14 +492,6 @@ Definition update_voter_state_with_last_block  (vs:VoterState) (block: AnyBlock)
         |}
     else
       vs.
-
-Lemma aux_nat_to_fin (n:nat) (upper_bound:nat) 
-  : option (Vectors.Fin.t upper_bound).
-Proof.
-  destruct (Vectors.Fin.of_nat n upper_bound).
-  - refine (Some t).
-  - refine None.
-Qed.
 
 
 (*TODO: merge precommit and preview logic in a single function *)
@@ -583,10 +575,13 @@ Definition update_opaqueRound_with_preview_message
   end.
 
 
+Require Import Vectors.
 
 Definition update_voter_state_with_precommit  (msg:Message) (vs: VoterState) 
   : VoterState
   :=
+  let maybe_round := Vectors.get  msg.(round) vs.(voter_rounds) 
+  in
   let maybe_index 
     : option (Vectors.Fin.t vs.(voter_last_round_know) ) 
     := aux_nat_to_fin 
@@ -760,7 +755,7 @@ Definition update_vote_for_voter `{Io} (t:Time) (voter:Voter) (state:State) (msg
     then
       accept_vote state voter msg
     else
-        if Nat.leb t (msg.(Message.time)+ global_time_constant)
+        if Nat.leb t (msg.(Message.time)+ global_time_constant) || (voter =? msg.(Message.voter))
         then accept_vote state voter msg else state.
 
 Definition upate_votes_for_voter `{Io} (t:Time) (state:State) (voter:Voter) : State :=
@@ -797,10 +792,49 @@ Definition update_votes `{Io} (t:Time) (state:State) : State:=
   in
   prune_messages state_votes_updated.
 
+Definition prevoter_step `{Io} 
+  (t:Time) 
+  (state:State) 
+  (voter:Voter) 
+  (category:VoterCategory)
+  (vs:VoterState)
+  : State.
+  :=
+  let tower := vs.(voter_rounds)
+  in
+  let maybe_index := aux_nat_to_fin vs.(voter_round_number) vs.(voter_last_round_know)
+  in
+  
+  match try_to_complete_round round  with
+  | Some(completable) => 
+  | None=>
+  end.
+
+
+Definition precommit_step `{Io} 
+  (t:Time) 
+  (state:State) 
+  (voter:Voter) 
+  (category:VoterCategory)
+  (vs:VoterState)
+  : State.
+Admitted.
+
 
 Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
   match Dictionary.lookup Nat.eqb voter state.(voters_state)with
-  | Some voter_state_ => state 
+  | Some voter_state_ =>  
+      (*TODO: Insert primary logic here first!*)
+      match Dictionary.lookup Nat.eqb voter (io_get_round_voters voter_state_.(voter_round_number)) with
+      | Some(VoterVoteKindC category kind_) => 
+          match kind_ with
+          | VotePrevote => prevoter_step t state voter category voter_state_
+          | VotePrecommit =>  precommit_step t state voter category voter_state_
+          (* TODO: FIx this to really do both! *)
+          | VoteBoth => prevoter_step t state voter category voter_state_
+          end
+      | _ => state 
+      end
   (*This shouldn't happen, we set all participants at the begining!*)
   | _ => state
   (* TODO:
