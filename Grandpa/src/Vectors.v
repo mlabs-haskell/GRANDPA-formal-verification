@@ -4,6 +4,9 @@ Require Import Functors.
 
 Definition Vec := Vector.t.
 
+Definition coerce {A} {n} (v:Vec A n) : Coq.Vectors.VectorDef.t A n 
+  := v.
+
 Lemma aux_nat_to_fin (n:nat) (upper_bound:nat) 
   : option (Vectors.Fin.t upper_bound).
 Proof.
@@ -31,6 +34,9 @@ Definition get {A} {length:nat} (v:Vec A length) (index:nat)
   in
   map (Vector.nth  v) maybe_index.
 
+(* 
+  Out of bounds index is ignored
+*)
 Definition update {A}{length:nat} (v:Vec A length) (index:nat) (new_value:A)
   : Vec A length
   :=
@@ -40,5 +46,3 @@ Definition update {A}{length:nat} (v:Vec A length) (index:nat) (new_value:A)
   | Some new_vec => new_vec
   | None => v
   end.
-
-  

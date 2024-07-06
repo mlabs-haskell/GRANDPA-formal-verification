@@ -3,6 +3,11 @@ Require Import Votes.
 
 Definition Time := nat.
 
+(**
+We end accidentally nmin preview instead of prevote.
+We later correct this in Protocol, but keep preview in other modules.
+**)
+
 Inductive RoundState 
       {preview_number precommit_number last_block_number}
   (preview_voters:Voters preview_number) 
@@ -57,6 +62,39 @@ Definition get_precommit_votes
   | InitialRoundState _ _ _ _ _=> VotesC _ _ List.nil (* No votes in initial round state *)
   | RoundStateUpdate _ _ _ _ _ _ _ _ new_precommit_votes => new_precommit_votes
   end.
+  
+
+Definition get_preview_voters
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  :Voters preview_number
+  := preview_voters.
+
+Definition get_precommit_voters
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  :Voters precommit_number
+  := precommit_voters.
+
+Definition get_last_block
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : 
+  Block last_block_number
+  := 
+  last_block.
+
+Definition get_start_time 
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : Time
+  := round_time.
+
+Definition get_round_number
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : nat
+  := round_number.
+
+Definition get_time_increment
+  (round_state: RoundState preview_voters precommit_voters  round_time last_block round_number time_increment)
+  : Time
+  := time_increment.
 
 End State1.
 

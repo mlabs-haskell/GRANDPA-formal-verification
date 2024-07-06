@@ -3,6 +3,7 @@ Require Import Votes.
 Require Import Preliminars.
 Require Import Round.
 Require Import Estimate.
+Require Import VoterState.
 
 Require Import Message.
 
@@ -13,19 +14,6 @@ Require Import Nat.
 Require Import Program.Equality.
 (*Require Arith.Compare_dec.
  *)
-
-
-Variant VoterCategory  :=
-  | Bizantine
-  | Honest.
-
-Variant VoterVoteRight := 
-  | VotePrevote
-  | VotePrecommit
-  | VoteBoth.
-
-Variant VoterKind : Type := 
-  | VoterVoteKindC (category:VoterCategory) (right: VoterVoteRight).
 
 Class Io := {
   global_time_constant: nat;
@@ -44,201 +32,140 @@ Class Io := {
         (List.map fst (Dictionary.to_list (io_get_round_voters r )));
 }.
 
-Variant OpaqueRoundState: Type := 
-  | OpaqueRoundStateC {preview_number precommit_number last_block_number round_number}
-    {preview_voters:Voters preview_number}
-    {precommit_voters: Voters precommit_number}
-    {round_start_time:Time}
-    {last_block: Block last_block_number}
-    {time:Time}
-    (round_state: 
-      RoundState 
-        preview_voters precommit_voters round_start_time last_block round_number time 
-    ).
+Definition process_round_voters_step 
+  (acc: ((nat*list Voter)*(nat*list Voter)))
+  (value:Voter*VoterKind)
+  : ((nat*list Voter)*(nat*list Voter))
+  :=
+  let (l,r) := acc
+  in
+  let (prevote_bizantines,prevote_voters)
+    := l
+  in
+  let (precommit_bizantines,precommit_voters)
+    := r
+  in
+  match value with
+  | (voter,kind)
+    =>
+    match kind with
+    | VoterKindC Bizantine VotePrevote 
+        => (
+          (prevote_bizantines+1, voter::prevote_voters),
+          (precommit_bizantines, precommit_voters)
+          )
+    | VoterKindC Bizantine VotePrecommit
+        => (
+          (prevote_bizantines, prevote_voters),
+          (precommit_bizantines+1, voter::precommit_voters)
+          )
+    | VoterKindC Bizantine VoteBoth
+        => (
+          (prevote_bizantines+1, voter::prevote_voters),
+          (precommit_bizantines+1, voter::precommit_voters)
+          )
+    | VoterKindC Honest VotePrevote 
+        => (
+          (prevote_bizantines, voter::prevote_voters),
+          (precommit_bizantines, precommit_voters)
+          )
+    | VoterKindC Honest VotePrecommit
+        => (
+          (prevote_bizantines, prevote_voters),
+          (precommit_bizantines, voter::precommit_voters)
+          )
+    | VoterKindC Honest VoteBoth 
+        => (
+          (prevote_bizantines, voter::prevote_voters),
+          (precommit_bizantines, voter::precommit_voters)
+          )
+    end
+  end.
 
-Definition Vec := Vector.t.
+Definition process_round_voters `{Io} (r:nat)
+  : ((nat*list Voter)*(nat*list Voter))
+  :=
+  let as_list :=Dictionary.to_list (io_get_round_voters r) 
+  in
+  List.fold_left process_round_voters_step as_list ((0,List.nil),(0,List.nil)).
 
-Definition RoundTower  
-  := Vec OpaqueRoundState .
 
-(**
-A voter has 3 states:
-  - Waiting to emit prevote (called preview in code) [prevoted_block = None] [precommited_block=None]
-   - Waiting to emit precommit  [precommited_block = None]
-   - Waiting to start a new round [prevoted_block] and [precommited_block] can be anything
-We use the VoterKind to know the state.
 
-Additionally the primary has to handle the broadcast of a 
-finalized block, but this is done separately in the simulation
-**)
 
-Record VoterState := {
-  voter_round_number : nat 
-  ;prevoted_block : option AnyBlock
-  ;precommited_block : option AnyBlock
-  (** We only store the last block received from a primary and we only keep the highest and latest (in that order)**)
-  ;last_brodcasted_block : AnyBlock 
-  ;voter_last_round_know: nat
-  ;voter_rounds : RoundTower voter_last_round_know
-  }.
-
-Definition update_voter_state_with_last_block  (vs:VoterState) (block: AnyBlock)
-  : VoterState
+Definition init_next_round_voter_state `{Io}
+  (time:Time)
+  (last_block:AnyBlock) 
+  (vs:VoterState)
+  :VoterState 
   := 
-    let (old_level,_) := vs.(last_brodcasted_block)
-    in
-  let (block_level,_) := block
-    in
-    if old_level <? block_level then  
-      {|
-        voter_round_number := vs.(voter_round_number)
-        ;prevoted_block := vs.(prevoted_block)
-        ;precommited_block := vs.(precommited_block)
-        ;last_brodcasted_block := block
-        ;voter_last_round_know:= vs.(voter_last_round_know)
-        ;voter_rounds := vs.(voter_rounds)
-        |}
-    else
-      vs.
-
-
-(*TODO: merge precommit and preview logic in a single function *)
-Definition update_round_with_precommit_message 
-  {preview_number precommit_number last_block_number round_number :nat}
-  {preview_voters:Voters preview_number }
-  {precommit_voters: Voters precommit_number}
-  {last_block: Block last_block_number}
-  {round_start_time : Time}
-  {time_increment:Time}
-  (r:RoundState preview_voters precommit_voters round_start_time last_block round_number time_increment) 
-  (msg:Message)
-  : OpaqueRoundState
-  :=
-  match Message.message_to_precommit_vote msg precommit_voters last_block with
-  | Some new_votes => 
-      let new_time_increment := msg.(Message.time) - (round_start_time + time_increment)
-      in
-        OpaqueRoundStateC (
-          RoundStateUpdate 
-            preview_voters 
-            precommit_voters 
-            round_start_time 
-            last_block 
-            round_number 
-            r 
-            new_time_increment 
-            (VotesC preview_voters last_block List.nil) 
-            (VotesC precommit_voters last_block (List.cons new_votes List.nil))
-          )
-  | _ => OpaqueRoundStateC r
-  end.
-
-Definition update_round_with_preview_message 
-  {preview_number precommit_number last_block_number round_number :nat}
-  {preview_voters:Voters preview_number }
-  {precommit_voters: Voters precommit_number}
-  {last_block: Block last_block_number}
-  {round_start_time : Time}
-  {time_increment:Time}
-  (r:RoundState preview_voters precommit_voters round_start_time last_block round_number time_increment) 
-  (msg:Message)
-  : OpaqueRoundState
-  :=
-  match Message.message_to_preview_vote msg preview_voters last_block with
-  | Some new_votes => 
-      let new_time_increment := msg.(Message.time) - (round_start_time + time_increment)
-      in
-        OpaqueRoundStateC (
-          RoundStateUpdate 
-            preview_voters 
-            precommit_voters 
-            round_start_time 
-            last_block 
-            round_number 
-            r 
-            new_time_increment 
-            (VotesC preview_voters last_block (List.cons new_votes List.nil))
-            (VotesC precommit_voters last_block List.nil) 
-          )
-  | _ => OpaqueRoundStateC r
-  end.
-
-
-Definition update_opaqueRound_with_precommit_message
-  (opaque:OpaqueRoundState)
-  (msg:Message)
-  : OpaqueRoundState
-  :=
-  match opaque with
-  | OpaqueRoundStateC r => update_round_with_precommit_message r msg
-  end.
-
-Definition update_opaqueRound_with_preview_message
-  (opaque:OpaqueRoundState)
-  (msg:Message)
-  : OpaqueRoundState
-  :=
-  match opaque with
-  | OpaqueRoundStateC r => update_round_with_preview_message r msg
-  end.
-
-
-Definition update_voter_state_with_precommit  (msg:Message) (vs: VoterState) 
-  : VoterState
-  :=
-  let maybe_round :option OpaqueRoundState := Vectors.get vs.(voter_rounds) msg.(round) 
+  let round_number := S vs.(VoterState.round_number)
   in
-  let maybe_updated 
-      : option OpaqueRoundState
-      :=
-    map (fun f => f msg ) (map
-        update_opaqueRound_with_precommit_message 
-        maybe_round)
+  let (prevote_info,precommit_info) 
+    := process_round_voters round_number
   in
-  let maybe_tower 
-    := 
-    map (Vectors.update vs.(voter_rounds) msg.(round)) maybe_updated
+  let (prevote_number,prevote_voters_list)
+    := prevote_info
   in
-  match maybe_tower with
-  | Some new_tower =>
-        {|
-        voter_round_number := vs.(voter_round_number)
-        ;prevoted_block := vs.(prevoted_block)
-        ;precommited_block := vs.(precommited_block)
-        ;last_brodcasted_block := vs.(last_brodcasted_block)
-        ;voter_last_round_know:= vs.(voter_last_round_know)
-        ;voter_rounds := new_tower 
-        |}
-  | _ => vs
-  end.
-
-Definition update_voter_state_with_preview  (msg:Message) (vs: VoterState) 
-  : VoterState
-  :=
-  let maybe_round :option OpaqueRoundState := Vectors.get vs.(voter_rounds) msg.(round) 
+  let (precommit_number,precommit_voters_list)
+    := precommit_info
   in
-  let maybe_updated 
-      : option OpaqueRoundState
-      :=
-    map (fun f => f msg ) (map
-        update_opaqueRound_with_preview_message 
-        maybe_round)
+  let prevote_voters 
+    :=  
+    VotersC 
+      prevote_number
+      (Dictionary.from_list 
+        Nat.eqb 
+        (map (fun x => (x,UnitC)) prevote_voters_list) 
+      )
   in
-  let maybe_tower 
-    := 
-    map (Vectors.update vs.(voter_rounds) msg.(round)) maybe_updated
+  let precommit_voters 
+    :=  
+    VotersC 
+      precommit_number
+      (Dictionary.from_list 
+        Nat.eqb 
+        (map (fun x => (x,UnitC)) precommit_voters_list) 
+      )
   in
-  match maybe_tower with
-  | Some new_tower =>
-        {|
-        voter_round_number := vs.(voter_round_number)
-        ;prevoted_block := vs.(prevoted_block)
-        ;precommited_block := vs.(precommited_block)
-        ;last_brodcasted_block := vs.(last_brodcasted_block)
-        ;voter_last_round_know:= vs.(voter_last_round_know)
-        ;voter_rounds := new_tower 
-        |}
-  | _ => vs
+  let (n,block) := last_block
+  in
+  let round := 
+    OpaqueRound.OpaqueRoundStateC(
+      InitialRoundState 
+        prevote_voters 
+        precommit_voters 
+        time
+        block
+        round_number
+    )
+  in
+  let rounds : Vectors.Vec OpaqueRound.OpaqueRoundState round_number
+    := Coq.Vectors.VectorDef.cons _ round _ vs.(rounds)
+  in
+  let  voter_state 
+    :=
+    {|
+    round_number := round_number
+    ;prevoted_block := None
+    ;precommited_block := None
+    ;last_brodcasted_block := None
+    ;rounds :=  rounds
+    ;pending_messages 
+      := vs.(pending_messages)
+    |}
+  in
+  (* We only process the pending messages for this round 
+    In theory there shouldnt be previous messages,
+     but if any, the main updater process of messages 
+     would take care of them.
+  *)
+  match Dictionary.lookup Nat.eqb round_number vs.(pending_messages) with
+  | Some pending =>
+    List.fold_left 
+      update_with_msg 
+      pending
+      voter_state
+  | None => voter_state
   end.
 
 Record State :={
@@ -295,31 +222,10 @@ Definition is_processed_by(state:State) (msg:Message) (v:Voter) : bool:=
 Definition accept_vote (state:State) (voter:Voter) (msg:Message): State :=
   match Dictionary.lookup Nat.eqb voter state.(voters_state)with
   | Some voter_state_ => 
-      match msg.(Message.kind) with 
-      | PreCommitMessage 
-          => update_voter_state 
-              state 
-              voter 
-              (update_voter_state_with_precommit msg voter_state_)
-      | PreViewMessage 
-          => 
-          update_voter_state 
-          state 
-          voter 
-          (update_voter_state_with_preview msg voter_state_)
-      | EstimateMessage 
-          => 
-          update_voter_state 
-          state 
-          voter 
-          (update_voter_state_with_last_block voter_state_ msg.(Message.block))
-      | FinalizationMessage 
-          =>
-          update_voter_state 
-          state 
-          voter 
-          (update_voter_state_with_last_block voter_state_ msg.(Message.block))
-      end
+    update_voter_state 
+    state 
+    voter 
+    (VoterState.update_with_msg voter_state_ msg)
   (* None means that a message for participant outside of the simulation is tried *)
   (* we expect this to never happend*)
   | _ => state
@@ -378,9 +284,9 @@ Definition prevoter_step `{Io}
   (vs:VoterState)
   : State
   :=
-  let tower := vs.(voter_rounds)
+  let tower := vs.(VoterState.rounds)
   in
-  let maybe_index := aux_nat_to_fin vs.(voter_round_number) vs.(voter_last_round_know)
+  let maybe_index := aux_nat_to_fin vs.(VoterState.round_number) vs.(VoterState.round_number)
   in
   state.
   (* 
@@ -405,8 +311,13 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
   match Dictionary.lookup Nat.eqb voter state.(voters_state)with
   | Some voter_state_ =>  
       (*TODO: Insert primary logic here first!*)
-      match Dictionary.lookup Nat.eqb voter (io_get_round_voters voter_state_.(voter_round_number)) with
-      | Some(VoterVoteKindC category kind_) => 
+      match 
+        Dictionary.lookup 
+          Nat.eqb 
+          voter 
+          (io_get_round_voters voter_state_.(VoterState.round_number)) 
+      with
+      | Some(VoterKindC category kind_) => 
           match kind_ with
           | VotePrevote => prevoter_step t state voter category voter_state_
           | VotePrecommit =>  precommit_step t state voter category voter_state_

@@ -31,3 +31,13 @@ Proof.
     + reflexivity.
 Qed.
 
+Instance Functor_list : Functor list := {
+  map := List.map
+}.
+
+Instance FunctorLaws_list : FunctorLaws list.
+Proof.
+  split.
+  - apply List.map_id.
+  - Admitted.
+
