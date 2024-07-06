@@ -18,14 +18,19 @@ Require Import Program.Equality.
 
 Class Io := {
   global_time_constant: nat;
-  block_producer {n} (last_block:Block n) : 
-    list {b:AnyBlock & Prefix last_block (projT2 b)};
+  block_producer (time voter:nat) : 
+    Sets.DictionarySet AnyBlock;
   io_accept_vote : Time -> Message -> Voter -> bool;
   (* the nat is the round number*)
   io_get_round_voters:  nat -> Dictionary.Dictionary nat VoterKind;
   io_get_round_primary : nat -> Voter;
-  block_producer_not_emtpy{n} {last_block:Block n} 
-  : block_producer(last_block) <> nil;
+  (*TODO: add more restrictions to the block producer:
+     - If v1 sees block b at t1 then all other v see b at t1+T
+     - if v sees block b at t1, then 
+         v sees b at t1+ t2 forall t2
+  *)
+  block_producer_not_emtpy 
+  :forall t v, Sets.is_empty (block_producer t v) = false;
   primary_consistent 
     : forall r , 
         List.In 
@@ -232,6 +237,23 @@ Definition update_votes `{Io} (t:Time) (state:State) : State:=
   in
   prune_messages state_votes_updated.
 
+Definition look_for_best_chain_for_block `{Io} (t:Time) (v:Voter) (ablock:AnyBlock)
+  : AnyBlock
+  :=
+  let (block_number,block) := ablock
+  in
+  let available_blocks := block_producer t v
+  in
+    List.fold_left 
+      (fun x y => if (projT1 x) <? (projT1 y) then y else x)
+      (
+        List.filter 
+        (fun x => Blocks.is_prefix block (projT2 x)) 
+        (Sets.to_list available_blocks)
+      )
+      (existT _ _ OriginBlock).
+  
+
 Definition prevoter_step `{Io} 
   (t:Time) 
   (state:State) 
@@ -240,17 +262,27 @@ Definition prevoter_step `{Io}
   (vs:VoterState)
   : State
   :=
-  let tower := vs.(VoterState.rounds)
+  let tower := vs.(VoterState rounds)
   in
-  let maybe_index := aux_nat_to_fin vs.(VoterState.round_number) vs.(VoterState.round_number)
-  in
-  state.
-  (* 
-  match try_to_complete_round round  with
-  | Some(completable) => state
-  | None=> state
+  match Vectors.get tower vs.(VoterState.round_number) with
+  | Some round =>
+    match try_to_complete_round round  with
+    | Some(completable) => 
+        match Vectors.get tower (vs.(VoterState.round_number)-1) with
+        |Some (previous_round)
+            => 
+            let ref_block := 
+              match vs.(last_brodcasted_block) with
+              | Some b => Some (b)
+                  (* TODO: is this right?*)
+              | None => get_estimate (get_bizantiners_number previous_round) previous_round
+        (*This shouldn't happen!*)
+        | None => state
+    | None=> state
+    end
+  (*This shouldn't happen!*)
+  | None => state
   end.
-   *)
 
 
 Definition precommit_step `{Io} 
