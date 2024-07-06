@@ -51,6 +51,14 @@ Definition from_list (l:list K)
   := 
     SetC (Dictionary.from_list eqb_k (map (fun n => (n,UnitC)) l)).
 
+Definition is_empty (d:DictionarySet K) : bool
+  := 
+  match to_list d with
+  | List.nil => true
+  | _ => false
+  end.
+
+
 
 Definition IsSubset (l r : DictionarySet K) : Prop 
   := 
