@@ -22,6 +22,7 @@ Class Io := {
     Sets.DictionarySet AnyBlock;
   io_accept_vote : Time -> Message -> Voter -> bool;
   (* the nat is the round number*)
+  io_bizantine_vote : Time -> Voter -> option AnyBlock;
   io_get_round_voters:  nat -> Dictionary.Dictionary nat VoterKind;
   io_get_round_primary : nat -> Voter;
   (*TODO: add more restrictions to the block producer:
@@ -263,6 +264,7 @@ Definition build_and_send_vote
   (voter:Voter) 
   (vs:VoterState)
   (b:AnyBlock)
+  :State
   :=
       let new_message : Message.Message 
         :=
@@ -287,25 +289,25 @@ Definition build_and_send_vote
 Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:VoterState)
   :State
   :=
-   let tower := vs.(VoterState.rounds)
-   in
-   match Vectors.get tower (vs.(VoterState.round_number)-1) with
-   |Some (OpaqueRound.OpaqueRoundStateC previous_round)
-       => 
-       let ref_block := 
-         match vs.(last_brodcasted_block) with
-         | Some b => Some b
-         | None => get_estimate previous_round
-         end
-       in 
-       match map (look_for_best_chain_for_block t voter) ref_block with 
-       | Some b => build_and_send_vote t state voter vs b
-| None => state
-       end
+  let tower := vs.(VoterState.rounds)
+  in
+  match Vectors.get tower (vs.(VoterState.round_number)-1) with
+  |Some (OpaqueRound.OpaqueRoundStateC previous_round)
+    => 
+    let ref_block := 
+      match vs.(last_brodcasted_block) with
+      | Some b => Some b
+      | None => get_estimate previous_round
+      end
+    in 
+    match map (look_for_best_chain_for_block t voter) ref_block with 
+    | Some b => build_and_send_vote t state voter vs b
+    | None => state
+    end
   | None => state
   end.
 
-Definition prevoter_step `{Io} 
+Definition prevoter_step_legit `{Io} 
   (t:Time) 
   (state:State) 
   (voter:Voter) 
@@ -335,6 +337,25 @@ Definition prevoter_step `{Io}
     end
   end.
 
+Definition prevoter_step `{Io} 
+  (t:Time) 
+  (state:State) 
+  (voter:Voter) 
+  (category:VoterCategory)
+  (vs:VoterState)
+  : State
+  :=
+  match category with 
+  | VoterState.Bizantine 
+    =>
+    match io_bizantine_vote t voter with 
+    | Some b => build_and_send_vote t state voter vs b
+    | None => state
+    end
+  | VoterState.Honest 
+    => 
+    prevoter_step_legit t state voter category vs
+  end.
 
 Definition precommit_step `{Io} 
   (t:Time) 
@@ -395,15 +416,6 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
       end
   (*This shouldn't happen, we set all participants at the begining!*)
   | _ => state
-  (* TODO:
-  - get current voter state 
-If the command appears in a section: By default, the scope is only added within the section. Specifying global marks the scope for export as part of the current module. Specifying local behaves like the default.
-
-  - look for it's kind, 
-  - look for what it have done this round 
-  - advance or wait and end step
-  match state.(voters_state) 
-  *)
   end.
 
 Definition voters_round_step `{Io} (t:Time) (state:State): State :=
