@@ -258,7 +258,7 @@ Definition look_for_best_chain_for_block `{Io} (t:Time) (v:Voter) (ablock:AnyBlo
       )
       (existT _ _ OriginBlock).
 
-Definition build_and_send_vote 
+Definition build_and_send_prevote
   (t:Time)
   (state:State) 
   (voter:Voter) 
@@ -279,9 +279,36 @@ Definition build_and_send_vote
         |}
       in
         let 
-          up_prevote := VoterState.update_precommit vs (Some b)
+          up_prevote := VoterState.update_prevoted vs (Some b)
         in
         let up_round := VoterState.update_votes_with_msg up_prevote new_message
+        in 
+        update_voter_state (update_message state new_message) voter up_round.
+
+Definition build_and_send_precommit
+  (t:Time)
+  (state:State) 
+  (voter:Voter) 
+  (vs:VoterState)
+  (b:AnyBlock)
+  :State
+  :=
+      let new_message : Message.Message 
+        :=
+        {| 
+          id:= S state.(message_count)
+          ;Message.block:=b
+          ;kind:=Message.PreCommitMessage
+          ;round:=vs.(VoterState.round_number)
+          ;time:=t
+          ;voter:=voter
+          ;processed_by:=Dictionary.from_list Nat.eqb ((voter,UnitC)::List.nil)
+        |}
+      in
+        let 
+          up_precommit := VoterState.update_precommit vs (Some b)
+        in
+        let up_round := VoterState.update_votes_with_msg up_precommit new_message
         in 
         update_voter_state (update_message state new_message) voter up_round.
 
@@ -296,12 +323,26 @@ Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:Vote
     => 
     let ref_block := 
       match vs.(last_brodcasted_block) with
-      | Some b => Some b
+      | Some b => 
+          match 
+            (g (get_all_prevote_votes previous_round)
+              ,get_estimate previous_round
+            )
+          with
+          | (Some g_prev, Some estimate_prev)
+              =>
+              if 
+                is_prefix (projT2 estimate_prev) (projT2 b) 
+                && is_prefix (projT2 b) (projT2 g_prev)
+              then Some b
+              else get_estimate previous_round
+          | _ => get_estimate previous_round
+          end
       | None => get_estimate previous_round
       end
     in 
     match map (look_for_best_chain_for_block t voter) ref_block with 
-    | Some b => build_and_send_vote t state voter vs b
+    | Some b => build_and_send_prevote t state voter vs b
     | None => state
     end
   | None => state
@@ -349,12 +390,61 @@ Definition prevoter_step `{Io}
   | VoterState.Bizantine 
     =>
     match io_bizantine_vote t voter with 
-    | Some b => build_and_send_vote t state voter vs b
+    | Some b => build_and_send_prevote t state voter vs b
     | None => state
     end
   | VoterState.Honest 
     => 
     prevoter_step_legit t state voter category vs
+  end.
+
+Definition precommit_step_legit `{Io} 
+  (t:Time) 
+  (state:State) 
+  (voter:Voter) 
+  (category:VoterCategory)
+  (vs:VoterState)
+  : State
+  :=
+  let tower := vs.(VoterState.rounds)
+  in
+  match vs.(precommited_block) with 
+  | Some _ =>
+    match Vectors.get tower (vs.(VoterState.round_number)) with
+    |Some (OpaqueRound.OpaqueRoundStateC r)
+      =>
+      match try_to_complete_round r with
+      | Some _ => 
+          let new_vs := 
+            init_next_round_voter_state t vs
+          in
+          update_voter_state state voter new_vs 
+      | None => state
+      end
+    | None =>  state
+    end
+  | None =>
+    match Vectors.get tower vs.(VoterState.round_number) with
+    | Some (OpaqueRound.OpaqueRoundStateC r) =>
+      match Vectors.get tower (vs.(VoterState.round_number)-1) with
+      | Some (OpaqueRound.OpaqueRoundStateC r_prev) =>
+        match (g (get_all_prevote_votes r), get_estimate r_prev) with 
+        | (Some g_r,Some estimate_prev)
+          => 
+          (* TODO: add third condition of precommit *)
+          if (t <? get_start_time r + 4*global_time_constant)
+            || Estimate.is_completable r 
+          then
+            build_and_send_precommit t state voter vs g_r 
+          else 
+            state 
+        | _ => state
+        end
+      | None => state
+      end
+    (*This shouldn't happen!*)
+    | None => state
+    end
   end.
 
 Definition precommit_step `{Io} 
@@ -363,8 +453,19 @@ Definition precommit_step `{Io}
   (voter:Voter) 
   (category:VoterCategory)
   (vs:VoterState)
-  : State.
-Admitted.
+  : State
+  :=
+  match category with 
+  | VoterState.Bizantine 
+    =>
+    match io_bizantine_vote t voter with 
+    | Some b => build_and_send_precommit t state voter vs b
+    | None => state
+    end
+  | VoterState.Honest 
+    => 
+    precommit_step_legit t state voter category vs
+  end.
 
 
 Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
