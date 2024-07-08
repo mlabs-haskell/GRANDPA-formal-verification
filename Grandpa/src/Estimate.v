@@ -6,13 +6,13 @@ Require Import Round.
 Require Import Nat.
 
 Variant Estimate 
-  {bizantiners_number:nat}
+  {total_voters:nat}
   {prevote_voters : Voters} 
   {precommit_voters: Voters}
   {round_time:Time}
   {round_number:nat}
   {time_increment: Time}
-  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : AnyBlock -> Type
   :=
     | EstimateOrigin : round_number = 0 -> Estimate round_state (existT _ 0 OriginBlock)
@@ -21,7 +21,7 @@ Variant Estimate
     (new_block : Block new_block_number)
     {g_block_number: nat}
     (g_prevote: Block g_block_number)
-    (g_prevote_is_some : g bizantiners_number ( get_prevote_votes round_state) = Some (existT _ g_block_number g_prevote))
+    (g_prevote_is_some : g ( get_prevote_votes round_state) = Some (existT _ g_block_number g_prevote))
     (new_block_is_ancestor_of_g: Prefix new_block g_prevote)
     : Estimate round_state (existT _ new_block_number new_block).
 
@@ -29,7 +29,7 @@ Variant Estimate
 
 Section State2.
 
-Context {bizantiners_number:nat}.
+Context {total_voters:nat}.
 Context {prevote_voters:Voters}.
 Context {precommit_voters: Voters}.
 Context {round_time : Time}.
@@ -39,7 +39,7 @@ Context {time_increment : Time}.
 
 (* Projection of the type Estimate *)
 Definition get_estimate_block
-  {round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment}
+  {round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment}
   {n}
   {block : Block n}
   (estimate :Estimate round_state (existT _ n block))
@@ -76,16 +76,15 @@ Fixpoint get_estimate_aux_recursive {gv_block_number:nat}
   end.
 
 Definition get_estimate_aux 
-  (bizantiners_number:nat)
   (prevote_votes: Votes prevote_voters ) 
   (precommit_votes: Votes precommit_voters )
   : option AnyBlock
   :=
-  match g bizantiners_number prevote_votes with 
+  match g prevote_votes with 
   | None => None
   | Some g_prevote_votes =>
     let precommit_supermajority_blocks := 
-      get_supermajority_blocks bizantiners_number precommit_votes
+      get_supermajority_blocks precommit_votes
     in
       get_estimate_aux_recursive 
         (projT2 g_prevote_votes) 
@@ -94,7 +93,7 @@ Definition get_estimate_aux
 
 Definition get_estimate 
   (round_state: 
-    RoundState bizantiners_number prevote_voters precommit_voters  
+    RoundState total_voters prevote_voters precommit_voters  
       round_time  round_number 
       time_increment
   )
@@ -111,14 +110,14 @@ Definition get_estimate
     in
     let all_precommit_votes := get_all_precommit_votes round_state
     in
-    get_estimate_aux bizantiners_number all_prevote_votes all_precommit_votes
+    get_estimate_aux all_prevote_votes all_precommit_votes
   end.
 
 
 End State2.
 
 Section State3.
-Context {bizantiners_number: nat}.
+Context {total_voters: nat}.
 Context {prevote_voters:Voters  }.
 Context {precommit_voters: Voters }.
 Context {round_time : Time}.
@@ -143,7 +142,7 @@ Theorem get_estimate_output_is_estimate
   {block_number:nat}
   {block:Block block_number}
   (round_state: 
-    RoundState bizantiners_number prevote_voters precommit_voters  
+    RoundState total_voters prevote_voters precommit_voters  
       round_time  round_number 
       time_increment
   )
@@ -161,7 +160,7 @@ dependent destruction block.
 
 
 Variant Completable 
-  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : Type
   :=
   | CompletableBelowPreview {number_and_block}
@@ -169,7 +168,7 @@ Variant Completable
       {g_block_number: nat}
       (g_prevote: Block g_block_number)
       (g_prevote_is_some 
-        : g bizantiners_number ( get_prevote_votes round_state) 
+        : g ( get_prevote_votes round_state) 
           = Some (existT _ g_block_number g_prevote)
       )
       (new_block_is_below_g: projT1 number_and_block < g_block_number)
@@ -178,25 +177,25 @@ Variant Completable
       (g_prevote: Block g_block_number)
       (
         g_prevote_is_some 
-        : g bizantiners_number ( get_prevote_votes round_state) 
+        : g ( get_prevote_votes round_state) 
           = Some (existT _ g_block_number g_prevote)
       )
       (cant_have_supermajority 
         : forall n (block : Block n) 
           , g_block_number < n 
-          -> has_supermajority bizantiners_number (get_precommit_votes round_state) 
+          -> has_supermajority (get_precommit_votes round_state) 
             = false
       )
   .
 
 Definition try_to_complete_round
-  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : option (Completable round_state).
 (* needs to define possible and impossible supermajority*)
 Admitted.
 
 Definition is_completable 
-  (round_state: RoundState bizantiners_number prevote_voters precommit_voters  round_time  round_number time_increment)
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : bool
   :=
   match try_to_complete_round round_state with

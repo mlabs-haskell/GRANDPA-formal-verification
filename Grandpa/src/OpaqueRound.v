@@ -5,14 +5,14 @@ Require Import Round.
 Require Import Message.
 
 Variant OpaqueRoundState: Type := 
-  | OpaqueRoundStateC {bizantiners_number round_number}
+  | OpaqueRoundStateC {total_voters round_number}
     {prevote_voters:Voters}
     {precommit_voters: Voters}
     {round_start_time:Time}
     {time:Time}
     (round_state: 
       RoundState 
-        bizantiners_number 
+        total_voters 
         prevote_voters 
         precommit_voters 
         round_start_time 
@@ -27,7 +27,7 @@ Definition update_votes_with_msg
   :=
   match opaque with
   | OpaqueRoundStateC r =>
-    let bizantiners_number := get_bizantiners_number r
+    let bizantiners_number := get_total_voters r
     in
     let prevote_voters := Round.get_prevote_voters r
     in

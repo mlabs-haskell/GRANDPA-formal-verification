@@ -33,7 +33,9 @@ Definition Voter : Type := nat.
 *)
 
 Record Voters : Type 
-  := {get_voters_dictionary: DictionarySet Voter}.
+  := {get_voters_dictionary: DictionarySet Voter
+      ;round_number_of_voters: nat
+  }.
 
 Definition voters_to_list (voters:Voters)
   := Sets.to_list (get_voters_dictionary voters).
@@ -42,9 +44,20 @@ Definition voters_length (voters:Voters)
   := 
   length (voters_to_list voters).
 
-Definition voters_from_list (voters:list Voter)
+Definition voters_from_list (voters:list Voter) 
+  (round_number_of_voters:nat)
   : Voters
-  := {| get_voters_dictionary:= Sets.from_list Nat.eqb voters|}.
+  := {| get_voters_dictionary:= Sets.from_list Nat.eqb voters
+        ;round_number_of_voters:=round_number_of_voters
+    |}.
+
+Definition voters_voters_and_list 
+  (voters:Voters)
+  (ls:list Voter)
+  : Voters 
+  :=
+  voters_from_list ls voters.(round_number_of_voters) .
+
 
 
 Definition in_Voters
@@ -57,6 +70,19 @@ Definition in_Voters
 Definition in_Voters_bool  
   (voter : Voter) (voters:Voters) 
   := 0 <? (List.count_occ PeanoNat.Nat.eq_dec (voters_to_list voters) voter).
+
+
+Definition calculate_max_bizantiners
+  (voters:Voters)
+  :nat
+  :=
+  let total:= voters.(round_number_of_voters)
+  in
+  match Nat.modulo total 3 with 
+  | 0 => (total/3) -1
+  | _ => total/3
+  end
+  .
 
 (** * Votes
 *)
@@ -247,12 +273,11 @@ End Some.
 Definition is_safe  
   {voters: Voters }
   (votes: Votes voters)
-  (bizantiners_number:nat)
   :bool
   :=
   match split_voters_by_equivocation votes with
   | (equivocate_voters, non_equivocate_voters) =>
-     length equivocate_voters <=? bizantiners_number
+     length equivocate_voters <=? calculate_max_bizantiners voters 
   end.
 
 Definition BlockDictionary := Dictionary.Dictionary AnyBlock nat.
@@ -584,18 +609,18 @@ Our implementation aproach is as follows:
    - Find the equivocate votes and the ones that aren't equivocate.
    - Count the non equivocate votes for every block.
    - Remove blocks that don't have at least [(n+f+1)/2] votes.
-      In this case [n:=length voters] and [f:= bizantiners_number]
+      In this case [n:=length voters] and [f:= ]
 *)
 
 Definition has_supermajority_predicate 
   (voters:Voters)
-  (bizantiners_number:nat)
   (number_of_equivocates:nat)
   (block_and_vote:AnyBlock*nat) : bool:= 
     match block_and_vote with
     | (_, number_of_votes) 
         => 
-        voters_length voters + bizantiners_number +1 
+        voters.(round_number_of_voters) 
+        + calculate_max_bizantiners voters +1 
         <? 2 * (number_of_votes + number_of_equivocates)
     end.
 
@@ -603,7 +628,6 @@ Definition has_supermajority_predicate
 
 Definition get_supermajority_blocks 
   {voters:Voters}
-  (bizantiners_number:nat)
   (T : Votes voters) 
   : list (AnyBlock * nat)
   := 
@@ -618,13 +642,13 @@ Definition get_supermajority_blocks
       (filter_votes_by_voters_subset 
         voters 
         T 
-        (voters_from_list non_equivocate_voters)
+        (voters_from_list non_equivocate_voters voters.(round_number_of_voters))
       )
   in
   let blocks_with_super_majority 
     := 
     List.filter 
-      (has_supermajority_predicate voters bizantiners_number number_of_equivocates)
+      (has_supermajority_predicate voters number_of_equivocates)
       (Dictionary.to_list count)
   in
     blocks_with_super_majority.
@@ -721,18 +745,17 @@ TODO: Really important
 Lemma blocks_with_super_majority_are_related 
   {voters:Voters}
   (T : Votes voters) 
-  (bizantiners_number:nat)
-  (is_safe_t: is_safe T bizantiners_number = true)
+  (is_safe_t: is_safe T = true)
   : forall (block1 block2:AnyBlock) (v1 v2:nat), 
-    List.In (block1,v1) (get_supermajority_blocks bizantiners_number T)
-    -> List.In (block2,v2) (get_supermajority_blocks bizantiners_number T)
+    List.In (block1,v1) (get_supermajority_blocks T)
+    -> List.In (block2,v2) (get_supermajority_blocks T)
     -> (projT2 block1) ~ (projT2 block2).
 Proof.
   intros ab1 ab2 v1 v2 H1 H2.
   destruct ab1 as [n1 b1] eqn:Hab1.
   destruct ab2 as [n2 b2] eqn:Hab2.
   simpl.
-  remember (get_supermajority_blocks bizantiners_number T) as gt eqn:Heq_gt.
+  remember (get_supermajority_blocks  T) as gt eqn:Heq_gt.
   unfold get_supermajority_blocks in Heq_gt.
   remember (split_voters_by_equivocation T) as splitedT.
   destruct splitedT as [equivocated_voters non_equivocate_voters].
@@ -834,15 +857,14 @@ Qed.
 (* TODO:  Really important *)
 Lemma superset_has_subset_majority_blocks 
   {voters:Voters}
-  (bizantiners_number:nat)
   (S : Votes voters) 
   (T : Votes voters) 
-  (safe_proof: is_safe T bizantiners_number =true)
+  (safe_proof: is_safe T  =true)
   (is_subset: VotesIsSubset S T)
   : forall anyblock anyblock_votes, 
-      List.In (anyblock,anyblock_votes) (get_supermajority_blocks bizantiners_number S)
+      List.In (anyblock,anyblock_votes) (get_supermajority_blocks  S)
       -> {anyblock_votes_in_t 
-          & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks bizantiners_number T)}.
+          & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks  T)}.
 Proof.
   intros b b_votes_number HinS.
   unfold get_supermajority_blocks in HinS.
@@ -873,10 +895,9 @@ Admitted.
 
 Definition has_supermajority 
   {voters:Voters}
-  (bizantiners_number:nat)
   (S : Votes voters)
   : bool
   := 
-  0 <? length (get_supermajority_blocks bizantiners_number S) .
+  0 <? length (get_supermajority_blocks  S) .
 
 Close Scope blocks_scope.

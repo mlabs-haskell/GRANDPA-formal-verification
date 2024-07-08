@@ -80,19 +80,23 @@ Definition init_next_round_voter_state `{Io}
   := 
   let round_number := S vs.(VoterState.round_number)
   in
+  let as_list :=Dictionary.to_list (io_get_round_voters round_number) 
+  in
+  let total_voters := length as_list
+  in
   match process_round_voters round_number with
   | (bizantiners_number, prevote_voters_list, precommit_voters_list) 
     =>
     let prevote_voters 
-      := Votes.voters_from_list prevote_voters_list
+      := Votes.voters_from_list prevote_voters_list total_voters
     in
     let precommit_voters 
-      := Votes.voters_from_list precommit_voters_list
+      := Votes.voters_from_list precommit_voters_list total_voters
     in
     let round := 
       OpaqueRound.OpaqueRoundStateC(
         InitialRoundState 
-          bizantiners_number
+          total_voters
           prevote_voters 
           precommit_voters 
           time
@@ -110,6 +114,7 @@ Definition init_next_round_voter_state `{Io}
       ;precommited_block := None
       ;last_brodcasted_block := None
       ;rounds :=  rounds
+      ;message_count :=  vs.(VoterState.message_count)
       ;pending_messages 
         := vs.(pending_messages)
       |}
@@ -262,22 +267,29 @@ Definition prevoter_step `{Io}
   (vs:VoterState)
   : State
   :=
-  let tower := vs.(VoterState rounds)
+  let tower := vs.(VoterState.rounds)
   in
   match Vectors.get tower vs.(VoterState.round_number) with
-  | Some round =>
-    match try_to_complete_round round  with
+  | Some (OpaqueRound.OpaqueRoundStateC round_) =>
+    match try_to_complete_round round_  with
     | Some(completable) => 
         match Vectors.get tower (vs.(VoterState.round_number)-1) with
-        |Some (previous_round)
+        |Some (OpaqueRound.OpaqueRoundStateC previous_round)
             => 
             let ref_block := 
               match vs.(last_brodcasted_block) with
-              | Some b => Some (b)
-                  (* TODO: is this right?*)
-              | None => get_estimate (get_bizantiners_number previous_round) previous_round
+              | Some b => Some b
+              | None => get_estimate previous_round
+              end
+            in 
+            match map (look_for_best_chain_for_block t voter) ref_block with 
+            | Some b => 
+              state
+            | None => state
+            end
         (*This shouldn't happen!*)
         | None => state
+        end
     | None=> state
     end
   (*This shouldn't happen!*)
