@@ -26,7 +26,7 @@ Class Io := {
   io_get_round_primary : nat -> Voter;
   (*TODO: add more restrictions to the block producer:
      - If v1 sees block b at t1 then all other v see b at t1+T
-     - if v sees block b at t1, then 
+- if v sees block b at t1, then 
          v sees b at t1+ t2 forall t2
   *)
   block_producer_not_emtpy 
@@ -114,7 +114,6 @@ Definition init_next_round_voter_state `{Io}
       ;precommited_block := None
       ;last_brodcasted_block := None
       ;rounds :=  rounds
-      ;message_count :=  vs.(VoterState.message_count)
       ;pending_messages 
         := vs.(pending_messages)
       |}
@@ -257,7 +256,54 @@ Definition look_for_best_chain_for_block `{Io} (t:Time) (v:Voter) (ablock:AnyBlo
         (Sets.to_list available_blocks)
       )
       (existT _ _ OriginBlock).
-  
+
+Definition build_and_send_vote 
+  (t:Time)
+  (state:State) 
+  (voter:Voter) 
+  (vs:VoterState)
+  (b:AnyBlock)
+  :=
+      let new_message : Message.Message 
+        :=
+        {| 
+          id:= S state.(message_count)
+          ;Message.block:=b
+          ;kind:=Message.PreVoteMessage
+          ;round:=vs.(VoterState.round_number)
+          ;time:=t
+          ;voter:=voter
+          ;processed_by:=Dictionary.from_list Nat.eqb ((voter,UnitC)::List.nil)
+        |}
+      in
+        let 
+          up_prevote := VoterState.update_precommit vs (Some b)
+        in
+        let up_round := VoterState.update_votes_with_msg up_prevote new_message
+        in 
+        update_voter_state (update_message state new_message) voter up_round.
+
+
+Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:VoterState)
+  :State
+  :=
+   let tower := vs.(VoterState.rounds)
+   in
+   match Vectors.get tower (vs.(VoterState.round_number)-1) with
+   |Some (OpaqueRound.OpaqueRoundStateC previous_round)
+       => 
+       let ref_block := 
+         match vs.(last_brodcasted_block) with
+         | Some b => Some b
+         | None => get_estimate previous_round
+         end
+       in 
+       match map (look_for_best_chain_for_block t voter) ref_block with 
+       | Some b => build_and_send_vote t state voter vs b
+| None => state
+       end
+  | None => state
+  end.
 
 Definition prevoter_step `{Io} 
   (t:Time) 
@@ -267,33 +313,26 @@ Definition prevoter_step `{Io}
   (vs:VoterState)
   : State
   :=
-  let tower := vs.(VoterState.rounds)
-  in
-  match Vectors.get tower vs.(VoterState.round_number) with
-  | Some (OpaqueRound.OpaqueRoundStateC round_) =>
-    match try_to_complete_round round_  with
-    | Some(completable) => 
-        match Vectors.get tower (vs.(VoterState.round_number)-1) with
-        |Some (OpaqueRound.OpaqueRoundStateC previous_round)
-            => 
-            let ref_block := 
-              match vs.(last_brodcasted_block) with
-              | Some b => Some b
-              | None => get_estimate previous_round
-              end
-            in 
-            match map (look_for_best_chain_for_block t voter) ref_block with 
-            | Some b => 
-              state
-            | None => state
-            end
-        (*This shouldn't happen!*)
-        | None => state
-        end
-    | None=> state
+  match vs.(prevoted_block) with 
+  | Some _ => state 
+  | None =>
+    let tower := vs.(VoterState.rounds)
+    in
+    match Vectors.get tower vs.(VoterState.round_number) with
+    | Some (OpaqueRound.OpaqueRoundStateC round_) =>
+      match try_to_complete_round round_  with
+      | Some _ => 
+          prevoter_step_aux t state voter vs
+      | None=>
+          if t<=? Round.get_start_time round_ + 2*global_time_constant 
+          then 
+            prevoter_step_aux t state voter vs
+          else
+            state
+      end
+    (*This shouldn't happen!*)
+    | None => state
     end
-  (*This shouldn't happen!*)
-  | None => state
   end.
 
 
@@ -319,10 +358,38 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
       with
       | Some(VoterKindC category kind_) => 
           match kind_ with
-          | VotePrevote => prevoter_step t state voter category voter_state_
-          | VotePrecommit =>  precommit_step t state voter category voter_state_
-          (* TODO: FIx this to really do both! *)
-          | VoteBoth => prevoter_step t state voter category voter_state_
+          | VotePrevote 
+              => 
+              prevoter_step t state voter category voter_state_
+          | VotePrecommit 
+              =>  
+              precommit_step t state voter category voter_state_
+          | VoteBoth => 
+              match voter_state_.(VoterState.prevoted_block) with
+              | Some _ => 
+                match voter_state_.(VoterState.precommited_block) with
+                |Some _ => 
+                  let tower := voter_state_.(VoterState.rounds)
+                  in
+                  match Vectors.get tower (voter_state_.(VoterState.round_number)) with
+                  |Some (OpaqueRound.OpaqueRoundStateC r)
+                    =>
+                    match try_to_complete_round r with
+                    | Some _ => 
+                        let new_vs := 
+                          init_next_round_voter_state t voter_state_
+                        in
+                        update_voter_state state voter new_vs 
+                    | None => state
+                    end
+                  | None =>  state
+                  end
+                |None =>
+                  precommit_step t state voter category voter_state_
+                end
+              | None => 
+                prevoter_step t state voter category voter_state_
+              end
           end
       | _ => state 
       end
@@ -330,6 +397,8 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
   | _ => state
   (* TODO:
   - get current voter state 
+If the command appears in a section: By default, the scope is only added within the section. Specifying global marks the scope for export as part of the current module. Specifying local behaves like the default.
+
   - look for it's kind, 
   - look for what it have done this round 
   - advance or wait and end step

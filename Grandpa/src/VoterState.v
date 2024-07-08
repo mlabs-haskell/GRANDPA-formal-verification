@@ -48,7 +48,6 @@ Record VoterState := {
   ;last_brodcasted_block : option AnyBlock 
   ;rounds : Vec OpaqueRoundState round_number
   (** The nat is the round number **)
-  ;message_count : nat
   ;pending_messages : Dictionary.Dictionary nat (list Message)
   }.
 
@@ -75,7 +74,6 @@ Definition update_last_block  (vs:VoterState) (block:AnyBlock)
       ;precommited_block := vs.(precommited_block)
       ;last_brodcasted_block := Some new_block
       ;rounds := vs.(rounds)
-      ;message_count := vs.(message_count)
       ;pending_messages := vs.(pending_messages)
       |}.
 
@@ -88,7 +86,6 @@ Definition update_prevoted  (vs:VoterState) (maybe_block: option AnyBlock)
        ;precommited_block := vs.(precommited_block)
        ;last_brodcasted_block := vs.(last_brodcasted_block)
        ;rounds := vs.(rounds)
-      ;message_count := vs.(message_count)
        ;pending_messages := vs.(pending_messages)
       |}.
 
@@ -101,7 +98,6 @@ Definition update_precommit  (vs:VoterState) (block: option AnyBlock)
       ;precommited_block := block
       ;last_brodcasted_block := vs.(last_brodcasted_block)
       ;rounds := vs.(rounds)
-      ;message_count := vs.(message_count)
       ;pending_messages := vs.(pending_messages)
     |}.
 
@@ -115,7 +111,6 @@ Definition update_rounds  (vs:VoterState) {tower_number:nat}
       ;precommited_block := vs.(precommited_block)
       ;last_brodcasted_block := vs.(last_brodcasted_block)
       ;rounds := new_rounds
-      ;message_count := vs.(message_count)
       ;pending_messages := vs.(pending_messages)
     |}.
 
@@ -128,7 +123,6 @@ Definition delete_pending_msg (vs:VoterState) (msg:Message)
       ;precommited_block := vs.(precommited_block)
       ;last_brodcasted_block := vs.(last_brodcasted_block)
       ;rounds := vs.(rounds)
-      ;message_count := vs.(message_count)
       ;pending_messages := 
         Dictionary.delete Nat.eqb msg.(Message.id) vs.(pending_messages)
     |}.
@@ -200,7 +194,6 @@ Definition update_with_msg (vs:VoterState) (msg:Message)
         ;precommited_block := vs.(precommited_block)
         ;last_brodcasted_block := vs.(last_brodcasted_block)
         ;rounds := vs.(rounds)
-      ;message_count := vs.(message_count)
         ;pending_messages 
           := 
           Dictionary.update_with 

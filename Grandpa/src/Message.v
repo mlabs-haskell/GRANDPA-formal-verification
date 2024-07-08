@@ -32,7 +32,7 @@ Definition update_message_proccessed (msg:Message) (v:Voter) :=
 ;round:=msg.(round)
     ;time:=msg.(time)
     ;voter:=msg.(voter)
-    ;processed_by:= Dictionary.add Nat.eqb msg.(id) UnitC msg.(processed_by)
+    ;processed_by:= Dictionary.add Nat.eqb v UnitC msg.(processed_by)
   |}.
 
 
