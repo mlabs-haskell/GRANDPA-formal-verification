@@ -129,3 +129,9 @@ Every section can also be divided into:
 31.  Proof of lemma 4.9.
     
 32.  Proof of intermediate lemmas.
+
+
+## Build
+
+For commodity there is a `nix.flake` file defined. 
+After `nix develop` you can just run `make` inside the `Grandpa` folder.
