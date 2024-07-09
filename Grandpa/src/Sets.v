@@ -43,6 +43,10 @@ Definition get_dictionary (d:DictionarySet K) : Dictionary K Unit
   | SetC d => d
   end.
 
+Definition add (k:K) (d:DictionarySet K) : DictionarySet K 
+  :=
+  SetC (Dictionary.add eqb_k k UnitC (get_dictionary d)).
+
 Definition to_list (d:DictionarySet K) : list K
   := map fst (Dictionary.to_list (get_dictionary d)).
 
@@ -50,6 +54,11 @@ Definition from_list (l:list K)
   :DictionarySet K
   := 
     SetC (Dictionary.from_list eqb_k (map (fun n => (n,UnitC)) l)).
+
+Definition empty 
+  : DictionarySet K
+  :=
+  SetC Dictionary.empty.
 
 Definition is_empty (d:DictionarySet K) : bool
   := 

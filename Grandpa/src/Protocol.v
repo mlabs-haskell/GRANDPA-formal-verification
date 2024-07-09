@@ -104,7 +104,7 @@ Definition init_next_round_voter_state `{Io}
           round_number
       )
     in
-    let rounds : Vectors.Vec OpaqueRound.OpaqueRoundState round_number
+    let rounds : Vectors.Vec OpaqueRound.OpaqueRoundState (S round_number)
       := Coq.Vectors.VectorDef.cons _ round _ vs.(rounds)
     in
     let  voter_state 
@@ -117,6 +117,7 @@ Definition init_next_round_voter_state `{Io}
       ;rounds :=  rounds
       ;pending_messages 
         := vs.(pending_messages)
+      ;finalized_blocks := vs.(finalized_blocks)
       |}
     in
     (* We only process the pending messages for this round 
@@ -150,7 +151,6 @@ Definition empty_state : State :=
     ;commited_blocks := List.nil
   |}.
 
-
 Definition update_message (state:State) (msg:Message) : State :=
   {|
     message_count:=state.(message_count)
@@ -166,6 +166,35 @@ Definition update_voter_state (state:State) (voter:Voter) (vs:VoterState) : Stat
     ;voters_state:=Dictionary.add Nat.eqb voter vs state.(voters_state)
     ;commited_blocks:=state.(commited_blocks)
   |}.
+
+Definition make_initial_state `{Io}
+  :State
+  :=
+  let as_list :=Dictionary.to_list (io_get_round_voters 0) 
+  in
+  let total_voters := length as_list
+  in
+  match process_round_voters 1 with
+  | (bizantiners_number, prevote_voters_list, precommit_voters_list) 
+    =>
+    let prevote_voters 
+      := Votes.voters_from_list prevote_voters_list total_voters
+    in
+    let precommit_voters 
+      := Votes.voters_from_list precommit_voters_list total_voters
+    in
+    let
+      init_vs  := VoterState.make_initial_voter_state prevote_voters precommit_voters
+    in
+    {|
+      message_count:=0
+      ;pending_messages:= Dictionary.empty
+      ;voters_state
+        := 
+        Dictionary.from_list Nat.eqb (map (fun x =>(fst x,init_vs)) as_list) 
+      ;commited_blocks:= (Blocks.to_any OriginBlock,0,0)::nil
+    |}
+  end.
 
 Definition remove_message (state:State) (msg:Message): State :=
   {|
@@ -472,6 +501,7 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
   match Dictionary.lookup Nat.eqb voter state.(voters_state)with
   | Some voter_state_ =>  
       (*TODO: Insert primary logic here first!*)
+      (*TODO: Add finaliztion logic here!*)
       match 
         Dictionary.lookup 
           Nat.eqb 
@@ -502,6 +532,7 @@ Definition voter_round_step `{Io} (t:Time) (state:State) (voter:Voter): State :=
                           init_next_round_voter_state t voter_state_
                         in
                         update_voter_state state voter new_vs 
+                    (* Add finalization logic for the last round here *)
                     | None => state
                     end
                   | None =>  state
@@ -549,11 +580,9 @@ CoFixpoint produce_states `{Io} (t:Time) (state:State): CoList State :=
 
 
 Definition get_state_up_to `{Io} (t:Time): State :=   
-  get_last t (produce_states 0 empty_state). 
+  get_last t (produce_states 0 make_initial_state). 
 
-(*
-Compute get_state_up_to 10. 
-*)
+(* Compute get_state_up_to 1. *)
 
 
 Lemma get_commited_blocks_are_related (state:State)

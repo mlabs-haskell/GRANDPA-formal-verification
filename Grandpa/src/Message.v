@@ -7,12 +7,22 @@ Require Import Nat.
 Require Import Coq.Arith.Arith.
 Require Import List.
 
+Record FinalizeBlock :Type 
+  :=
+  {
+    prevoters: Voters
+    ;precommiters: Voters
+    ;prevotes : Votes prevoters
+    ;precommits : Votes precommiters
+  }.
+
+
 Variant MessageKind : Type
   :=
   | PreCommitMessage : MessageKind
   | PreVoteMessage : MessageKind
   | EstimateMessage: MessageKind
-  | FinalizationMessage: MessageKind.
+  | FinalizationMessage (votes:FinalizeBlock) : MessageKind.
 
 Record Message :=
    { id:nat 
