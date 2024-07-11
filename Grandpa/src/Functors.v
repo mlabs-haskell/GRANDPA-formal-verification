@@ -1,6 +1,8 @@
 Require Import Coq.Lists.List.
 Require Import Coq.Program.Basics.
 
+Require Coq.Vectors.VectorDef.
+
 Class Functor (f : Type -> Type) := {
   map : forall {A B : Type}, (A -> B) -> f A -> f B
 }.
@@ -41,3 +43,14 @@ Proof.
   - apply List.map_id.
   - Admitted.
 
+Definition VectorWrapper (n:nat) (A:Type) 
+  :Type
+  :=    Coq.Vectors.VectorDef.t A n. 
+
+Definition coerceVector {n:nat} {A:Type} 
+  (v:VectorDef.t A n) : VectorWrapper n A 
+  := v.
+
+Instance Functor_vector {n} : Functor (VectorWrapper n) := {
+  map := fun {A} {B} (f:A -> B) v => VectorDef.map f v
+}.

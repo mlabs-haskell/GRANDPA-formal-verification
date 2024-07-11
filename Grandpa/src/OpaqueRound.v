@@ -20,6 +20,49 @@ Variant OpaqueRoundState: Type :=
         time 
     ).
 
+Definition get_prevote_voters (o:OpaqueRoundState) : Voters
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_prevote_voters r 
+  end.
+
+Definition get_precommit_voters (o:OpaqueRoundState) : Voters
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_precommit_voters r 
+  end.
+
+Definition get_start_time (o:OpaqueRoundState) : Time
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_start_time r 
+  end.
+
+Definition get_round_number (o:OpaqueRoundState) : nat
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_round_number r 
+  end.
+
+Definition get_total_voters (o:OpaqueRoundState) : nat
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_total_voters r 
+  end.
+
+Definition get_all_prevote_votes (o:OpaqueRoundState) : (Votes (get_prevote_voters o))
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_prevote_votes r 
+  end.
+
+Definition get_all_precommit_votes (o:OpaqueRoundState) : (Votes (get_precommit_voters o))
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Round.get_precommit_votes r 
+  end.
+
+
 Definition update_votes_with_msg
   (opaque:OpaqueRoundState)
   (msg:Message)
@@ -27,7 +70,7 @@ Definition update_votes_with_msg
   :=
   match opaque with
   | OpaqueRoundStateC r =>
-    let bizantiners_number := get_total_voters r
+    let bizantiners_number := Round.get_total_voters r
     in
     let prevote_voters := Round.get_prevote_voters r
     in

@@ -154,6 +154,7 @@ Definition update_last_block  (vs:VoterState) (block:AnyBlock)
       ;finalized_blocks:= vs.(finalized_blocks)
       |}.
 
+(*TODO: use update_last_block*)
 Definition update_add_finalized_block  (vs:VoterState) (block:AnyBlock)
   : VoterState
   := 

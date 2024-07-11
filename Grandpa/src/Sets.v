@@ -2,6 +2,8 @@ Require Import Dictionary.
 Require Import Functors.
 Require Import ListFacts.
 
+Require Import Bool.
+
 Section UnitSection.
 
 End UnitSection.
@@ -94,5 +96,13 @@ Proof.
   transitivity (count eqb_k k (to_list S2));auto.
 Qed.
 
+
+Definition all (f: K -> bool) (s:DictionarySet K) : bool 
+  := 
+  List.fold_left (fun acc k => acc && (f k) ) (to_list s) true.
+
+Definition or (f: K -> bool) (s:DictionarySet K) : bool 
+  := 
+  List.fold_left (fun acc k => acc || (f k) ) (to_list s) true.
 
 End DictionarySet.
