@@ -45,6 +45,18 @@ Definition voter_is_primary_for_round `{Io} (v:Voter) (round_number:nat):bool
   := 
   io_get_round_primary round_number =? v.
 
+Definition get_round_bizantine_voters `{Io} (round_number:nat)
+  :list nat
+  :=
+  let f v_k :=
+    match v_k with
+    | (_,VoterKindC Bizantine _) => true
+    | _ => false
+    end
+  in
+  map fst  (List.filter f (Dictionary.to_list (io_get_round_voters round_number)) ).
+
+
 Definition process_round_voters_step 
   (acc: nat*(list Voter)*(list Voter) )
   (value:Voter*VoterKind)
@@ -157,7 +169,7 @@ Record State :={
   (* The key nat in the Dictionary is the message id *)
   ;pending_messages:Dictionary.Dictionary nat Message 
   ;voters_state:Dictionary.Dictionary nat VoterState
-  ;commited_blocks: list (AnyBlock * Time * nat)
+  ;global_finalized_blocks: list (AnyBlock * Time * nat)
   }.
 
 Definition empty_state : State :=
@@ -165,7 +177,7 @@ Definition empty_state : State :=
     message_count:=0
     ;pending_messages:=Dictionary.empty
     ;voters_state:=Dictionary.empty
-    ;commited_blocks := List.nil
+    ;global_finalized_blocks := List.nil
   |}.
 
 Definition update_message (state:State) (msg:Message) : State :=
@@ -173,7 +185,7 @@ Definition update_message (state:State) (msg:Message) : State :=
     message_count:=state.(message_count)
     ;pending_messages:=Dictionary.add Nat.eqb msg.(id) msg state.(pending_messages)
     ;voters_state:=state.(voters_state)
-    ;commited_blocks:=state.(commited_blocks)
+    ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
 Definition advance_count (state:State) : State :=
@@ -181,7 +193,7 @@ Definition advance_count (state:State) : State :=
     message_count:=S state.(message_count)
     ;pending_messages:= state.(pending_messages)
     ;voters_state:=state.(voters_state)
-    ;commited_blocks:=state.(commited_blocks)
+    ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
 Definition update_voter_state (state:State) (voter:Voter) (vs:VoterState) : State :=
@@ -189,7 +201,7 @@ Definition update_voter_state (state:State) (voter:Voter) (vs:VoterState) : Stat
     message_count:=state.(message_count)
     ;pending_messages:=state.(pending_messages)
     ;voters_state:=Dictionary.add Nat.eqb voter vs state.(voters_state)
-    ;commited_blocks:=state.(commited_blocks)
+    ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
 Definition make_initial_state `{Io}
@@ -217,7 +229,7 @@ Definition make_initial_state `{Io}
       ;voters_state
         := 
         Dictionary.from_list Nat.eqb (map (fun x =>(fst x,init_vs)) as_list) 
-      ;commited_blocks:= (Blocks.to_any OriginBlock,0,0)::nil
+      ;global_finalized_blocks:= (Blocks.to_any OriginBlock,0,0)::nil
     |}
   end.
 
@@ -226,7 +238,7 @@ Definition remove_message (state:State) (msg:Message): State :=
     message_count:=state.(message_count)
     ;pending_messages:=Dictionary.delete Nat.eqb msg.(id) state.(pending_messages)
     ;voters_state:=state.(voters_state)
-    ;commited_blocks:=state.(commited_blocks)
+    ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
 Definition set_as_processed_by (v:Voter) (msg:Message) (state:State): State :=
@@ -847,16 +859,13 @@ Definition get_state_up_to `{Io} (t:Time): State :=
 (* Compute get_state_up_to 1. *)
 
 
-Lemma get_commited_blocks_are_related (state:State)
+Lemma get_global_finalized_blocks_are_related (state:State)
   (b1 b2 : AnyBlock) 
   (b1_in 
-    : List.In b1 (List.map ( fun x => fst (fst x)) state.(commited_blocks)))
+    : List.In b1 (List.map ( fun x => fst (fst x)) state.(global_finalized_blocks)))
   (b2_in 
-    : List.In b2 (List.map ( fun x => fst (fst x)) state.(commited_blocks)))
+    : List.In b2 (List.map ( fun x => fst (fst x)) state.(global_finalized_blocks)))
   : Related (projT2 b1) (projT2 b2).
-Admitted.
-
-Definition voted (v:Voter) (r:nat) (state:State) (b:AnyBlock):Prop.
 Admitted.
 
 
@@ -865,7 +874,7 @@ Open Scope type_scope.
 
 Section ProtocolConsistency.
 
-Definition get_voter_opaque_round (state:State) (v:Voter) (t:Time) (r_n:nat)
+Definition get_voter_opaque_round (state:State) (v:Voter) (r_n:nat)
   : option OpaqueRound.OpaqueRoundState 
   := 
   match (Dictionary.lookup Nat.eqb v (voters_state state)) with
@@ -906,11 +915,11 @@ Lemma round_continuos_existence `{Io}
   (r1:OpaqueRound.OpaqueRoundState)
   (
     is_some_at_t
-    : get_voter_opaque_round (get_state_up_to t) v t r_n = Some r1
+    : get_voter_opaque_round (get_state_up_to t) v r_n = Some r1
   )
   (t_increment:Time)
     : exists r2
-    , get_voter_opaque_round (get_state_up_to (t_increment+t)%nat) v (t_increment+t)%nat r_n = Some r2.
+    , get_voter_opaque_round (get_state_up_to (t_increment+t)%nat) v r_n = Some r2.
 Proof.
   dependent induction t_increment. 
   - eauto.
@@ -925,14 +934,13 @@ Lemma round_prevoters_consistent_over_time `{Io}
   (r1:OpaqueRound.OpaqueRoundState)
   (
     is_some_at_t
-    :get_voter_opaque_round (get_state_up_to t) v t r_n = Some r1
+    :get_voter_opaque_round (get_state_up_to t) v r_n = Some r1
   )
   (t_increment:Time)
   :exists r2,
   get_voter_opaque_round 
     (get_state_up_to (t_increment+t)%nat )
     v 
-    (t_increment+t)%nat
     r_n 
     = Some r2 
   /\ (OpaqueRound.get_prevote_voters r2 = OpaqueRound.get_prevote_voters r1).
@@ -963,7 +971,7 @@ Lemma votes_are_monotone_over_time `{Io}
   (b_in
     :List.In 
       (to_any b) 
-      (List.map ( fun x => fst (fst x)) (commited_blocks state))
+      (List.map ( fun x => fst (fst x)) (global_finalized_blocks state))
   )
   .
 *)
@@ -976,12 +984,12 @@ Lemma commits_came_from_voter {n:nat} (b:Block n)
   (b_in
     :List.In 
       (to_any b) 
-      (List.map ( fun x => fst (fst x)) (commited_blocks state))
+      (List.map ( fun x => fst (fst x)) (global_finalized_blocks state))
   )
   :
   exists (r_n:nat) (v:Voter) tv pv_v pc_v t0 t' 
     (r:RoundState tv pv_v pc_v t0 r_n t')
-    , get_voter_opaque_round state v t r_n
+    , get_voter_opaque_round state v r_n
       = Some (OpaqueRound.OpaqueRoundStateC r)
     /\ 
       g 
@@ -997,24 +1005,43 @@ Proof.
   exists r_n.
   Admitted.
 
+(*TODO: add consistency of total_number_of_voters param
+  that is passed to both prevote and precommit set of voters for every round
+*)
   
 End ProtocolConsistency.
 
-(* TODO: Correct bizantiners number*)
-Theorem theorem_4_1 {n1 n2 bizantine_number:nat} (b1:Block n1) (b2:Block n2) 
+
+Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
+  :Prop
+  :=
+    (Votes.voter_voted_in_votes v (OpaqueRound.get_all_prevote_votes opaque) = true)
+    \/
+    (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
+
+
+Theorem theorem_4_1 `{Io} 
+  {n1 n2 :nat} 
+  (b1:Block n1) 
+  (b2:Block n2) 
+  (round_finalized_1 round_finalized_2:nat)
+  (t1 t2:nat)
   (un_related:Unrelated b1 b2)
   (state:State)
-  {t:Time}
-  `{Io}
+  (t:Time)
   (state_is_from_protocol: state =  get_state_up_to t)
-  (b1_in:List.In (to_any b1) (List.map ( fun x => fst (fst x)) (commited_blocks state)))
-  (b2_in:List.In (to_any b2) (List.map ( fun x => fst (fst x)) (commited_blocks state)))
-  : exists r b (s:Sets.DictionarySet Voter), 
+  (b1_in:List.In (to_any b1,t1, round_finalized_1) (global_finalized_blocks state))
+  (b2_in:List.In (to_any b2,t2, round_finalized_2) (global_finalized_blocks state))
+  (symmetry_hipotesis:round_finalized_1 <= round_finalized_2)
+  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
     (
-      (length (Sets.to_list s) >= bizantine_number +1) 
+      (
+        length (Sets.to_list s) 
+        >= 
+        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+      ) 
       /\
-      (forall v, List.In v (Sets.to_list s) -> voted v r state b)
-      /\ (b = to_any b1  \/  b = to_any b2)
+      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
     ).
 Proof.
   dependent induction b1. 
@@ -1033,25 +1060,44 @@ Admitted.
       (* List.in_map*)
 (* if n < n0 *)
 
+Definition voter_is_hones_at_round (v:Voter) (r:nat) : bool.
+Admitted.
 
-(*
+
 Corollary corollary_4_3 
   `{Io}
-  (t:Time)
-  (bizantiners_restriction
-    :
-    forall r_n,
-    get_round_bizantiners_number r_n < (get_round_total_voters r_n) /3
-  )
-  (b:AnyBlock)
-  (r_n:nat)
-  (finalized_at: exists t2, List.In (b,r_n,t2) (commited_blocks (get_state_up_to t))  )
+  (round_finalized_number:nat)
+  (time_finalied:Time)
+  (b_finalized:AnyBlock)
   (v:Voter)
-  (*TODO: fix this*)
-  (is_honest:nat)
-  (r_difference:nat)
-  (is_completable:nat (*get_state_up_to t*))
-  :nat.
-*)
+  (r_n:nat)
+  (is_honest: voter_is_hones_at_round v r_n = true)
+  (t_increment:Time)
+  (r_n_geq: r_n >= round_finalized_number)
+  (opaque_r_n : OpaqueRound.OpaqueRoundState)
+  (opaque_from_state
+    : 
+    get_voter_opaque_round (get_state_up_to (t_increment + time_finalied)%nat ) v r_n 
+    = Some opaque_r_n
+  )
+  (r_n_completable:
+   OpaqueRound.is_completable opaque_r_n = true
+  )
+  :exists (eb:AnyBlock),
+    (
+      OpaqueRound.get_estimate opaque_r_n
+      = 
+      Some eb 
+    )
+    /\ 
+    (
+      Blocks.is_prefix (projT2 b_finalized) (projT2 eb) = true
+    ).
+Proof.
+  Admitted.
+
+
+
+
 
 Close Scope type_scope.

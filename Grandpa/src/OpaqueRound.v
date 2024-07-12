@@ -1,6 +1,7 @@
 Require Import Blocks.                 
 Require Import Votes.                  
 Require Import Round.
+Require Import Estimate.
 
 Require Import Message.
 
@@ -60,6 +61,20 @@ Definition get_all_precommit_votes (o:OpaqueRoundState) : (Votes (get_precommit_
   :=
   match o with 
   | OpaqueRoundStateC r => Round.get_precommit_votes r 
+  end.
+
+Definition is_completable (o:OpaqueRoundState) 
+  : bool
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Estimate.is_completable r 
+  end.
+
+Definition get_estimate (o:OpaqueRoundState) 
+  : option AnyBlock
+  :=
+  match o with 
+  | OpaqueRoundStateC r => Estimate.get_estimate r 
   end.
 
 
