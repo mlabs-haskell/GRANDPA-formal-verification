@@ -1,0 +1,208 @@
+Require Import Blocks.                 
+Require Import Votes.                  
+Require Import Preliminars.
+Require Import Round.
+
+Require Import Nat.
+
+Variant Estimate 
+  {total_voters:nat}
+  {prevote_voters : Voters} 
+  {precommit_voters: Voters}
+  {round_time:Time}
+  {round_number:nat}
+  {time_increment: Time}
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
+  : AnyBlock -> Type
+  :=
+    | EstimateOrigin : round_number = 0 -> Estimate round_state (existT _ 0 OriginBlock)
+    |EstimateC 
+    {new_block_number : nat}
+    (new_block : Block new_block_number)
+    {g_block_number: nat}
+    (g_prevote: Block g_block_number)
+    (g_prevote_is_some : g ( get_prevote_votes round_state) = Some (existT _ g_block_number g_prevote))
+    (new_block_is_ancestor_of_g: Prefix new_block g_prevote)
+    : Estimate round_state (existT _ new_block_number new_block).
+
+
+
+Section State2.
+
+Context {total_voters:nat}.
+Context {prevote_voters:Voters}.
+Context {precommit_voters: Voters}.
+Context {round_time : Time}.
+Context {round_number: nat}.
+Context {time_increment : Time}.
+
+
+(* Projection of the type Estimate *)
+Definition get_estimate_block
+  {round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment}
+  {n}
+  {block : Block n}
+  (estimate :Estimate round_state (existT _ n block))
+  : Block n
+  :=
+  match estimate with
+    | EstimateOrigin _ _ => OriginBlock
+    | EstimateC _ new_block _ _ _ => new_block
+  end.
+
+Fixpoint get_estimate_aux_recursive {gv_block_number:nat} 
+  (gv:Block gv_block_number)
+  (precommit_supermajority_blocks: list (AnyBlock*nat))
+  : option AnyBlock
+  :=
+  let find_block any_block := 
+    match any_block with
+      | (existT _ block_number block,_)
+        => Blocks.eqb gv block
+    end
+  in
+  match List.find find_block precommit_supermajority_blocks with 
+    | None 
+        => match gv with
+            | OriginBlock => None
+            | NewBlock old_block _ 
+                =>  
+                get_estimate_aux_recursive 
+                  old_block 
+                  precommit_supermajority_blocks
+            end
+    | Some (any_block,_)
+        => Some any_block
+  end.
+
+Definition get_estimate_aux 
+  (prevote_votes: Votes prevote_voters ) 
+  (precommit_votes: Votes precommit_voters )
+  : option AnyBlock
+  :=
+  match g prevote_votes with 
+  | None => None
+  | Some g_prevote_votes =>
+    let precommit_supermajority_blocks := 
+      get_supermajority_blocks precommit_votes
+    in
+      get_estimate_aux_recursive 
+        (projT2 g_prevote_votes) 
+        precommit_supermajority_blocks
+  end.
+
+Definition get_estimate 
+  (round_state: 
+    RoundState total_voters prevote_voters precommit_voters  
+      round_time  round_number 
+      time_increment
+  )
+  : option AnyBlock
+  :=
+ match round_state  with
+  | InitialRoundState _ _ _ _ _ => 
+      if Nat.eqb round_number 0 then
+      Some (existT _ 0 OriginBlock)
+      else
+      None
+  | RoundStateUpdate _ _ _ _ _ _ _ _ _=> 
+    let all_prevote_votes := get_all_prevote_votes round_state
+    in
+    let all_precommit_votes := get_all_precommit_votes round_state
+    in
+    get_estimate_aux all_prevote_votes all_precommit_votes
+  end.
+
+
+End State2.
+
+Section State3.
+Context {total_voters: nat}.
+Context {prevote_voters:Voters  }.
+Context {precommit_voters: Voters }.
+Context {round_time : Time}.
+Context {round_number: nat}.
+Context {time_increment : Time}.
+
+
+Lemma get_estimate_aux_recursive_is_none_on_nil : 
+  forall {n} (block:Block n) 
+  ,get_estimate_aux_recursive block nil = None.
+Proof.
+  intro n. induction n as [|n HInductive]
+    ;intro block. 
+    + dependent inversion block.
+      simpl. reflexivity.
+    + dependent inversion block. 
+      simpl. 
+      apply HInductive.
+Qed.
+      
+Theorem get_estimate_output_is_estimate 
+  {block_number:nat}
+  {block:Block block_number}
+  (round_state: 
+    RoundState total_voters prevote_voters precommit_voters  
+      round_time  round_number 
+      time_increment
+  )
+  (get_estimate_result
+    : get_estimate round_state = Some (existT _ block_number block)
+  )
+  : Estimate round_state (existT _ block_number block).
+Proof.
+Admitted.
+(*  
+dependent destruction block.
+  - refine (EstimateOrigin round_state _).
+*)
+
+
+
+Variant Completable 
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
+  : Type
+  :=
+  | CompletableBelowPreview {number_and_block}
+      (e: Estimate  round_state number_and_block)
+      {g_block_number: nat}
+      (g_prevote: Block g_block_number)
+      (g_prevote_is_some 
+        : g ( get_prevote_votes round_state) 
+          = Some (existT _ g_block_number g_prevote)
+      )
+      (new_block_is_below_g: projT1 number_and_block < g_block_number)
+  | CompletableByImpossible 
+      {g_block_number: nat}
+      (g_prevote: Block g_block_number)
+      (
+        g_prevote_is_some 
+        : g ( get_prevote_votes round_state) 
+          = Some (existT _ g_block_number g_prevote)
+      )
+      (cant_have_supermajority 
+        : forall n (block : Block n) 
+          , g_block_number < n 
+          -> has_supermajority (get_precommit_votes round_state) 
+            = false
+      )
+  .
+
+Definition try_to_complete_round
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
+  : option (Completable round_state).
+(* needs to define possible and impossible supermajority*)
+Admitted.
+
+Definition is_completable 
+  (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
+  : bool
+  :=
+  match try_to_complete_round round_state with
+  | None => false
+  | _ => true
+  end.
+
+
+
+End State3.

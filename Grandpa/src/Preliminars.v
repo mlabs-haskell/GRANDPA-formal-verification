@@ -117,12 +117,16 @@ Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
 Proof.
   Admitted.
 
-Lemma find_highest_blocks_on_safe_set_lenght {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
+Lemma find_highest_blocks_on_safe_set_lenght 
+  {voters:Voters}
+  (T : Votes voters) 
   (is_safe_t: is_safe T = true)
-  : length (find_highest_blocks (List.map fst (get_supermajority_blocks T))) <=1.
+  : 
+  length 
+    (find_highest_blocks 
+      (List.map fst (get_supermajority_blocks T)
+      )
+    )<=1.
 Proof.
   destruct (find_highest_blocks (List.map fst (get_supermajority_blocks T))) as [|b1 remain] eqn:H.
   + auto.
@@ -182,10 +186,9 @@ Proof.
          and the fact that (not proved yet) filter is monotone with respect to count.*)
       Admitted.
 
-Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
+Lemma find_highest_blocks_on_safe_set 
+  {voters:Voters}
+  (T : Votes voters) 
   (is_safe_t: is_safe T = true)
   : get_supermajority_blocks T <> nil 
     -> {b & 
@@ -195,7 +198,7 @@ Lemma find_highest_blocks_on_safe_set {bizantiners_number last_block_number}
 Proof.
   intro Hnil.
   destruct (find_highest_blocks (List.map fst (get_supermajority_blocks T))) as [| b ls] eqn:Hn.
-  - pose (find_highest_blocks_nil_iff_nil (List.map fst (get_supermajority_blocks T)) ) as nil_iff.
+  - pose (find_highest_blocks_nil_iff_nil (List.map fst (get_supermajority_blocks  T)) ) as nil_iff.
     rewrite nil_iff in Hn.
     apply List.map_eq_nil in Hn.
     contradiction.
@@ -211,10 +214,9 @@ Proof.
 Qed.
 
 (* Función g *)
-Definition g {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T : Votes voters last_block) 
+Definition g 
+  {voters:Voters}
+  (T : Votes voters) 
   : option (sigT ( fun out => Block out))
   := 
   let blocks_with_super_majority 
@@ -226,10 +228,9 @@ Definition g {bizantiners_number last_block_number}
     end.
 
 
-Lemma gt_some_implies_supermajority_not_empty {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Lemma gt_some_implies_supermajority_not_empty 
+  {voters:Voters }
+  (T: Votes voters)
   {gt_block_number: nat}
   (gt : Block gt_block_number)
   (gt_is_result : g T = Some (existT _ gt_block_number gt))
@@ -256,18 +257,34 @@ Lemma map_in {A B} (f : A -> B) (l : list A) (y : B) (x : A)
   : (f x = y /\ List.In x l) ->List.In y (List.map f l).
 Admitted.
 
-Lemma from_g_to_votes_safe_set {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Lemma from_g_to_votes_safe_set 
+  {voters:Voters}
+  (T: Votes voters )
   (is_safe_t:is_safe T = true)
   (gt_anyblock:AnyBlock)
   (gt_is_result : g T = Some gt_anyblock)
-  : {vote_number:nat & List.In (gt_anyblock,vote_number) (get_supermajority_blocks T)}.
+  : 
+    {vote_number:nat 
+      & List.In 
+        (gt_anyblock,vote_number) 
+        (get_supermajority_blocks T)
+    }.
 Proof.
   destruct gt_anyblock as [gt_block_number gt_block] eqn:Hremember.
-  pose (gt_some_implies_supermajority_not_empty T gt_block gt_is_result) as super_t_not_nil.
-  pose (find_highest_blocks_on_safe_set T is_safe_t super_t_not_nil) as g_t_result.
+  pose (
+    gt_some_implies_supermajority_not_empty 
+      
+      T 
+      gt_block 
+      gt_is_result
+  ) as super_t_not_nil.
+  pose (
+    find_highest_blocks_on_safe_set 
+    
+    T 
+    is_safe_t 
+    super_t_not_nil
+  ) as g_t_result.
   destruct g_t_result as [b eq_b].
   unfold g in gt_is_result.
   clear super_t_not_nil.
@@ -289,13 +306,12 @@ Qed.
 
 
 Open Scope type_scope.
-Lemma lemma_2_5_2 {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Lemma lemma_2_5_2 
+  {voters:Voters}
+  (T: Votes voters)
   (is_safe_t: is_safe T = true)
-  (S: Votes voters last_block) 
-  (is_sub_set: IsSubset S T )
+  (S: Votes voters)  
+  (is_sub_set: VotesIsSubset S T )
   {gs_block_number: nat}
   (gs : Block gs_block_number)
   (gs_is_result : g S = Some (existT _ gs_block_number gs))
@@ -380,22 +396,21 @@ Qed.
 Close Scope type_scope.
 
 
-Variant ImpossibleSupermajority {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Variant ImpossibleSupermajority 
+  {voters:Voters}
+  (T: Votes voters)
   {block_number: nat}
   (block: Block block_number)
   :Prop
   := 
   | ImpossibleSupermajorityC
-    (S: Votes voters last_block)
-    (subset_proof:IsSubset S T)
+    (S: Votes voters)
+    (subset_proof:VotesIsSubset S T)
     (non_related_proof:forall anyblock, 
       List.In anyblock (List.map vote_to_block (votes_to_list S)) 
       -> (Prefix (projT2 anyblock) block * False) )
       :
-      (length (voters_to_list voters) + bizantiners_number + 1) 
+      (length (voters_to_list voters) +  1) 
       + 
       (* This condition must be changed, we want to 
          have here the intersection of S and the 
@@ -408,10 +423,9 @@ Variant ImpossibleSupermajority {bizantiners_number last_block_number}
       ImpossibleSupermajority T block.
 
 
-Definition PossibleSupermajority {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Definition PossibleSupermajority 
+  {voters:Voters}
+  (T: Votes voters )
   {block_number: nat}
   (block: Block block_number)
   : Prop 
@@ -419,15 +433,15 @@ Definition PossibleSupermajority {bizantiners_number last_block_number}
         
 
 
-Lemma lemma_2_6_1 {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (T: Votes voters last_block)
+Lemma lemma_2_6_1 
+  {voters:Voters}
+  (T: Votes voters)
   {block1_number block2_number: nat}
   (block1: Block block1_number)
   (block2: Block block2_number)
   (is_prefix_b1_b2: Prefix block1 block2)
-  : ImpossibleSupermajority T block1 -> ImpossibleSupermajority T block2.
+  : ImpossibleSupermajority T block1 
+      -> ImpossibleSupermajority T block2.
 Proof.
   intro H.
   destruct H as [S subset_proof non_related_proof ineq].
@@ -442,26 +456,25 @@ Proof.
   auto.
 Qed.
 
-Lemma lemma_2_6_2 {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S T: Votes voters last_block)
-  (is_sub_set: IsSubset S T )
+Lemma lemma_2_6_2 
+  {voters:Voters}
+  (S T: Votes voters)
+  (is_sub_set: VotesIsSubset S T )
   {block_number : nat}
   (block: Block block_number)
-  : ImpossibleSupermajority S block -> ImpossibleSupermajority T block.
+  : ImpossibleSupermajority S block 
+      -> ImpossibleSupermajority T block.
 Proof.
   intro H.
   destruct H as [S2 subset_proof non_related_proof ineq].
-  pose (is_subset_transitive S2 S T subset_proof is_sub_set) as s2_subset_t. 
+  pose (is_votes_subset_transitive S2 S T subset_proof is_sub_set) as s2_subset_t. 
 (* 
  *)
 Admitted.
 
-Lemma lemma_2_6_3 {bizantiners_number last_block_number}
-  {voters:Voters bizantiners_number}
-  {last_block : Block last_block_number}
-  (S: Votes voters last_block)
+Lemma lemma_2_6_3 
+  {voters:Voters}
+  (S: Votes voters)
   {gs_block_number:nat}
   (gs : Block gs_block_number)
   (gs_is_result : g S = Some (existT _ gs_block_number gs))

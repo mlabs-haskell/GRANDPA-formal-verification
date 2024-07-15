@@ -2,7 +2,7 @@ From Grandpa Require Import Blocks.
 From Grandpa Require Import Votes.
 
 Example e_block1 := NewBlock OriginBlock 10.
-Example e_block2 := NewBlock OriginBlock 11.
+Example e_block2 := NewBlock OriginBlock 10.
 Example e_block3 := NewBlock OriginBlock 12.
 Example e_block4 := NewBlock OriginBlock 10.
 Example e_block5 := NewBlock OriginBlock 10.
@@ -14,13 +14,13 @@ Example e_block9 := NewBlock (NewBlock OriginBlock 10) 23.
 Open Scope list.
 Example e_voters_list := (1::2::3::4::5::6::7::8::9::List.nil).
 
-Example e_voters := voters_from_list 1 e_voters_list. 
+Example e_voters := voters_from_list e_voters_list (List.length e_voters_list). 
 
 Example false_in x : in_Voters x e_voters.
 Admitted.
 
 Definition mk {m} n (b: Block m) := 
-  VoteC e_voters OriginBlock n (false_in n) b (originBlock_is_always_prefix b).
+  VoteC e_voters n (false_in n) b.
 
 Example votes_list := 
   (
@@ -36,7 +36,7 @@ Example votes_list :=
   :: List.nil
   ).
 
-Example e_votes := VotesC e_voters OriginBlock votes_list.
+Example e_votes := VotesC e_voters votes_list.
 
 Compute split_voters_by_equivocation e_votes .
 Compute count_votes e_votes.
@@ -46,7 +46,7 @@ Compute get_supermajority_blocks e_votes .
 
 Example test1 : 
   get_supermajority_blocks e_votes 
-    = List.cons (existT (fun n : nat => Block n) 1 (NewBlock OriginBlock 10), 6) List.nil.
+    = List.cons (existT (fun n : nat => Block n) 1 (NewBlock OriginBlock 10), 7) List.nil.
 Proof.
   reflexivity.
 Qed.
