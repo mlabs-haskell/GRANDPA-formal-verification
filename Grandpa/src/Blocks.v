@@ -627,7 +627,6 @@ Definition is_related {n m} (block1:Block n) (block2:Block m)
   := is_prefix block1 block2 || is_prefix block2 block1.
 
 
-
 Lemma decidable_related : forall n (block1:Block n) m (block2 :Block m)
   , {block1 ~ block2} + {Unrelated block1 block2}.
 Proof.
@@ -664,6 +663,14 @@ Proof.
          pose (prefix_implies_is_prefix _ _ H3) as H4.
          rewrite H4 in Heqmaybe_prefix1_2.
          discriminate Heqmaybe_prefix1_2.
+Qed.
+
+Lemma unrelated_symmetric {n1 n2 :nat} (b1:Block n1) (b2:Block n2) : Unrelated b1 b2 -> Unrelated b2 b1.
+Proof.
+  intro H.
+  destruct (decidable_related n2 b2 n1 b1).
+  - exfalso. pose (related_symmetric b2 b1 r) as r2. auto.
+  - auto.
 Qed.
 
 Lemma different_blocks_of_same_height_are_unrelated : 

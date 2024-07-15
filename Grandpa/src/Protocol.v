@@ -56,6 +56,17 @@ Definition get_round_bizantine_voters `{Io} (round_number:nat)
   in
   map fst  (List.filter f (Dictionary.to_list (io_get_round_voters round_number)) ).
 
+Definition get_round_honest_voters `{Io} (round_number:nat)
+  :list nat
+  :=
+  let f v_k :=
+    match v_k with
+    | (_,VoterKindC Honest _) => true
+    | _ => false
+    end
+  in
+  map fst  (List.filter f (Dictionary.to_list (io_get_round_voters round_number)) ).
+
 
 Definition process_round_voters_step 
   (acc: nat*(list Voter)*(list Voter) )
@@ -1019,6 +1030,68 @@ Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
     \/
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
 
+Lemma theorem_4_1_eq `{Io} 
+  {n1 n2 :nat} 
+  (b1:Block n1) 
+  (b2:Block n2) 
+  (round_finalized :nat)
+  (t1 :nat)
+  (t2 :nat)
+  (un_related:Unrelated b1 b2)
+  (state:State)
+  (t:Time)
+  (state_is_from_protocol: state =  get_state_up_to t)
+  (b1_in:List.In (to_any b1,t1, round_finalized) (global_finalized_blocks state))
+  (b2_in:List.In (to_any b2,t2, round_finalized) (global_finalized_blocks state))
+  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+    (
+      (
+        length (Sets.to_list s) 
+        >= 
+        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+      ) 
+      /\
+      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
+    ).
+Proof.
+  Admitted.
+
+Lemma theorem_4_1_lt `{Io} 
+  {n1 n2 :nat} 
+  (b1:Block n1) 
+  (b2:Block n2) 
+  (round_finalized_1 round_finalized_2:nat)
+  (t1 t2:nat)
+  (un_related:Unrelated b1 b2)
+  (state:State)
+  (t:Time)
+  (state_is_from_protocol: state =  get_state_up_to t)
+  (b1_in:List.In (to_any b1,t1, round_finalized_1) (global_finalized_blocks state))
+  (b2_in:List.In (to_any b2,t2, round_finalized_2) (global_finalized_blocks state))
+  (symmetry_hipotesis:round_finalized_1 < round_finalized_2)
+  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+    (
+      (
+        length (Sets.to_list s) 
+        >= 
+        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+      ) 
+      /\
+      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
+    ).
+Proof.
+  dependent induction b1. 
+  - pose (originBlock_is_always_prefix b2) as contra.
+    apply (prefix_implies_related _ _) in contra.
+    contradiction.
+  - dependent destruction b2.
+    +  pose (originBlock_is_always_prefix (NewBlock b1 id)) as contra.  
+       apply (prefix_implies_related _ _) in contra.
+       apply related_symmetric in contra.
+       contradiction.
+    + Search ({?n = ?m}+{?n < ?m}+{?m < ?n }).
+Admitted.
+
 
 Theorem theorem_4_1 `{Io} 
   {n1 n2 :nat} 
@@ -1044,24 +1117,19 @@ Theorem theorem_4_1 `{Io}
       (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
     ).
 Proof.
-  dependent induction b1. 
-  - pose (originBlock_is_always_prefix b2) as contra.
-    apply (prefix_implies_related _ _) in contra.
-    contradiction.
-  - dependent destruction b2.
-    +  pose (originBlock_is_always_prefix (NewBlock b1 id)) as contra.  
-       apply (prefix_implies_related _ _) in contra.
-       apply related_symmetric in contra.
-       contradiction.
-    + 
-Admitted.
-(*    + Search List.In. *)
-      (* List.in_split*)
-      (* List.in_map*)
-(* if n < n0 *)
+  pose (Arith.Compare_dec.lt_eq_lt_dec round_finalized_1 round_finalized_2 ) as trico.
+  destruct trico as [[trico4 | trico2]| trico3].
+  - apply (theorem_4_1_lt b1 b2 round_finalized_1 round_finalized_2 t1 t2 un_related state t state_is_from_protocol b1_in b2_in);try assumption.  
+  - apply (theorem_4_1_eq b1 b2 round_finalized_1 t1 t2 un_related state t state_is_from_protocol b1_in).
+    rewrite trico2.
+    apply b2_in.
+  - pose (Blocks.unrelated_symmetric b1 b2 un_related) as un_related2.
+    apply (theorem_4_1_lt b2 b1 round_finalized_2 round_finalized_1 t2 t1 un_related2 state t state_is_from_protocol b2_in b1_in);try assumption.  
+Qed.
 
-Definition voter_is_hones_at_round (v:Voter) (r:nat) : bool.
-Admitted.
+Definition voter_is_hones_at_round `{Io} (v:Voter) (r:nat) : bool
+  := 
+  0<? ListFacts.count Nat.eqb v (get_round_honest_voters r).
 
 
 Corollary corollary_4_3 
@@ -1094,6 +1162,8 @@ Corollary corollary_4_3
       Blocks.is_prefix (projT2 b_finalized) (projT2 eb) = true
     ).
 Proof.
+  (*TODO: delayed until lemmas resolution on M3.
+   *)
   Admitted.
 
 
