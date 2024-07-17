@@ -900,4 +900,78 @@ Definition has_supermajority
   := 
   0 <? length (get_supermajority_blocks  S) .
 
+
+Require Import Coq.Logic.JMeq.
+
+
+Lemma castVote 
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (v:Vote voters1)
+  :Vote voters2.
+Proof.
+  destruct v.
+  assert (in_Voters voter voters2) as H.
+  - rewrite <- are_eq.
+    assumption.
+  - refine (VoteC _ voter H block).
+Defined.
+
+Lemma jmeq_vote 
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (v:Vote voters1)
+  : JMeq v (castVote are_eq v).
+Proof.
+  subst.
+  destruct v.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma jmeq_vote2
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  :JMeq (Vote voters1) (Vote voters2).
+Proof.
+  subst.
+  reflexivity.
+Qed.
+
+
+Lemma identity_castVote (voters:Voters) (v:Vote voters) 
+  : castVote eq_refl v = v . 
+Proof.
+  destruct v.
+  auto.
+Qed.
+
+
+
+Lemma castVotes 
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (v:Votes voters1) : Votes voters2.
+Proof.
+  destruct v.
+  remember (List.map (castVote are_eq) votes_list) as votes_list2.
+  refine (VotesC voters2 votes_list2).
+Defined.
+
+Lemma identity_castVotes (voters:Voters) (v:Votes voters) 
+  : castVotes eq_refl v = v . 
+Proof.
+  destruct v.
+  simpl.
+  enough (List.map (castVote eq_refl) votes_list = votes_list).
+  - rewrite H. auto.
+  - induction votes_list.
+    + auto.
+    + simpl.
+      rewrite identity_castVote.
+      rewrite IHvotes_list.
+      auto.
+Qed.
+
+
 Close Scope blocks_scope.

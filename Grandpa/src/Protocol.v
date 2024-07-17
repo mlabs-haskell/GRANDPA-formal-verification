@@ -16,6 +16,8 @@ Require Import Program.Equality.
 (*Require Arith.Compare_dec.
  *)
 
+Require Import Lia.
+
 Class Io := {
   global_time_constant: nat;
   block_producer (time voter:nat) : 
@@ -32,12 +34,12 @@ Class Io := {
 - if v sees block b at t1, then 
          v sees b at t1+ t2 forall t2
   *)
-  block_producer_not_emtpy 
+block_producer_not_emtpy 
   :forall t v, Sets.is_empty (block_producer t v) = false;
   primary_consistent 
     : forall r , 
         List.In 
-        (io_get_round_primary r) 
+ (io_get_round_primary r) 
         (List.map fst (Dictionary.to_list (io_get_round_voters r )));
 }.
 
@@ -867,7 +869,7 @@ CoFixpoint produce_states `{Io} (t:Time) (state:State): CoList State :=
 Definition get_state_up_to `{Io} (t:Time): State :=   
   get_last t (produce_states 0 make_initial_state). 
 
-(* Compute get_state_up_to 1. *)
+(* Compute get_state_up_to 0. *)
 
 
 Lemma get_global_finalized_blocks_are_related (state:State)
@@ -970,7 +972,65 @@ Proof.
     reflexivity.
   - Admitted.
 
+Lemma round_precommiters_consistent_over_time `{Io}
+  (v:Voter)
+  (t:Time)
+  (r_n:nat)
+  (r1:OpaqueRound.OpaqueRoundState)
+  (
+    is_some_at_t
+    :get_voter_opaque_round (get_state_up_to t) v r_n = Some r1
+  )
+  (t_increment:Time)
+  :exists r2,
+  get_voter_opaque_round 
+    (get_state_up_to (t_increment+t)%nat )
+    v 
+    r_n 
+    = Some r2 
+  /\ (OpaqueRound.get_precommit_voters r2 = OpaqueRound.get_precommit_voters r1).
+Admitted.
 
+Lemma round_precomits_consistent_over_time `{Io}
+  (v:Voter)
+  (t:Time)
+  (r_n:nat)
+  (r1:OpaqueRound.OpaqueRoundState)
+  (
+    is_some_at_t
+    :get_voter_opaque_round (get_state_up_to t) v r_n = Some r1
+  )
+  (t_increment:Time)
+  (r2:OpaqueRound.OpaqueRoundState)
+  (is_some_at_t_increment: 
+    get_voter_opaque_round 
+      (get_state_up_to (t_increment+t)%nat )
+      v 
+      r_n 
+      = Some r2
+  )
+  (voters_are_equal: (OpaqueRound.get_precommit_voters r1) = (OpaqueRound.get_precommit_voters r2))
+  : (Votes.castVotes voters_are_equal (OpaqueRound.get_all_precommit_votes r1) = OpaqueRound.get_all_precommit_votes r2).
+Admitted.
+
+Lemma finalized_blocks_monotone_over_time `{Io}
+  (t:Time)
+  (t_increment:Time)
+  : exists  l, 
+  (global_finalized_blocks (get_state_up_to (t_increment + t)%nat ))
+  =
+  l ++ (global_finalized_blocks (get_state_up_to t)).
+Proof.
+  Admitted.
+
+Lemma finalized_blocks_monotone_over_time2 `{Io}
+  (t:Time)
+  (t_increment:Time)
+  : forall b, List.In b (global_finalized_blocks (get_state_up_to t))
+  ->
+  List.In b (global_finalized_blocks (get_state_up_to (t_increment + t)%nat )).
+Proof.
+  Admitted.
 
 (*
 Lemma votes_are_monotone_over_time `{Io}
@@ -987,34 +1047,43 @@ Lemma votes_are_monotone_over_time `{Io}
   .
 *)
 
-Lemma commits_came_from_voter {n:nat} (b:Block n) 
-  {t:Time}
+Lemma finalized_block_time_leq {n:nat} (b:Block n) 
+  (r_n:nat)
+  (t_n:Time)
+  (t:Time)
   `{Io}
-  (state:State)
-  (state_is_from_protocol: state =  get_state_up_to t)
   (b_in
     :List.In 
-      (to_any b) 
-      (List.map ( fun x => fst (fst x)) (global_finalized_blocks state))
+      (to_any b,t_n, r_n )
+       (global_finalized_blocks (get_state_up_to t))
+  )
+  : t_n <= t.
+Admitted.
+
+Lemma finalized_block_came_from_voter {n:nat} (b:Block n) 
+  (r_n:nat)
+  (t_n:Time)
+  (t:Time)
+  `{Io}
+  (b_in
+    :List.In 
+      (to_any b, t_n, r_n )
+       (global_finalized_blocks (get_state_up_to t))
   )
   :
-  exists (r_n:nat) (v:Voter) tv pv_v pc_v t0 t' 
-    (r:RoundState tv pv_v pc_v t0 r_n t')
-    , get_voter_opaque_round state v r_n
-      = Some (OpaqueRound.OpaqueRoundStateC r)
+  exists (v:Voter) 
+    (r:OpaqueRound.OpaqueRoundState)
+    , get_voter_opaque_round (get_state_up_to t_n) v r_n
+      = Some r
     /\ 
       g 
-        (get_all_precommit_votes 
-          (
-          total_voters:= Round.get_total_voters r
-          ) r
+        (OpaqueRound.get_all_precommit_votes 
+          r
         ) = Some (to_any b).
 Proof.
   remember (to_any b) as ab eqn:ab_eq_b.
-  apply in_map in b_in.
-  destruct b_in as [ [[b_send t_send] r_n ] [ab_eq_send in_commits] ].
-  exists r_n.
   Admitted.
+
 
 (*TODO: add consistency of total_number_of_voters param
   that is passed to both prevote and precommit set of voters for every round
@@ -1030,6 +1099,51 @@ Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
     \/
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
 
+Lemma theorem_4_1_eq_aux `{Io} 
+  {n1 :nat} 
+  (b1:Block n1) 
+  (round_finalized :nat)
+  (t1 :nat)
+  (t:Time)
+  (b1_in:List.In (to_any b1,t1, round_finalized) (global_finalized_blocks (get_state_up_to t)))
+  : exists (v:Voter) (vr:OpaqueRound.OpaqueRoundState) (vr2:OpaqueRound.OpaqueRoundState)
+  ,
+    (
+      get_voter_opaque_round (get_state_up_to t1) v round_finalized 
+      =
+      Some vr
+    )
+    /\
+    (g (OpaqueRound.get_all_precommit_votes vr) = Some (to_any b1))
+    /\
+    (
+      get_voter_opaque_round (get_state_up_to (t+2*global_time_constant)%nat) v round_finalized 
+      = 
+      Some vr2
+    ).
+Proof.
+  pose (finalized_block_time_leq b1 round_finalized t1 t b1_in) as t1_leq_t.
+  remember (t+2*global_time_constant)%nat as new_t eqn:new_t_eq.
+  assert (List.In (to_any b1,t1, round_finalized) (global_finalized_blocks (get_state_up_to new_t))) as b1_in_new_t.
+  {
+    pose (finalized_blocks_monotone_over_time2 t (new_t - t) (to_any b1, t1,round_finalized) b1_in).
+    enough ((new_t - t +t)%nat = new_t) as H0.
+    rewrite <- H0.
+    assumption.
+    lia.
+    }
+  destruct (finalized_block_came_from_voter b1 round_finalized t1 new_t  b1_in_new_t) as [v [vr [is_some_vr g_vr]]].
+  exists v.
+  pose (round_continuos_existence v t1 round_finalized vr is_some_vr (new_t - t1)) as vr_exists_at_new_t.
+  assert (new_t - t1 +t1 = new_t)%nat as is_new_t. lia.
+  rewrite is_new_t in vr_exists_at_new_t.
+  destruct vr_exists_at_new_t as [vr2 is_some_vr2].
+  exists vr.
+  exists vr2.
+  auto.
+Qed.
+
+
 Lemma theorem_4_1_eq `{Io} 
   {n1 n2 :nat} 
   (b1:Block n1) 
@@ -1038,23 +1152,54 @@ Lemma theorem_4_1_eq `{Io}
   (t1 :nat)
   (t2 :nat)
   (un_related:Unrelated b1 b2)
-  (state:State)
   (t:Time)
-  (state_is_from_protocol: state =  get_state_up_to t)
-  (b1_in:List.In (to_any b1,t1, round_finalized) (global_finalized_blocks state))
-  (b2_in:List.In (to_any b2,t2, round_finalized) (global_finalized_blocks state))
-  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  (b1_in:List.In (to_any b1,t1, round_finalized) (global_finalized_blocks (get_state_up_to t)))
+  (b2_in:List.In (to_any b2,t2, round_finalized) (global_finalized_blocks (get_state_up_to t)))
+  : exists (t3:Time) (v:Voter) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
     (
+      (
+        get_voter_opaque_round (get_state_up_to t3) v round_finalized = Some r
+      )
+      /\
       (
         length (Sets.to_list s) 
         >= 
-        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+        1+ Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
       ) 
       /\
-      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
+      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
+      /\ 
+      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters round_finalized))
     ).
 Proof.
-  Admitted.
+  remember (t + 2 * global_time_constant)%nat as new_t eqn:new_t_eq.
+  exists new_t.
+  destruct (theorem_4_1_eq_aux b1 round_finalized t1 t b1_in) as [v [v1r [v1r2 [is_some_v1r [g_v1r is_some_v1r2]]]]].
+  exists v.
+  exists v1r2.
+  Search List.In.
+  remember (List.filter (fun v3 => Votes.voter_voted_in_votes v3 (OpaqueRound.get_all_precommit_votes v1r2)) (get_round_bizantine_voters round_finalized)) as s_as_list eqn:s_as_list_eq.
+  remember (Sets.from_list Nat.eqb s_as_list) as s.
+  exists s.
+  rewrite <- new_t_eq in is_some_v1r2.
+  split.
+  assumption.
+  split.
+  - destruct (theorem_4_1_eq_aux b2 round_finalized t2 t b2_in) as [v2 [v2r [v2r2 [is_some_v2r [g_v2r is_some_v2r2]]]]].
+    (*
+       TODO in 3.8 : 
+       we need to show that after t+2*global_time_constant v has got all the votes on v2r, and as such we have 
+       a supermajority for both blocks in this round (b1 and b2) at this time. 
+       Then we destruct the Votes.is_safe predicate applied in the precommits at time t + 2*global_time_constant 
+       In the False case, we end this sub-proof.
+       In the True case, b_1 and b_2 are related by a lemma in the Votes.v about supermajority on safe sets, contra with un_related
+    *)
+  (*
+    The other two parts to be proved, are a consequency of the construction of the list (literally they are in the predicate that build the list).
+   *)
+    Admitted.
+  
+
 
 Lemma theorem_4_1_lt `{Io} 
   {n1 n2 :nat} 
@@ -1069,15 +1214,21 @@ Lemma theorem_4_1_lt `{Io}
   (b1_in:List.In (to_any b1,t1, round_finalized_1) (global_finalized_blocks state))
   (b2_in:List.In (to_any b2,t2, round_finalized_2) (global_finalized_blocks state))
   (symmetry_hipotesis:round_finalized_1 < round_finalized_2)
-  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  : exists (t3:Time) (v:Voter) (r_n:nat) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
     (
+      (
+        get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
+      )
+      /\
       (
         length (Sets.to_list s) 
         >= 
-        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+        1+ Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
       ) 
       /\
-      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
+      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
+      /\ 
+      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters r_n))
     ).
 Proof.
   dependent induction b1. 
@@ -1090,6 +1241,7 @@ Proof.
        apply related_symmetric in contra.
        contradiction.
     + Search ({?n = ?m}+{?n < ?m}+{?m < ?n }).
+      (*TODO in 3.8 *)
 Admitted.
 
 
@@ -1106,23 +1258,36 @@ Theorem theorem_4_1 `{Io}
   (b1_in:List.In (to_any b1,t1, round_finalized_1) (global_finalized_blocks state))
   (b2_in:List.In (to_any b2,t2, round_finalized_2) (global_finalized_blocks state))
   (symmetry_hipotesis:round_finalized_1 <= round_finalized_2)
-  : exists (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  : exists (t3:Time) (v:Voter) (r_n:nat) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
     (
+      (
+        get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
+      )
+      /\
       (
         length (Sets.to_list s) 
         >= 
-        Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r) +1
+        1+ Votes.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
       ) 
       /\
-      (forall v, List.In v (Sets.to_list s) -> VoterVotedInRound v r)
+      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
+      /\ 
+      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters r_n))
     ).
 Proof.
   pose (Arith.Compare_dec.lt_eq_lt_dec round_finalized_1 round_finalized_2 ) as trico.
   destruct trico as [[trico4 | trico2]| trico3].
   - apply (theorem_4_1_lt b1 b2 round_finalized_1 round_finalized_2 t1 t2 un_related state t state_is_from_protocol b1_in b2_in);try assumption.  
-  - apply (theorem_4_1_eq b1 b2 round_finalized_1 t1 t2 un_related state t state_is_from_protocol b1_in).
-    rewrite trico2.
-    apply b2_in.
+  - rewrite state_is_from_protocol in b1_in.
+    rewrite state_is_from_protocol in b2_in.
+    rewrite <- trico2 in b2_in.
+    destruct (theorem_4_1_eq b1 b2 round_finalized_1 t1 t2 un_related  t b1_in b2_in) as [t3 [v3 [r [s remain]]]].
+    exists t3.
+    exists v3.
+    exists round_finalized_1. 
+    exists r.
+    exists s.
+    assumption.
   - pose (Blocks.unrelated_symmetric b1 b2 un_related) as un_related2.
     apply (theorem_4_1_lt b2 b1 round_finalized_2 round_finalized_1 t2 t1 un_related2 state t state_is_from_protocol b2_in b1_in);try assumption.  
 Qed.
@@ -1162,7 +1327,7 @@ Corollary corollary_4_3
       Blocks.is_prefix (projT2 b_finalized) (projT2 eb) = true
     ).
 Proof.
-  (*TODO: delayed until lemmas resolution on M3.
+  (*TODO: delayed until 3.8
    *)
   Admitted.
 
