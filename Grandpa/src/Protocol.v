@@ -1177,7 +1177,6 @@ Proof.
   destruct (theorem_4_1_eq_aux b1 round_finalized t1 t b1_in) as [v [v1r [v1r2 [is_some_v1r [g_v1r is_some_v1r2]]]]].
   exists v.
   exists v1r2.
-  Search List.In.
   remember (List.filter (fun v3 => Votes.voter_voted_in_votes v3 (OpaqueRound.get_all_precommit_votes v1r2)) (get_round_bizantine_voters round_finalized)) as s_as_list eqn:s_as_list_eq.
   remember (Sets.from_list Nat.eqb s_as_list) as s.
   exists s.
@@ -1240,7 +1239,7 @@ Proof.
        apply (prefix_implies_related _ _) in contra.
        apply related_symmetric in contra.
        contradiction.
-    + Search ({?n = ?m}+{?n < ?m}+{?m < ?n }).
+    +
       (*TODO in 3.8 *)
 Admitted.
 
