@@ -1,5 +1,6 @@
-Require Import Blocks.                 
-Require Import Votes.                  
+Require Import Blocks.AnyBlock.
+Require Import Votes.
+Require Import Voters.
 Require Import Round.
 Require Import Estimate.
 

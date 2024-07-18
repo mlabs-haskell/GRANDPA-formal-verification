@@ -19,19 +19,3 @@ Class FunctorLaws (f : Type -> Type) `{Functor f} := {
   map_comp : forall (A B C : Type) (g : B -> C) (h : A -> B) (x : f A),
     map (compose g h) x = map g (map h x)
 }.
-
-
-(* TODO: Add a proper module for vectors
-
-Definition VectorWrapper (n:nat) (A:Type) 
-  :Type
-  :=    Coq.Vectors.VectorDef.t A n. 
-
-Definition coerceVector {n:nat} {A:Type} 
-  (v:VectorDef.t A n) : VectorWrapper n A 
-  := v.
-
-Instance Functor_vector {n} : Functor (VectorWrapper n) := {
-  map := fun {A} {B} (f:A -> B) v => VectorDef.map f v
-}.
- *)

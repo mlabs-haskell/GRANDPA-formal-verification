@@ -1,8 +1,14 @@
 Require List.
-Require Import Nat.
+Require Import PeanoNat.
 
-Require Import Blocks.
+Require Import Blocks.Block.
+Require Import Blocks.AnyBlock.
 Require Import Votes.
+Require Import Voters.
+Require Import DataTypes.List.Count.
+
+
+
 
 
 
@@ -13,17 +19,14 @@ Definition find_highest_block_join
     := 
   match acc with
   | List.nil => List.cons existencial List.nil
-  | List.cons (existT _ h_block_number _) others =>
-    match existencial with
-    | existT _ block_number block =>
-         if h_block_number <? block_number 
+  | List.cons block others =>
+         if block.(AnyBlock.block_number) <? existencial.(AnyBlock.block_number)
          then List.cons existencial List.nil
          else 
-          if Nat.eqb h_block_number  block_number 
+          if block.(AnyBlock.block_number) =?  existencial.(AnyBlock.block_number) 
           then List.cons existencial acc
           else
             acc
-    end
   end.
 
 Lemma find_highest_block_join_never_nil (existencial:AnyBlock) (blocks: list AnyBlock) 
@@ -32,20 +35,21 @@ Proof.
   intro H.
   destruct blocks as [|[h_block_number] remain];simpl in H.
   - inversion H.
-  - destruct existencial as [block_number].
-    destruct (h_block_number <? block_number).
+  - destruct existencial as [block_number block0].
+    simpl in H.
+    destruct (h_block_number <? block_number) eqn:Heq.
     + inversion H.
     + destruct (h_block_number =? block_number);inversion H.
 Qed.
 
 Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock) 
-  (blocks_has_same_height: exists n, forall block, List.In block blocks -> (projT1 block) = n )
+  (blocks_has_same_height: exists n, forall block, List.In block blocks -> block.(AnyBlock.block_number) = n )
   :forall result_block, 
     List.In result_block (find_highest_block_join existencial blocks)
-      -> projT1 existencial <= projT1 result_block
+      -> existencial.(AnyBlock.block_number) <= result_block.(AnyBlock.block_number)
           /\ 
           forall block, List.In block blocks 
-            -> projT1 block <= projT1 result_block.
+            -> block.(AnyBlock.block_number) <= result_block.(AnyBlock.block_number).
 Proof.
   intros [block_number block] H.
   destruct existencial as [e_block_number e_block].
@@ -80,7 +84,7 @@ Qed.
 Lemma find_highest_blocks_works (blocks: list AnyBlock) (b1 b2:AnyBlock)
     :List.In b1 (find_highest_blocks blocks)
     -> List.In b2 blocks
-      -> projT1 b2 <= projT1 b1.
+      -> b2.(AnyBlock.block_number) <= b1.(AnyBlock.block_number).
 Proof.
   intros Hb1.
   induction blocks as [| h_block remain_blocks HInd].
@@ -92,8 +96,8 @@ Proof.
 
 Lemma find_highest_blocks_have_same_lenght blocks 
   :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
-    ,List.In (existT _ n block1) (find_highest_blocks blocks)
-    -> List.In (existT _ m block2) (find_highest_blocks blocks)
+    ,List.In (AnyBlock.to_any block1) (find_highest_blocks blocks)
+    -> List.In (AnyBlock.to_any block2) (find_highest_blocks blocks)
       -> n = m.
 Proof.
   (* 
@@ -112,8 +116,8 @@ Proof.
 
 Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
   b 
-  : forall n, ListFacts.count anyblock_eqb b blocks <=n
-   -> ListFacts.count anyblock_eqb b (find_highest_blocks blocks) <=1.
+  : forall n, count b blocks <=n
+   -> count b (find_highest_blocks blocks) <=1.
 Proof.
   Admitted.
 
@@ -122,7 +126,7 @@ Lemma find_highest_blocks_on_safe_set_lenght
   (T : Votes voters) 
   (is_safe_t: is_safe T = true)
   : 
-  length 
+  List.length 
     (find_highest_blocks 
       (List.map fst (get_supermajority_blocks T)
       )
@@ -163,14 +167,16 @@ Proof.
         simpl in block_number_is_above.
         rewrite b1_number_eq_b2_number in block_number_is_above.
         apply (PeanoNat.Nat.lt_irrefl _ block_number_is_above).
-      * assert (1< ListFacts.count anyblock_eqb (existT _ b1_number b1_block)  (find_highest_blocks (List.map fst (get_supermajority_blocks T)))) as contra1.
+      * assert (1< count (AnyBlock.to_any b1_block)  (find_highest_blocks (List.map fst (get_supermajority_blocks T)))) as contra1.
         {
           rewrite H.
-          unfold ListFacts.count.
+          unfold count.
           simpl.
-          rewrite eqb_reflexive.
+          rewrite eqb_reflexivity.
           simpl.
           simpl in related.
+          unfold eqb.
+          simpl.
           rewrite related.
           simpl.
           unfold lt.
@@ -178,7 +184,7 @@ Proof.
           apply le_n_S.
           apply le_0_n.
         }
-      pose (find_highest_blocks_outpu_is_unique (List.map fst (get_supermajority_blocks T)) (existT _ b1_number b1_block) 1) as contra2.
+      pose (find_highest_blocks_outpu_is_unique (List.map fst (get_supermajority_blocks T)) (AnyBlock.to_any b1_block) 1) as contra2.
       apply (Arith_base.lt_not_le_stt 1 _ contra1).
       apply contra2.
       unfold get_supermajority_blocks.
@@ -217,7 +223,7 @@ Qed.
 Definition g 
   {voters:Voters}
   (T : Votes voters) 
-  : option (sigT ( fun out => Block out))
+  : option AnyBlock
   := 
   let blocks_with_super_majority 
     := get_supermajority_blocks T
@@ -233,7 +239,7 @@ Lemma gt_some_implies_supermajority_not_empty
   (T: Votes voters)
   {gt_block_number: nat}
   (gt : Block gt_block_number)
-  (gt_is_result : g T = Some (existT _ gt_block_number gt))
+  (gt_is_result : g T = Some (AnyBlock.to_any gt))
   : get_supermajority_blocks T <> List.nil.
 Proof.
   unfold not.
@@ -248,6 +254,8 @@ Qed.
 (**
   The one in List.in_map_iff is of type Prop, this means 
    we can't destruct the generated term.
+*)
+(*TODO: move this to a list module
 *)
 Lemma in_map {A B} (f : A -> B) (l : list A) (y : B)
   : List.In y (List.map f l) -> {x : A & f x = y /\ List.In x l}.
@@ -314,15 +322,15 @@ Lemma lemma_2_5_2
   (is_sub_set: VotesIsSubset S T )
   {gs_block_number: nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some (existT _ gs_block_number gs))
+  (gs_is_result : g S = Some (AnyBlock.to_any gs))
   : {gt_block &
-    (g T = Some gt_block) * (Related gs (projT2 gt_block) * (gs_block_number <= projT1 gt_block))}.
+    (g T = Some gt_block) * (Related gs gt_block.(AnyBlock.block) * (gs_block_number <= gt_block.(AnyBlock.block_number) ))}.
 Proof.
   remember (get_supermajority_blocks S) as super_s eqn:Hsuper_s.
   pose (superset_has_subset_majority_blocks S T is_safe_t  is_sub_set) as supermajority_s_subset_t.
   unfold g in gs_is_result.
   rewrite <- Hsuper_s in gs_is_result.
-  assert (List.In (existT _ gs_block_number gs) (find_highest_blocks (List.map fst super_s))) as H.
+  assert (List.In (AnyBlock.to_any gs) (find_highest_blocks (List.map fst super_s))) as H.
   {
     destruct (find_highest_blocks (List.map fst super_s) ) as [|s remain_s] eqn:H2.
     + inversion gs_is_result.
@@ -340,7 +348,7 @@ Proof.
   apply supermajority_s_subset_t in gs_in_super.
   destruct gs_in_super as [gs_votes_in_t gs_in_super_t].
   remember (gs_anyblock,gs_votes_in_t) as gs_with_votes_in_t.
-  assert (fst gs_with_votes_in_t = existT (fun n : nat => Block n) gs_block_number gs) as Haux1.
+  assert (fst gs_with_votes_in_t = AnyBlock.to_any gs) as Haux1.
   {
     rewrite Heqgs_with_votes_in_t.
     simpl.
@@ -386,7 +394,7 @@ Proof.
   rewrite gs_eq in related.
   simpl in related.
   rewrite gs_eq in gs_anyblock_in_map_t.
-  pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) gt_anyblock (existT _ gs_block_number gs) gt_in_find gs_anyblock_in_map_t) as gs_number_leq_gt_number.
+  pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) gt_anyblock (AnyBlock.to_any gs) gt_in_find gs_anyblock_in_map_t) as gs_number_leq_gt_number.
   refine (existT _ gt_anyblock (gt_result, (related, gs_number_leq_gt_number))).
 Qed.
   
@@ -407,18 +415,18 @@ Variant ImpossibleSupermajority
     (S: Votes voters)
     (subset_proof:VotesIsSubset S T)
     (non_related_proof:forall anyblock, 
-      List.In anyblock (List.map vote_to_block (votes_to_list S)) 
-      -> (Prefix (projT2 anyblock) block * False) )
+      List.In anyblock (List.map Vote.to_anyblock S.(vlist)) 
+      -> (Prefix anyblock.(AnyBlock.block) block * False) )
       :
-      (length (voters_to_list voters) +  1) 
+      (List.length (Voters.to_list voters) +  1) 
       + 
       (* This condition must be changed, we want to 
          have here the intersection of S and the 
          equivocate set of voters
       *)
-        (2* length (votes_to_list (intersection T  S))) 
+        (2* List.length (intersection T  S).(Votes.vlist)) 
           < 
-          2 * (length (votes_to_list S) + length (fst (split_voters_by_equivocation T))) 
+          2 * (List.length S.(Votes.vlist) + List.length (fst (split_voters_by_equivocation T))) 
         ->
       ImpossibleSupermajority T block.
 
@@ -446,12 +454,12 @@ Proof.
   intro H.
   destruct H as [S subset_proof non_related_proof ineq].
   enough (forall anyblock, 
-      List.In anyblock (List.map vote_to_block (votes_to_list S)) 
-      -> Prefix (projT2 anyblock) block2 * False ).
+      List.In anyblock (List.map Vote.to_anyblock (votes_to_list S)) 
+      -> Prefix anyblock.(AnyBlock.block) block2 * False ).
   {apply (ImpossibleSupermajorityC T block2 S subset_proof H ineq). }
   intros anyblock any_in_list.
   destruct (non_related_proof anyblock any_in_list) as [ any_prefix_b1  false1].
-  remember (projT2 anyblock) as b3.
+  remember anyblock.(AnyBlock.block) as b3.
   pose (prefix_transitive _ _ _ any_prefix_b1 is_prefix_b1_b2 ) as left1.
   auto.
 Qed.
@@ -477,7 +485,7 @@ Lemma lemma_2_6_3
   (S: Votes voters)
   {gs_block_number:nat}
   (gs : Block gs_block_number)
-  (gs_is_result : g S = Some (existT _ gs_block_number gs))
+  (gs_is_result : g S = Some (AnyBlock.to_any gs))
   {block_number : nat}
   (block: Block block_number)
   (unrelated_proof: Unrelated block gs)

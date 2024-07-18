@@ -1,9 +1,12 @@
-Require Import Blocks.                 
-Require Import Votes.                  
+Require Import Blocks.Block.
+Require Import Voters. 
+Require Import Votes.
+Require Import Voter.
+
 
 Definition Time := nat.
 
-Inductive RoundState 
+Inductive RoundState
   (total_voters:nat)
   (prevote_voters:Voters ) 
   (precommit_voters: Voters )
@@ -136,7 +139,7 @@ Definition voter_voted_in_prevote
   := 
   let prevote_votes := get_all_prevote_votes round_state
   in
-    if in_Voters_bool voter prevote_voters 
+    if Voters.inb voter prevote_voters 
     then voter_voted_in_votes voter prevote_votes
     else true.
 
@@ -154,7 +157,7 @@ Definition  voter_voted_in_precommit
   := 
   let precommit_votes := get_all_precommit_votes round_state
   in
-    if in_Voters_bool voter precommit_voters 
+    if Voters.inb voter precommit_voters 
     then voter_voted_in_votes voter precommit_votes
     else true.
 

@@ -1,14 +1,15 @@
-Require Import Blocks.
+Require Import Blocks.AnyBlock.
 Require Import Votes.
+Require Import Voters.
 Require Import Round.
 Require Import OpaqueRound.
 Require Import Message.
 Require List.
 
-Require Import Functors.
+Require Import Classes.Functor.
 Require Import Vectors.
 
-Require Import Nat.
+Require Import PeanoNat.
 
 Variant VoterCategory  :=
   | Bizantine
@@ -68,8 +69,8 @@ Definition make_initial_voter_state
         (Sets.to_list 
           (Sets.from_list Nat.eqb 
             (Sets.to_list 
-             (get_voters_dictionary prevote_voters) 
-             ++ Sets.to_list (get_voters_dictionary precommit_voters
+             (Voters.to_set prevote_voters) 
+             ++ Sets.to_list (Voters.to_set precommit_voters
              ) 
             )
           )
