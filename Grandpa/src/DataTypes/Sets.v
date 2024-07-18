@@ -1,37 +1,25 @@
 Require Import Dictionary.
-Require Import Functors.
-Require Import ListFacts.
+Require Import DataTypes.List.Count.
 
-Require Import Bool.
+Require Bool.
 
-Section UnitSection.
-
-End UnitSection.
-
-Variant Unit := | UnitC.
-
-Definition eqb_unit (x y :Unit) := true. 
-
-Lemma eqb_unit_reflexive : forall {x:Unit}, eqb_unit x x = true.
-Proof. reflexivity. Qed.
-
-Lemma eqb_unit_symmetric: forall {x y:Unit} {b}, eqb_unit x y =b -> eqb_unit x y = b.
-Proof. auto. Qed.
-
-Lemma eqb_unit_transitive: forall {k1 k2 k3:Unit}, eqb_unit k1 k2 =true -> eqb_unit k2 k3 = true -> eqb_unit k1 k3 = true.
-Proof. auto. Qed.
+Require Import Instances.Unit.
+Require Import Classes.Functor.
+Require Import Classes.Eqb.
+Require Import Instances.List.
 
 
 
 
 Section DictionarySet.
 
-Context {K:Type}.
+Open Scope bool_scope.
+Open Scope eqb_scope.
+Open Scope functor_scope.
 
-Variable eqb_k: K -> K -> bool.
-Axiom eqb_k_reflexive : forall {k:K}, eqb_k k k = true.
-Axiom eqb_k_symmetric: forall {k1 k2:K} {b}, eqb_k k1 k2 =b -> eqb_k k2 k1 = b.
-Axiom eqb_k_transitive: forall {k1 k2 k3:K}, eqb_k k1 k2 =true -> eqb_k k2 k3 = true -> eqb_k k1 k3 = true.
+Context {K:Type}.
+Context `{eqb_k: Eqb K}.
+Context `{eqb_k_laws: @EqbLaws K eqb_k}.
 
 Variant DictionarySet (T:Type) : Type
   :=
@@ -47,15 +35,15 @@ Definition get_dictionary (d:DictionarySet K) : Dictionary K Unit
 
 Definition add (k:K) (d:DictionarySet K) : DictionarySet K 
   :=
-  SetC (Dictionary.add eqb_k k UnitC (get_dictionary d)).
+  SetC (Dictionary.add k UnitC (get_dictionary d)).
 
 Definition to_list (d:DictionarySet K) : list K
-  := map fst (Dictionary.to_list (get_dictionary d)).
+  := map  fst (Dictionary.to_list (get_dictionary d)).
 
 Definition from_list (l:list K) 
   :DictionarySet K
   := 
-    SetC (Dictionary.from_list eqb_k (map (fun n => (n,UnitC)) l)).
+    SetC (Dictionary.from_list (map (fun n => (n,UnitC)) l)).
 
 Definition empty 
   : DictionarySet K
@@ -74,8 +62,8 @@ Definition is_empty (d:DictionarySet K) : bool
 Definition IsSubset (l r : DictionarySet K) : Prop 
   := 
   forall (k: K), 
-    (count eqb_k k  (to_list l)
-    <= count eqb_k k (to_list r))%nat.
+    (count k  (to_list l)
+    <= count k (to_list r))%nat.
 
 Definition intersection (l r : DictionarySet K) : DictionarySet K.
 Admitted.
@@ -93,7 +81,7 @@ Proof.
   intro k. 
   pose (s1_s2 k) as ineq1.
   pose (s2_s3 k) as ineq2.
-  transitivity (count eqb_k k (to_list S2));auto.
+  transitivity (count k (to_list S2));auto.
 Qed.
 
 

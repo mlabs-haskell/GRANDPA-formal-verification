@@ -3,10 +3,16 @@ Require Import Coq.Program.Basics.
 
 Require Coq.Vectors.VectorDef.
 
+Declare Scope functor_scope.
+Delimit Scope functor_scope  with functor.
+
+
 Class Functor (f : Type -> Type) := {
   map : forall {A B : Type}, (A -> B) -> f A -> f B
 }.
 
+Infix "<$>" := map (at level 28, left associativity, only parsing) : functor_scope.
+Notation "x <$ m" := (map (const x) m )(at level 28, left associativity, only parsing) : functor_scope.
 
 Class FunctorLaws (f : Type -> Type) `{Functor f} := {
   map_id : forall (A : Type) (x : f A), map (@id A) x = x;
@@ -14,34 +20,8 @@ Class FunctorLaws (f : Type -> Type) `{Functor f} := {
     map (compose g h) x = map g (map h x)
 }.
 
-Instance Functor_option : Functor option := {
-  map := fun {A B : Type} (g : A -> B) (o : option A) =>
-    match o with
-    | Some x => Some (g x)
-    | None => None
-    end
-}.
 
-Instance FunctorLaws_option : FunctorLaws option.
-Proof.
-  split.
-  - intros A [x |]; simpl.
-    + reflexivity.
-    + reflexivity.
-  - intros A B C g h [x |]; simpl.
-    + reflexivity.
-    + reflexivity.
-Qed.
-
-Instance Functor_list : Functor list := {
-  map := List.map
-}.
-
-Instance FunctorLaws_list : FunctorLaws list.
-Proof.
-  split.
-  - apply List.map_id.
-  - Admitted.
+(* TODO: Add a proper module for vectors
 
 Definition VectorWrapper (n:nat) (A:Type) 
   :Type
@@ -54,3 +34,4 @@ Definition coerceVector {n:nat} {A:Type}
 Instance Functor_vector {n} : Functor (VectorWrapper n) := {
   map := fun {A} {B} (f:A -> B) v => VectorDef.map f v
 }.
+ *)

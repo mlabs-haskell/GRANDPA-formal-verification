@@ -1,19 +1,21 @@
-Require Import List.
-Require Import Coq.Lists.List Coq.Bool.Bool.
+Require Import Classes.Eqb.
 
-Import Coq.Lists.List.ListNotations.
+Require Import List.
+Require Coq.Bool.Bool.
+
+Import List.ListNotations.
 
 Scheme Equality for list.
 
 Section List.
 
-Context {A:Type}.
+Open Scope list_scope.
+Open Scope eqb_scope.
 
-Context (eqb:A -> A->bool).
-Axiom (eqb_reflexive: forall a, eqb a a = true).
-Axiom (eqb_transitive: forall a b c, eqb a b = true -> eqb b c = true -> eqb c a= true).
-Axiom (eqb_symmetric: forall a b, eqb a b = true -> eqb b a = true).
-Axiom (eqb_eq : forall a b , eqb a b = true <-> a = b).
+Context {A:Type}.
+Context `{eqb_a: Eqb A}.
+Context `{eqb_a_laws: @EqbLaws A eqb_a}.
+Context `{eqb_eq : @EqbEq A eqb_a }.
 
 Definition count x (l: list A) : nat
   := length (List.filter (eqb x) l).
@@ -46,7 +48,7 @@ Proof.
 Qed.
 
 Lemma count_after_filter_is_zero x l 
-  : count x (filter (fun y => negb (eqb x y) ) l ) = 0.
+  : count x (List.filter (fun y => negb (eqb x y) ) l ) = 0.
 Proof.
   induction l.
   - reflexivity.
@@ -93,11 +95,11 @@ Lemma Inb_iff_In : forall x l,
       + destruct (eqb x y) eqn:Heqb.
         * intros _. left. (* Prove that x = y *)
           apply eqb_eq. 
-          apply eqb_symmetric.
+          rewrite eqb_symmetry.
           assumption.
         * intros H. right. apply IH. assumption.
       + intros [H | H].
-        * subst. rewrite eqb_reflexive. reflexivity.
+        * subst. rewrite eqb_reflexivity. reflexivity.
         * apply IH in H. rewrite H. destruct (eqb x y);auto.
   Qed.
 
