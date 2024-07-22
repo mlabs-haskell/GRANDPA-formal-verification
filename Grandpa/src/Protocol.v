@@ -1,15 +1,12 @@
 Require Import Blocks.AnyBlock.
-Require Import Blocks.Block.
-Require Import Votes.
-Require Import Vote.
-Require Import Voter.
 Require Import Voters.
 Require Import Preliminars.
-Require Import Round.
-Require Import Estimate.
-Require Import VoterState.
+Require Estimate.
+Require OpaqueRound.
+Require Round.
 Require Import Time.
 Require Import RoundNumber.
+Require Import VoterState.
 Require Import Vectors.
 Require Import Sets.
 Require Import Message.
@@ -154,7 +151,7 @@ Definition init_next_round_voter_state `{Io}
     in
     let round := 
       OpaqueRound.OpaqueRoundStateC(
-        InitialRoundState 
+        Round.InitialRoundState 
           total_voters
           prevote_voters 
           precommit_voters 
@@ -484,8 +481,8 @@ Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:Vote
       match vs.(last_brodcasted_block) with
       | Some b => 
           match 
-            (g (get_all_prevote_votes previous_round)
-              ,get_estimate previous_round
+            (g (Round.get_all_prevote_votes previous_round)
+              ,Estimate.get_estimate previous_round
             )
           with
           | (Some g_prev, Some estimate_prev)
@@ -494,10 +491,10 @@ Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:Vote
                 is_prefix estimate_prev.(AnyBlock.block) b.(AnyBlock.block) 
                 && is_prefix b.(AnyBlock.block) g_prev.(AnyBlock.block)
               then Some b
-              else get_estimate previous_round
-          | _ => get_estimate previous_round
+              else Estimate.get_estimate previous_round
+          | _ => Estimate.get_estimate previous_round
           end
-      | None => get_estimate previous_round
+      | None => Estimate.get_estimate previous_round
       end
     in 
     match map (look_for_best_chain_for_block t voter) ref_block with 
@@ -522,7 +519,7 @@ Definition prevoter_step_legit `{Io}
     in
     match Vectors.get tower (RoundNumber.to_nat vs.(VoterState.round_number)) with
     | Some (OpaqueRound.OpaqueRoundStateC round_) =>
-      match try_to_complete_round round_  with
+      match Estimate.try_to_complete_round round_  with
       | Some _ => 
           prevoter_step_aux t state voter vs
       | None=>
@@ -574,11 +571,11 @@ Definition precommit_step_legit `{Io}
     | Some (OpaqueRound.OpaqueRoundStateC r) =>
       match Vectors.get tower (RoundNumber.to_nat vs.(VoterState.round_number) - 1) with
       | Some (OpaqueRound.OpaqueRoundStateC r_prev) =>
-        match (g (get_all_prevote_votes r), get_estimate r_prev) with 
+        match (g (Round.get_all_prevote_votes r), Estimate.get_estimate r_prev) with 
         | (Some g_r,Some estimate_prev)
           => 
           (* TODO: add third condition of precommit *)
-          if (t <? get_start_time r + (Time.from_nat 4)*global_time_constant)
+          if (t <? Round.get_start_time r + (Time.from_nat 4)*global_time_constant)
             || Estimate.is_completable r 
           then
             build_and_send_precommit t state voter vs g_r 
@@ -763,7 +760,7 @@ Definition wait_step_for_new_round `{Io}
   match Vectors.get tower (RoundNumber.to_nat vs.(VoterState.round_number)) with
   |Some (OpaqueRound.OpaqueRoundStateC r)
     =>
-    match try_to_complete_round r with
+    match Estimate.try_to_complete_round r with
     | Some _ => 
         let new_vs := 
           init_next_round_voter_state t vs
@@ -772,7 +769,7 @@ Definition wait_step_for_new_round `{Io}
         in
         if voter_is_primary_for_round voter vs.(VoterState.round_number)
         then
-          match get_estimate r with 
+          match Estimate.get_estimate r with 
           | Some b => build_and_send_primary_estimate t state voter vs b
           | None => updated_state
           end

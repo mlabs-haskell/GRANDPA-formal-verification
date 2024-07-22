@@ -6,6 +6,9 @@ Require Import Voter.
 Require Import Time.
 Require Import RoundNumber.
 
+Export RoundNumber.
+Export Time.
+
 Require Import Instances.Nat.
 Require Import Classes.Math.All.
 

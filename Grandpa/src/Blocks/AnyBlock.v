@@ -1,6 +1,8 @@
 Require Bool.
 Require Import Blocks.Block.
 
+Export Block.
+
 Require Import Classes.Eqb.
 Require Import Instances.Nat.
 Require Import Instances.Tuple.

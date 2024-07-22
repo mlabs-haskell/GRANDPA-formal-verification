@@ -3,8 +3,8 @@ Require Import Votes.
 Require Import Voters.
 Require Import Round.
 Require Import Estimate.
-Require Import Time.
-Require Import RoundNumber.
+
+Export Round.
 
 Require Import Message.
 
