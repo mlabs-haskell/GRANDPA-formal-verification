@@ -3,6 +3,9 @@ Require Import Blocks.AnyBlock.
 Require Import Voter.
 Require Import Voters.
 
+Export Voter.
+Export Voters.
+
 Require Import Classes.Eqb.
 Require Instances.Tuple.
 Require Instances.Nat.

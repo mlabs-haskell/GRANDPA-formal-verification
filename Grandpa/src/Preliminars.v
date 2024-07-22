@@ -8,11 +8,7 @@ Require Import Voters.
 Require Import DataTypes.List.Count.
 Require DataTypes.List.Inb.
 
-
 Open Scope list.
-
-
-
 
 Definition find_highest_block_join
   (existencial:AnyBlock) 
@@ -302,7 +298,9 @@ Qed.
 
 
 
+#[local]
 Open Scope type_scope.
+
 Lemma lemma_2_5_2 
   {voters:Voters}
   (T: Votes voters)
@@ -386,12 +384,8 @@ Proof.
   pose (find_highest_blocks_works (List.map fst (get_supermajority_blocks T)) gt_anyblock (AnyBlock.to_any gs) gt_in_find gs_anyblock_in_map_t) as gs_number_leq_gt_number.
   refine (existT _ gt_anyblock (gt_result, (related, gs_number_leq_gt_number))).
 Qed.
+
   
-
-
-
-Close Scope type_scope.
-
 
 Variant ImpossibleSupermajority 
   {voters:Voters}

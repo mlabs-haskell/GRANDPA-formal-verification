@@ -9,6 +9,8 @@ Require Import DataTypes.List.Count.
 
 Require Import Voter.
 
+Export Voter.
+
 (** * Voters
 *)
 

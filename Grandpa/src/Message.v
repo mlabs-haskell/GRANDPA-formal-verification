@@ -46,10 +46,10 @@ Record Message :=
    { id:MessageId
     ;block:AnyBlock
     ;kind: MessageKind
-    ;round:nat
+    ;round:RoundNumber
     ;time:Time
     ;voter:Voter
-    ;processed_by:Dictionary Voter Unit
+    ;processed_by:Sets.DictionarySet Voter
    }.
 
 Definition update_message_proccessed (msg:Message) (v:Voter) := 
@@ -60,7 +60,7 @@ Definition update_message_proccessed (msg:Message) (v:Voter) :=
 ;round:=msg.(round)
     ;time:=msg.(time)
     ;voter:=msg.(voter)
-    ;processed_by:= Dictionary.add v UnitC msg.(processed_by)
+    ;processed_by:= Sets.add v msg.(processed_by)
   |}.
 
 

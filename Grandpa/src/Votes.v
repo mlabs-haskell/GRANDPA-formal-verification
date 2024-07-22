@@ -20,6 +20,10 @@ Require Import Voter.
 Require Import Voters.
 Require Import Vote.
 
+Export Voter.
+Export Voters.
+Export Vote.
+
 Open Scope bool.
 Open Scope blocks_scope.
 Open Scope eqb.
@@ -810,14 +814,13 @@ Qed.
 
 
 
-(* TODO:
 Lemma castVotes 
   {voters1 voters2 : Voters} 
   (are_eq: voters1 = voters2) 
   (v:Votes voters1) : Votes voters2.
 Proof.
   destruct v.
-  remember (List.map (castVote are_eq) votes_list) as votes_list2.
+  remember (List.map (castVote are_eq) vlist0) as votes_list2.
   refine (VotesC voters2 votes_list2).
 Defined.
 
@@ -826,17 +829,16 @@ Lemma identity_castVotes (voters:Voters) (v:Votes voters)
 Proof.
   destruct v.
   simpl.
-  enough (List.map (castVote eq_refl) votes_list = votes_list).
+  enough (List.map (castVote eq_refl) vlist0 = vlist0).
   - rewrite H. auto.
-  - induction votes_list.
+  - induction vlist0.
     + auto.
     + simpl.
       rewrite identity_castVote.
-      rewrite IHvotes_list.
+      rewrite IHvlist0.
       auto.
 Qed.
 
- *)
 
 Close Scope blocks.
 Close Scope bool.

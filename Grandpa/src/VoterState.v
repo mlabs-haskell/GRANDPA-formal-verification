@@ -57,7 +57,6 @@ Record VoterState := {
   (**Has to have size [round_number +1] so at the beginning we 
   can get the round 0 **)
   ;rounds : Vec OpaqueRoundState (S (RoundNumber.to_nat round_number))
-  (** The nat is the round number **)
   ;pending_messages : Dictionary.Dictionary RoundNumber (list Message)
   ;finalized_blocks : Sets.DictionarySet AnyBlock
   }.
@@ -273,7 +272,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
   : VoterState
   :=
   let maybe_round :option OpaqueRoundState 
-      := Vectors.get vs.(rounds) msg.(round) 
+      := Vectors.get vs.(rounds) (RoundNumber.to_nat msg.(round))
   in
   let 
     maybe_updated 
@@ -285,7 +284,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
   in
   let maybe_tower 
     := 
-    map (Vectors.update vs.(rounds) msg.(round)) maybe_updated
+    map (Vectors.update vs.(rounds) (RoundNumber.to_nat msg.(round))) maybe_updated
   in
   match maybe_tower with
   | Some new_tower => update_rounds vs new_tower
@@ -303,7 +302,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
 Definition update_with_msg (vs:VoterState) (msg:Message)
   : VoterState
   := 
-  if   msg.(Message.round) <=? RoundNumber.to_nat vs.(round_number)
+  if   (msg.(Message.round) <=? vs.(round_number))%natWrapper
   then
       let updated_state 
         := 

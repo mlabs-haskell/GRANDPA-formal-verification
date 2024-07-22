@@ -133,19 +133,22 @@ End Math.
 Infix "-" := (fun x y => from_nat ((to_nat x) - (to_nat y))) : natWrapper_scope.
 
 #[global]
-Infix "<" := (fun x y => from_nat ((to_nat x) < (to_nat y)))%nat : natWrapper_scope.
+Infix "*" := (fun x y => from_nat ((to_nat x) * (to_nat y))) : natWrapper_scope.
 
 #[global]
-Infix "<?" := (fun x y => from_nat ((to_nat x) <? (to_nat y)))%nat : natWrapper_scope.
+Infix "<" := (fun x y => ((to_nat x) < (to_nat y)))%nat : natWrapper_scope.
 
 #[global]
-Infix "<=" := (fun x y => from_nat ((to_nat x) <= (to_nat y)))%nat : natWrapper_scope.
+Infix "<?" := (fun x y => ((to_nat x) <? (to_nat y)))%nat : natWrapper_scope.
 
 #[global]
-Infix "<=?" := (fun x y => from_nat ((to_nat x) <=? (to_nat y)))%nat : natWrapper_scope.
+Infix "<=" := (fun x y => ((to_nat x) <= (to_nat y)))%nat : natWrapper_scope.
 
 #[global]
-Infix ">" := (fun x y =>  from_nat ((to_nat x) > (to_nat y)))%nat : natWrapper_scope.
+Infix "<=?" := (fun x y => ((to_nat x) <=? (to_nat y)))%nat : natWrapper_scope.
 
 #[global]
-Infix ">=" := (fun x y => from_nat ((to_nat x) >= (to_nat y)))%nat : natWrapper_scope.
+Infix ">" := (fun x y =>  ((to_nat x) > (to_nat y)))%nat : natWrapper_scope.
+
+#[global]
+Infix ">=" := (fun x y => ((to_nat x) >= (to_nat y)))%nat : natWrapper_scope.
