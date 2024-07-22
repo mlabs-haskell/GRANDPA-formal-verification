@@ -6,12 +6,24 @@ Require Import Vote.
 Require Import Instances.Unit.
 Require Import Dictionary.
 Require Import Sets.
+Require Import Time.
+Require Import RoundNumber.
 
-Require Import Nat.
+Require Import DataTypes.NatWrapper.
+Export NatWrapper.
+
 Require Import Coq.Arith.Arith.
 Require Import List.
 
 Require Import Classes.Eqb.
+
+Variant MessageIdPhantom :=  MessageIdPhantomC.
+
+Definition MessageId := NatWrapper MessageIdPhantom.
+
+Definition from_nat := @NatWrapper.from_nat MessageIdPhantom.
+Definition to_nat := @NatWrapper.to_nat MessageIdPhantom.
+
 
 Record FinalizeBlock :Type 
   :=
@@ -31,11 +43,11 @@ Variant MessageKind : Type
   | FinalizationMessage (votes:FinalizeBlock) : MessageKind.
 
 Record Message :=
-   { id:nat 
+   { id:MessageId
     ;block:AnyBlock
     ;kind: MessageKind
     ;round:nat
-    ;time:nat
+    ;time:Time
     ;voter:Voter
     ;processed_by:Dictionary Voter Unit
    }.

@@ -1,22 +1,34 @@
-Require Import Blocks.                 
-Require Import Votes.                  
+Require Import Blocks.AnyBlock.
+Require Import Blocks.Block.
+Require Import Votes.
+Require Import Vote.
+Require Import Voter.
+Require Import Voters.
 Require Import Preliminars.
 Require Import Round.
 Require Import Estimate.
 Require Import VoterState.
-
-Require Import Message.
-
-Require Import Functors.
+Require Import Time.
+Require Import RoundNumber.
 Require Import Vectors.
 Require Import Sets.
+Require Import Message.
 
-Require Import Nat.
 Require Import Program.Equality.
+Require Import Nat.
+
+Require Import Classes.Functor.
+Require Import Classes.Eqb.
+Require Import Instances.List.
+
+
 (*Require Arith.Compare_dec.
  *)
 
 Require Import Lia.
+
+Open Scope list.
+Open Scope eqb.
 
 Class Io := {
   global_time_constant: nat;
@@ -25,10 +37,10 @@ Class Io := {
   io_accept_vote : Time -> Message -> Voter -> bool;
   (* the nat is the round number*)
   io_bizantine_vote : Time -> Voter -> option AnyBlock;
-  io_bizantine_advance_round : Time -> Voter-> nat -> bool;
-  io_get_round_voters:  nat -> Dictionary.Dictionary nat VoterKind;
+  io_bizantine_advance_round : Time -> Voter-> RoundNumber -> bool;
+  io_get_round_voters:  RoundNumber -> Dictionary.Dictionary Voter VoterKind;
   (*TODO: add an Io that returns all time participants and use in initialization*)
-  io_get_round_primary : nat -> Voter;
+  io_get_round_primary : RoundNumber -> Voter;
   (*TODO: add more restrictions to the block producer:
      - If v1 sees block b at t1 then all other v see b at t1+T
 - if v sees block b at t1, then 
@@ -40,15 +52,15 @@ block_producer_not_emtpy
     : forall r , 
         List.In 
  (io_get_round_primary r) 
-        (List.map fst (Dictionary.to_list (io_get_round_voters r )));
+        (map fst (Dictionary.to_list (io_get_round_voters r )));
 }.
 
-Definition voter_is_primary_for_round `{Io} (v:Voter) (round_number:nat):bool
+Definition voter_is_primary_for_round `{Io} (v:Voter) (round_number:RoundNumber):bool
   := 
   io_get_round_primary round_number =? v.
 
-Definition get_round_bizantine_voters `{Io} (round_number:nat)
-  :list nat
+Definition get_round_bizantine_voters `{Io} (round_number:RoundNumber)
+  :list Voter
   :=
   let f v_k :=
     match v_k with
@@ -58,8 +70,8 @@ Definition get_round_bizantine_voters `{Io} (round_number:nat)
   in
   map fst  (List.filter f (Dictionary.to_list (io_get_round_voters round_number)) ).
 
-Definition get_round_honest_voters `{Io} (round_number:nat)
-  :list nat
+Definition get_round_honest_voters `{Io} (round_number:RoundNumber)
+  :list Voter
   :=
   let f v_k :=
     match v_k with
@@ -98,19 +110,19 @@ Definition process_round_voters_step
     end
   end.
 
-Definition process_round_voters `{Io} (r:nat)
+Definition process_round_voters `{Io} (rn:RoundNumber)
   : (nat*list Voter *list Voter)
   :=
-  let as_list :=Dictionary.to_list (io_get_round_voters r) 
+  let as_list :=Dictionary.to_list (io_get_round_voters rn) 
   in
   List.fold_left process_round_voters_step as_list ((0,List.nil,List.nil)).
 
-Definition get_round_total_voters `{Io} (round_number:nat)
+Definition get_round_total_voters `{Io} (round_number:RoundNumber)
   : nat
   := 
-    length (Dictionary.to_list (io_get_round_voters round_number)).
+    List.length (Dictionary.to_list (io_get_round_voters round_number)).
 
-Definition get_round_bizantiners_number `{Io} (round_number:nat)
+Definition get_round_bizantiners_number `{Io} (round_number:RoundNumber)
   : nat
   := 
   match process_round_voters round_number with
@@ -123,7 +135,7 @@ Definition init_next_round_voter_state `{Io}
   (vs:VoterState)
   :VoterState 
   := 
-  let round_number := S vs.(VoterState.round_number)
+  let round_number : RoundNumber := S vs.(VoterState.round_number)
   in
   let total_voters := get_round_total_voters round_number
   in
@@ -131,10 +143,10 @@ Definition init_next_round_voter_state `{Io}
   | (bizantiners_number, prevote_voters_list, precommit_voters_list) 
     =>
     let prevote_voters 
-      := Votes.voters_from_list prevote_voters_list total_voters
+      := Voters.from_list prevote_voters_list total_voters
     in
     let precommit_voters 
-      := Votes.voters_from_list precommit_voters_list total_voters
+      := Voters.from_list precommit_voters_list total_voters
     in
     let round := 
       OpaqueRound.OpaqueRoundStateC(
@@ -181,7 +193,7 @@ Record State :={
   message_count:nat
   (* The key nat in the Dictionary is the message id *)
   ;pending_messages:Dictionary.Dictionary nat Message 
-  ;voters_state:Dictionary.Dictionary nat VoterState
+  ;voters_state:Dictionary.Dictionary Voter VoterState
   ;global_finalized_blocks: list (AnyBlock * Time * nat)
   }.
 

@@ -62,3 +62,28 @@ Instance EqbEqTuple {A B : Type} {eqb_a: Eqb A} {eqb_b: Eqb B} `{@EqbLaws A eqb_
 Global Existing Instance EqbEqTuple.
 
 End Eqb.
+
+
+(* Maybe we should avoid defining this?
+Section Semigroup.
+
+Open Scope semigroup.
+
+#[refine]
+Instance SemigroupTuple {A B:Type} `{Semigroup A, Semigroup B}: Semigroup (A * B) 
+:={
+  plus x y := 
+  match x,y with
+  | (x1,x2),(y1,y2) => (x1+y1,x2+y2)
+  end
+}.
+Proof.
+  intros x y z.
+  destruct x, y,z;try reflexivity.
+  rewrite plus_associative.
+  rewrite plus_associative.
+  reflexivity.
+Qed.
+End Semigroup.
+ *)
+

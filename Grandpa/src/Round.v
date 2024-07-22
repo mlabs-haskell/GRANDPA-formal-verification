@@ -3,18 +3,24 @@ Require Import Voters.
 Require Import Votes.
 Require Import Voter.
 
+Require Import Time.
+Require Import RoundNumber.
 
-Definition Time := nat.
+Require Import Instances.Nat.
+Require Import Classes.Math.All.
+
+
+Open Scope math.
 
 Inductive RoundState
   (total_voters:nat)
   (prevote_voters:Voters ) 
   (precommit_voters: Voters )
   (round_start_time:Time) 
-  (round_number: nat)
+  (round_number: RoundNumber)
   : Time ->  Type :=
   | InitialRoundState 
-    : RoundState total_voters prevote_voters precommit_voters round_start_time round_number 0
+    : RoundState total_voters prevote_voters precommit_voters round_start_time round_number (Time.from_nat 0)
   | RoundStateUpdate 
     {old_time_increment: Time}
     (old_state: RoundState total_voters
@@ -33,8 +39,8 @@ Context {total_voters:nat}.
 Context {prevote_voters:Voters  }.
 Context {precommit_voters: Voters }.
 Context {round_time : Time}.
-Context {round_number: nat}.
-Context {time_increment: nat}.
+Context {round_number: RoundNumber}.
+Context {time_increment: Time}.
 
 
 
@@ -77,7 +83,7 @@ Definition get_start_time
 
 Definition get_round_number
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
-  : nat
+  : RoundNumber
   := round_number.
 
 Definition get_time_increment
@@ -98,7 +104,7 @@ Fixpoint get_all_prevote_votes
   {prevote_voters : Voters } 
   {precommit_voters: Voters }
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
@@ -114,7 +120,7 @@ Fixpoint get_all_precommit_votes
   {prevote_voters : Voters } 
   {precommit_voters: Voters }
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : 
@@ -130,7 +136,7 @@ Definition voter_voted_in_prevote
   {prevote_voters : Voters } 
   {precommit_voters: Voters }
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (voter:Voter)
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
@@ -148,7 +154,7 @@ Definition  voter_voted_in_precommit
   {prevote_voters : Voters } 
   {precommit_voters: Voters }
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (voter:Voter)
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
@@ -161,3 +167,4 @@ Definition  voter_voted_in_precommit
     then voter_voted_in_votes voter precommit_votes
     else true.
 
+Close Scope math.

@@ -1,6 +1,3 @@
-Require Coq.Logic.JMeq.
-
-
 Declare Scope eqb_scope.
 
 Delimit Scope eqb_scope  with eqb.

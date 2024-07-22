@@ -1,5 +1,6 @@
 Require Import Classes.Eqb.
 Require Import Classes.Functor.
+Require Import Classes.Math.All.
 
 Section Eqb.
 Open Scope eqb_scope.
@@ -38,7 +39,9 @@ Instance EqbOption {A : Type} `{Eqb A} : Eqb (option A) :=
 {
   eqb := eqb_option
 }.
-Global Existing Instance EqbOption.
+
+#[global]
+Existing Instance EqbOption.
 
 Instance EqbLawsOption {A : Type} {eqb_a: Eqb A} `{@EqbLaws A eqb_a} : EqbLaws (option A) :=
 {
@@ -46,7 +49,8 @@ Instance EqbLawsOption {A : Type} {eqb_a: Eqb A} `{@EqbLaws A eqb_a} : EqbLaws (
   eqb_symmetry := eqb_option_symmetry;
   eqb_transitivity := eqb_option_transitivity
 }.
-Global Existing Instance EqbLawsOption.
+#[global]
+Existing Instance EqbLawsOption.
 
 Lemma eqb_option_eq {A:Type} `{eqb_a:Eqb A, eqb_a_laws: @EqbLaws A eqb_a, eqb_a_eq : @EqbEq A eqb_a}  (x y : option A) : eqb x y = true <-> x = y.
 Proof.
@@ -61,7 +65,8 @@ Instance EqbEqOption {A : Type} {eqb_a: Eqb A} `{@EqbLaws A eqb_a} `{@EqbEq A eq
   eqb_eq := eqb_option_eq;
 }.
 
-Global Existing Instance EqbEqOption.
+#[global]
+Existing Instance EqbEqOption.
 End Eqb.
 
 Section Functor.
@@ -73,7 +78,8 @@ Instance Functor_option : Functor option := {
     | None => None
     end
 }.
-Global Existing Instance Functor_option.
+#[global]
+Existing Instance Functor_option.
 
 Instance FunctorLaws_option : FunctorLaws option.
 Proof.
@@ -86,6 +92,62 @@ Proof.
     + reflexivity.
 Qed.
 
-Global Existing Instance FunctorLaws_option.
+#[global]
+Existing Instance FunctorLaws_option.
 
 End Functor.
+
+Section Math.
+
+Instance SemigroupOption `{A:Type , Semigroup A}: Semigroup (option A) 
+:={
+  plus x y :=
+    match x,y with
+    | Some x', Some y' => Some (plus x' y')%math
+    | Some x', None => x
+    | None, Some y' => y
+    | _,_ => None
+    end
+}.
+#[global]
+Existing Instance SemigroupOption.
+
+#[refine]
+Instance SemigroupLawsOption `{A:Type , sg:Semigroup A, sgl:SemigroupLaws A}: SemigroupLaws (option A) 
+:={
+}.
+Proof.
+  intros x y z.
+  destruct x, y , z;try reflexivity.
+  simpl.
+  rewrite plus_associative.
+  reflexivity.
+Qed.
+
+#[global]
+Existing Instance SemigroupLawsOption.
+
+Instance MonoidOption `{A:Type , Semigroup A}: Monoid (option A) 
+:={
+  neutro:= None
+}.
+#[global]
+Existing Instance MonoidOption.
+
+#[refine]
+Instance MonoidLawsOption `{A:Type , sg:Semigroup A, sgl:SemigroupLaws A}:MonoidLaws (option A) 
+:={
+}.
+Proof.
+  - intro t.
+    destruct t;auto.
+  - intro t.
+    destruct t;auto.
+Qed.
+
+#[global]
+Existing Instance MonoidLawsOption.
+
+(*TODO: add group instance*)
+
+End Math.

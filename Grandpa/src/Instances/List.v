@@ -3,6 +3,8 @@ Import ListNotations.
 
 Require Import Classes.Eqb.
 Require Import Classes.Functor.
+Require Import Classes.Math.Monoid.
+
 
 
 
@@ -43,7 +45,8 @@ Instance EqbList {A : Type} `{Eqb A} : Eqb (list A) :=
   eqb := eqb_list
 }.
 
-Global Existing Instance EqbList.
+#[global]
+Existing Instance EqbList.
 
 Instance EqbLawsList {A : Type} {eqb_a:Eqb A} `{@EqbLaws A eqb_a} : EqbLaws (list A) :=
 {
@@ -52,7 +55,8 @@ Instance EqbLawsList {A : Type} {eqb_a:Eqb A} `{@EqbLaws A eqb_a} : EqbLaws (lis
   eqb_transitivity := eqb_list_transitivity
 }.
 
-Global Existing Instance EqbLawsList.
+#[global]
+Existing Instance EqbLawsList.
 
 
 Lemma eqb_list_eq {A:Type} `{eqb_a:Eqb A, eqb_a_laws: @EqbLaws A eqb_a, eqb_a_eq : @EqbEq A eqb_a}  (x y : list A) : eqb x y = true <-> x = y.
@@ -77,7 +81,9 @@ Instance EqbEq_list {A : Type} `{eqb_a:Eqb A} `{@EqbLaws A eqb_a} `{@EqbEq A eqb
 {
   eqb_eq := eqb_list_eq;
 }.
-Global Existing Instance EqbEq_list.
+
+#[global]
+Existing Instance EqbEq_list.
 End Eqb.
 
 Section Functor.
@@ -85,7 +91,8 @@ Instance Functor_list : Functor list := {
   map := List.map
 }.
 
-Global Existing Instance Functor_list.
+#[global]
+Existing Instance Functor_list.
 
 
 Instance FunctorLaws_list : FunctorLaws list.
@@ -94,7 +101,53 @@ Proof.
   - apply List.map_id.
   - Admitted.
 
-Global Existing Instance FunctorLaws_list.
+#[global]
+Existing Instance FunctorLaws_list.
 
 End Functor.
 
+Section Math.
+
+Instance SemigroupList {A:Type}: Semigroup (list A) 
+:={
+  plus := @List.app A
+}.
+
+#[global]
+Existing Instance SemigroupList.
+
+#[refine]
+Instance SemigroupLawsList {A:Type}  : @SemigroupLaws (list A) SemigroupList
+:={
+}.
+Proof.
+  intros x y z.
+  apply List.app_assoc.
+Qed.
+
+#[global]
+Existing Instance SemigroupLawsList.
+
+Instance MonoidList {A:Type}: Monoid (list A) 
+:={
+  neutro:= []
+}.
+
+#[global]
+Existing Instance MonoidList.
+
+#[refine]
+Instance MonoidLawsList {A:Type}  : @MonoidLaws (list A) SemigroupList SemigroupLawsList MonoidList
+:={
+}.
+Proof.
+  - intro t.
+    reflexivity.
+  - intro t.
+    apply List.app_nil_r.
+Qed.
+
+#[global]
+Existing Instance MonoidLawsList.
+
+End Math.

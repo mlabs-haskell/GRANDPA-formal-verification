@@ -11,6 +11,7 @@ Require Dictionary.
 Require Import Blocks.Block.
 Require Import Blocks.AnyBlock.
 Require Import DataTypes.List.Count.
+Require Import DataTypes.List.Inb.
 Require Import DataTypes.Sets.
 
 Require Import Classes.Eqb.
@@ -113,13 +114,6 @@ Section Some.
 Variable voters: Voters.
 Variable votes: Votes voters.
 
-(*TODO: Move this to a module, maybe reduce DataTypes.List.Count 
-  to just DataTypes.List. *)
-Definition in_list `{A:Type,Eqb A} (n:A) (l:list A) :bool := 
-  match List.find (fun m => n =? m) l with
-  | None => false
-  | _ => true
-  end.
 
 Definition filter_votes_by_voters_subset (subset : Voters) 
   : Votes voters
@@ -128,7 +122,7 @@ Definition filter_votes_by_voters_subset (subset : Voters)
   in
   let voters_as_nat_list := Voters.to_list subset
   in
-  let vote_predicate vote := in_list (Vote.voter vote) voters_as_nat_list
+  let vote_predicate vote := Inb (Vote.voter vote) voters_as_nat_list
   in
     VotesC voters (List.filter vote_predicate  votes_list).
     
@@ -844,4 +838,7 @@ Qed.
 
  *)
 
-Close Scope blocks_scope.
+Close Scope blocks.
+Close Scope bool.
+Close Scope eqb.
+Close Scope list.

@@ -6,8 +6,10 @@ Require Import Blocks.AnyBlock.
 Require Import Votes.
 Require Import Voters.
 Require Import DataTypes.List.Count.
+Require DataTypes.List.Inb.
 
 
+Open Scope list.
 
 
 
@@ -251,19 +253,6 @@ Proof.
 Qed.
 
 
-(**
-  The one in List.in_map_iff is of type Prop, this means 
-   we can't destruct the generated term.
-*)
-(*TODO: move this to a list module
-*)
-Lemma in_map {A B} (f : A -> B) (l : list A) (y : B)
-  : List.In y (List.map f l) -> {x : A & f x = y /\ List.In x l}.
-Admitted.
-
-Lemma map_in {A B} (f : A -> B) (l : list A) (y : B) (x : A)
-  : (f x = y /\ List.In x l) ->List.In y (List.map f l).
-Admitted.
 
 Lemma from_g_to_votes_safe_set 
   {voters:Voters}
@@ -303,7 +292,7 @@ Proof.
   pose (List.in_eq gt_anyblock nil) as gt_in_find.
   rewrite <- eq_b in gt_in_find.
   apply (find_highest_blocks_is_part_of_blocks (List.map fst (get_supermajority_blocks T)) gt_anyblock) in gt_in_find.
-  apply in_map in gt_in_find.
+  apply Inb.in_map in gt_in_find.
   destruct gt_in_find as [[gt_anyblock2 gt_votes] [gt_eq gt_in_super_t] ].
   simpl in gt_eq.
   rewrite gt_eq in gt_in_super_t.
@@ -342,7 +331,7 @@ Proof.
       - inversion gs_is_result.
     }
   apply find_highest_blocks_is_part_of_blocks in H as H2.
-  apply in_map in H2.
+  apply Inb.in_map in H2.
   destruct H2 as [[gs_anyblock gs_votes] [gs_eq gs_in_super]].
   rewrite Hsuper_s in gs_in_super.
   apply supermajority_s_subset_t in gs_in_super.
@@ -364,7 +353,7 @@ Proof.
        assumption.
      - assumption.
      }
-  pose (map_in fst (get_supermajority_blocks T) gs_anyblock gs_with_votes_in_t Haux2) as gs_anyblock_in_map_t.
+  pose (Inb.map_in fst (get_supermajority_blocks T) gs_anyblock gs_with_votes_in_t Haux2) as gs_anyblock_in_map_t.
   assert (get_supermajority_blocks T <> nil) as super_t_not_nil.
   {
     unfold not.
@@ -384,7 +373,7 @@ Proof.
   pose (List.in_eq gt_anyblock nil) as gt_in_find.
   rewrite <- gt_eq in gt_in_find.
   apply find_highest_blocks_is_part_of_blocks in gt_in_find as gt_in_map.
-  apply in_map in gt_in_map.
+  apply Inb.in_map in gt_in_map.
   destruct gt_in_map as [[gt_block gt_votes] [gt_eq2 gt_in_super_t] ].
   simpl in gt_eq2.
   rewrite gt_eq2 in gt_in_super_t.
@@ -491,3 +480,5 @@ Lemma lemma_2_6_3
   (unrelated_proof: Unrelated block gs)
   : ImpossibleSupermajority S block.
 Admitted.
+
+Close Scope list.

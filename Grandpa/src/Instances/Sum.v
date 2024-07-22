@@ -34,7 +34,9 @@ Instance EqbSum {A B : Type} `{Eqb A} `{Eqb B} : Eqb (A + B) :=
 {
   eqb := eqb_sum
 }.
-Global Existing Instance EqbSum.
+
+#[global]
+Existing Instance EqbSum.
 
 Instance EqbLawsSum {A B : Type} {eqb_a: Eqb A} {eqb_b: Eqb B} `{@EqbLaws A eqb_a} `{@EqbLaws B eqb_b} : EqbLaws (A + B) :=
 {
@@ -42,7 +44,9 @@ Instance EqbLawsSum {A B : Type} {eqb_a: Eqb A} {eqb_b: Eqb B} `{@EqbLaws A eqb_
   eqb_symmetry := eqb_sum_symmetry;
   eqb_transitivity := eqb_sum_transitivity
 }.
-Global Existing Instance EqbLawsSum.
+
+#[global]
+Existing Instance EqbLawsSum.
 
 Lemma eqb_sum_eq {A B:Type} `{eqb_a:Eqb A, eqb_b:Eqb B, eqb_a_laws: @EqbLaws A eqb_a, eqb_b_laws: @EqbLaws B eqb_b, eqb_a_eq : @EqbEq A eqb_a, eqb_b_eq : @EqbEq B eqb_b}  (x y : A + B) : eqb x y = true <-> x = y.
 Proof.
@@ -59,7 +63,7 @@ Instance EqbEqSum {A B : Type} {eqb_a: Eqb A} {eqb_b: Eqb B} `{@EqbLaws A eqb_a}
   eqb_eq := eqb_sum_eq;
 }.
 
-Global Existing Instance EqbEqSum.
+#[global]
+Existing Instance EqbEqSum.
 
 End Eqb.
-

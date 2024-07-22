@@ -1,4 +1,5 @@
 Require Import Classes.Eqb.
+Require Import Classes.Math.All.
 
 Inductive Unit := UnitC.
 
@@ -26,7 +27,9 @@ Instance EqbUnit : Eqb Unit :=
 {
   eqb := eqb_unit
 }.
-Global Existing Instance EqbUnit.
+
+#[global]
+Existing Instance EqbUnit.
 
 Instance EqbLawsUnit : EqbLaws Unit :=
 {
@@ -34,7 +37,9 @@ Instance EqbLawsUnit : EqbLaws Unit :=
   eqb_symmetry := eqb_unit_symmetry;
   eqb_transitivity := eqb_unit_transitivity
 }.
-Global Existing Instance EqbLawsUnit.
+
+#[global]
+Existing Instance EqbLawsUnit.
 
 Lemma eqb_unit_eq : forall (u1 u2 : Unit), eqb_unit u1 u2 = true <-> u1 = u2.
 Proof.
@@ -46,4 +51,73 @@ Instance EqbEqUnit : EqbEq Unit :=
   eqb_eq := eqb_unit_eq;
 }.
 
-Global Existing Instance EqbEqUnit.
+#[global]
+Existing Instance EqbEqUnit.
+
+Section Math.
+
+Instance SemigroupUnit : Semigroup Unit 
+:={
+  plus x y := UnitC
+}.
+
+#[global]
+Existing Instance SemigroupUnit.
+
+#[refine]
+Instance SemigroupLawsUnit : SemigroupLaws Unit 
+:={
+}.
+Proof.
+  auto.
+Qed.
+
+Instance MonoidUnit : Monoid Unit 
+:={
+  neutro := UnitC
+}.
+
+#[global]
+Existing Instance MonoidUnit.
+
+#[refine]
+Instance MonoidLawsUnit : MonoidLaws Unit 
+:={
+}.
+Proof.
+  - intro t.
+    destruct t.
+    auto.
+  - intro t.
+    destruct t.
+    auto.
+Qed.
+
+#[global]
+Existing Instance MonoidLawsUnit.
+
+Instance GroupUnit : Group Unit 
+:={
+  negate t := UnitC
+}.
+
+#[global]
+Existing Instance GroupUnit.
+
+#[refine]
+Instance GroupLawsUnit : GroupLaws Unit 
+:={
+}.
+Proof.
+  - intro t.
+    destruct t.
+    auto.
+  - intro t.
+    destruct t.
+    auto.
+Qed.
+
+#[global]
+Existing Instance GroupLawsUnit.
+
+End Math.

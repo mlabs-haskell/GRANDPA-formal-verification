@@ -4,22 +4,26 @@ Require Import Votes.
 Require Import Voters.
 Require Import Preliminars.
 Require Import Round.
+Require Import Time.
+Require Import RoundNumber.
 
 Require Import Nat.
 
 Require Import Classes.Eqb.
+
+Open Scope eqb.
 
 Variant Estimate 
   {total_voters:nat}
   {prevote_voters : Voters} 
   {precommit_voters: Voters}
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : AnyBlock -> Type
   :=
-    | EstimateOrigin : round_number = 0 -> Estimate round_state (AnyBlock.to_any OriginBlock)
+    | EstimateOrigin : round_number = RoundNumber.from_nat 0 -> Estimate round_state (AnyBlock.to_any OriginBlock)
     |EstimateC 
     {new_block_number : nat}
     (new_block : Block new_block_number)
@@ -37,7 +41,7 @@ Context {total_voters:nat}.
 Context {prevote_voters:Voters}.
 Context {precommit_voters: Voters}.
 Context {round_time : Time}.
-Context {round_number: nat}.
+Context {round_number: RoundNumber}.
 Context {time_increment : Time}.
 
 
@@ -105,7 +109,7 @@ Definition get_estimate
   :=
  match round_state  with
   | InitialRoundState _ _ _ _ _ => 
-      if Nat.eqb round_number 0 then
+      if (RoundNumber.to_nat round_number) =? 0 then
       Some (AnyBlock.to_any OriginBlock)
       else
       None
@@ -125,7 +129,7 @@ Context {total_voters: nat}.
 Context {prevote_voters:Voters  }.
 Context {precommit_voters: Voters }.
 Context {round_time : Time}.
-Context {round_number: nat}.
+Context {round_number: RoundNumber}.
 Context {time_increment : Time}.
 
 
@@ -210,3 +214,5 @@ Definition is_completable
 
 
 End State3.
+
+Close Scope eqb.
