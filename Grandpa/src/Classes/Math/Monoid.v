@@ -19,9 +19,6 @@ Class MonoidLaws (T:Type)
   right_neutro : forall t, t + neutro = t
   }.
 
-Print MonoidLaws.
-
-
 #[global]
 Hint Unfold neutro: MathHints.
 
