@@ -1,14 +1,22 @@
-Require Import Blocks.
+Require Import Blocks.AnyBlock.
 Require Import Votes.
+Require Import Voters.
 Require Import Round.
 Require Import OpaqueRound.
 Require Import Message.
+Require Import RoundNumber.
+Require Import Time.
 Require List.
 
-Require Import Functors.
+Require Import Classes.Functor.
+Require Import Classes.Eqb.
+Require Import Instances.List.
+
 Require Import Vectors.
 
-Require Import Nat.
+Require Import PeanoNat.
+
+Open Scope list.
 
 Variant VoterCategory  :=
   | Bizantine
@@ -41,90 +49,54 @@ should be to process the pending messages for the round
 **)
 
 Record VoterState := {
-  round_number : nat 
+  round_number : RoundNumber
   ;prevoted_block : option AnyBlock
   ;precommited_block : option AnyBlock
   (** We only store the last block received from a primary and we only keep the highest and latest (in that order)**)
   ;last_brodcasted_block : option AnyBlock 
   (**Has to have size [round_number +1] so at the beginning we 
   can get the round 0 **)
-  ;rounds : Vec OpaqueRoundState (S round_number)
-  (** The nat is the round number **)
-  ;pending_messages : Dictionary.Dictionary nat (list Message)
+  ;rounds : Vec OpaqueRoundState (S (RoundNumber.to_nat round_number))
+  ;pending_messages : Dictionary.Dictionary RoundNumber (list Message)
   ;finalized_blocks : Sets.DictionarySet AnyBlock
   }.
 
 
 Local Open Scope vector_scope.
 
-Definition make_initial_voter_state 
-  (prevote_voters:Voters ) 
-  (precommit_voters: Voters )
+(*
+  We assume that prevote_voters and preview_voters has the same number of 
+  round_number_of_voters
+ *)
+Definition make_state_zero
+  (prevote_voters:Voters) 
+  (preview_voters:Voters)
   : VoterState
   :=
-  let total_voters 
-      := 
-      length 
-        (Sets.to_list 
-          (Sets.from_list Nat.eqb 
-            (Sets.to_list 
-             (get_voters_dictionary prevote_voters) 
-             ++ Sets.to_list (get_voters_dictionary precommit_voters
-             ) 
-            )
-          )
-        )
-  in
-  (*
-  The estimate for the 0 round at the beginning is just the Origin block 
-  always!
-  *)
   let
     round_zero  :=
       InitialRoundState 
         0 
-        {|
-          Votes.get_voters_dictionary:= Sets.empty
-          ;Votes.round_number_of_voters:=0
-        |} 
-        {|
-          Votes.get_voters_dictionary:= Sets.empty
-          ;Votes.round_number_of_voters:=0
-        |} 
-        0
-        0
+        prevote_voters
+        preview_voters
+        (Time.from_nat 0)
+        (RoundNumber.from_nat 0)
   in
-  let 
-    round_one 
-    := 
-    InitialRoundState  total_voters prevote_voters precommit_voters 1 1 
-  in
-  let
-    tower :Vec (OpaqueRound.OpaqueRoundState) 2 :=
-    Vector.cons _
-      (OpaqueRound.OpaqueRoundStateC round_one) 
-      _
+  {|
+    round_number:= (RoundNumber.from_nat 0) 
+    ;prevoted_block := None
+    ;precommited_block := None
+    ;last_brodcasted_block := None
+    ;rounds := 
       (Vector.cons 
         _
         (OpaqueRound.OpaqueRoundStateC round_zero) 
         _
         (Vector.nil _)
       )
-  in
-  
-  {|
-    round_number := 1
-    ;prevoted_block := None
-    ;precommited_block := None
-    ;last_brodcasted_block := Some (Blocks.to_any OriginBlock)
-    ;rounds := tower
     ;pending_messages := Dictionary.empty
-    ;finalized_blocks 
-      := 
-      Sets.from_list 
-        Blocks.anyblock_eqb 
-        (Blocks.to_any OriginBlock :: List.nil )
-   |}.
+    ;finalized_blocks := Sets.empty
+  |}.
 
 
 Definition update_last_block  (vs:VoterState) (block:AnyBlock)
@@ -181,7 +153,7 @@ Definition update_add_finalized_block  (vs:VoterState) (block:AnyBlock)
       ;pending_messages := vs.(pending_messages)
       ;finalized_blocks
         :=
-        Sets.add Blocks.anyblock_eqb block vs.(finalized_blocks)
+        Sets.add block vs.(finalized_blocks)
       |}.
 
 Definition update_prevoted  (vs:VoterState) (maybe_block: option AnyBlock)
@@ -215,7 +187,7 @@ Definition update_rounds  (vs:VoterState) {tower_number:nat}
   : VoterState
   := 
     {|
-      round_number := tower_number
+      round_number := RoundNumber.from_nat tower_number
       ;prevoted_block := vs.(prevoted_block)
       ;precommited_block := vs.(precommited_block)
       ;last_brodcasted_block := vs.(last_brodcasted_block)
@@ -223,6 +195,9 @@ Definition update_rounds  (vs:VoterState) {tower_number:nat}
       ;pending_messages := vs.(pending_messages)
        ;finalized_blocks:= vs.(finalized_blocks)
     |}.
+
+
+Open Scope eqb.
 
 Definition delete_pending_msg (vs:VoterState) (msg:Message)
   :VoterState
@@ -234,7 +209,23 @@ Definition delete_pending_msg (vs:VoterState) (msg:Message)
       ;last_brodcasted_block := vs.(last_brodcasted_block)
       ;rounds := vs.(rounds)
       ;pending_messages := 
-        Dictionary.delete Nat.eqb msg.(Message.id) vs.(pending_messages)
+        let prune_message l : list Message := 
+          List.filter (fun msg2 => negb (msg.(Message.id) =? msg2.(Message.id))) l
+        in
+        Dictionary.from_list
+        (map  
+          (fun x => 
+            match x with 
+            | (rn, l) 
+                => 
+                (
+                  rn,
+                  prune_message l
+                ) 
+            end
+          )
+          (Dictionary.to_list vs.(pending_messages))
+        )
        ;finalized_blocks:= vs.(finalized_blocks)
     |}.
 
@@ -247,7 +238,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
   : VoterState
   :=
   let maybe_round :option OpaqueRoundState 
-      := Vectors.get vs.(rounds) msg.(round) 
+      := Vectors.get vs.(rounds) (RoundNumber.to_nat msg.(round))
   in
   let 
     maybe_updated 
@@ -259,7 +250,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
   in
   let maybe_tower 
     := 
-    map (Vectors.update vs.(rounds) msg.(round)) maybe_updated
+    map (Vectors.update vs.(rounds) (RoundNumber.to_nat msg.(round))) maybe_updated
   in
   match maybe_tower with
   | Some new_tower => update_rounds vs new_tower
@@ -277,7 +268,7 @@ Definition update_votes_with_msg  (vs: VoterState) (msg:Message)
 Definition update_with_msg (vs:VoterState) (msg:Message)
   : VoterState
   := 
-  if   msg.(Message.round) <=? vs.(round_number)
+  if   (msg.(Message.round) <=? vs.(round_number))%natWrapper
   then
       let updated_state 
         := 
@@ -309,7 +300,6 @@ Definition update_with_msg (vs:VoterState) (msg:Message)
         ;pending_messages 
           := 
           Dictionary.update_with 
-            Nat.eqb
             vs.(round_number) 
             (List.cons msg List.nil) 
             update  
@@ -317,3 +307,4 @@ Definition update_with_msg (vs:VoterState) (msg:Message)
        ;finalized_blocks:= vs.(finalized_blocks)
         |}.
 
+Close Scope list.

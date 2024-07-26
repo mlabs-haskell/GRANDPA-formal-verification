@@ -1,9 +1,14 @@
-Require Import Blocks.                 
-Require Import Votes.                  
+Require Import Blocks.AnyBlock.
+Require Import Votes.
+Require Import Voters.
 Require Import Round.
 Require Import Estimate.
 
+Export Round.
+
 Require Import Message.
+
+Require Import Classes.Math.All.
 
 Variant OpaqueRoundState: Type := 
   | OpaqueRoundStateC {total_voters round_number}
@@ -39,7 +44,7 @@ Definition get_start_time (o:OpaqueRoundState) : Time
   | OpaqueRoundStateC r => Round.get_start_time r 
   end.
 
-Definition get_round_number (o:OpaqueRoundState) : nat
+Definition get_round_number (o:OpaqueRoundState) : RoundNumber
   :=
   match o with 
   | OpaqueRoundStateC r => Round.get_round_number r 
@@ -78,6 +83,9 @@ Definition get_estimate (o:OpaqueRoundState)
   end.
 
 
+Open Scope math.
+Open Scope natWrapper.
+
 Definition update_votes_with_msg
   (opaque:OpaqueRoundState)
   (msg:Message)
@@ -97,7 +105,7 @@ Definition update_votes_with_msg
     in
     let round_number := Round.get_round_number r
     in
-    let new_time_increment := msg.(Message.time) - (start_time + old_increment)
+    let new_time_increment : Time := (msg.(Message.time) - (start_time + old_increment))
     in
     match Message.message_to_prevote_vote msg prevote_voters with
     | Some new_votes => 
@@ -133,3 +141,5 @@ Definition update_votes_with_msg
      end
   end.
 
+Close Scope natWrapper.
+Close Scope math.

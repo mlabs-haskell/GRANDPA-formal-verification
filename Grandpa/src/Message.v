@@ -1,11 +1,29 @@
-Require Import Blocks.
+Require Import Blocks.AnyBlock.
 Require Import Votes.
+Require Import Voters.
+Require Import Voter.
+Require Import Vote.
+Require Import Instances.Unit.
 Require Import Dictionary.
 Require Import Sets.
+Require Import Time.
+Require Import RoundNumber.
 
-Require Import Nat.
+Require Import DataTypes.NatWrapper.
+Export NatWrapper.
+
 Require Import Coq.Arith.Arith.
 Require Import List.
+
+Require Import Classes.Eqb.
+
+Variant MessageIdPhantom :=  MessageIdPhantomC.
+
+Definition MessageId := NatWrapper MessageIdPhantom.
+
+Definition from_nat := @NatWrapper.from_nat MessageIdPhantom.
+Definition to_nat := @NatWrapper.to_nat MessageIdPhantom.
+
 
 Record FinalizeBlock :Type 
   :=
@@ -25,13 +43,13 @@ Variant MessageKind : Type
   | FinalizationMessage (votes:FinalizeBlock) : MessageKind.
 
 Record Message :=
-   { id:nat 
+   { id:MessageId
     ;block:AnyBlock
     ;kind: MessageKind
-    ;round:nat
-    ;time:nat
+    ;round:RoundNumber
+    ;time:Time
     ;voter:Voter
-    ;processed_by:Dictionary Voter Unit
+    ;processed_by:Sets.DictionarySet Voter
    }.
 
 Definition update_message_proccessed (msg:Message) (v:Voter) := 
@@ -42,7 +60,7 @@ Definition update_message_proccessed (msg:Message) (v:Voter) :=
 ;round:=msg.(round)
     ;time:=msg.(time)
     ;voter:=msg.(voter)
-    ;processed_by:= Dictionary.add Nat.eqb v UnitC msg.(processed_by)
+    ;processed_by:= Sets.add v msg.(processed_by)
   |}.
 
 
@@ -52,15 +70,15 @@ Lemma message_to_vote_aux (msg:Message)
   : option (Vote voters).
 Proof.
   destruct msg eqn:msg_eq.
-  pose (List.find (Nat.eqb voter0) (voters_to_list voters)) as find_eq.
+  pose (List.find (eqb voter0) (Voters.to_list voters)) as find_eq.
   destruct find_eq eqn:find_is.
   2: refine None.
   subst find_eq.
-  apply (find_some _ _ )in find_is.
+  apply (List.find_some _ _ )in find_is.
   destruct find_is as [in_proof is_voter].
-  rewrite Nat.eqb_eq in is_voter.
+  rewrite eqb_eq in is_voter.
   rewrite <- is_voter in in_proof.
-  refine (Some(VoteC _ voter0 in_proof  (projT2 msg.(block)))).
+  refine (Some(VoteC _ msg.(block).(AnyBlock.block_number) msg.(block).(AnyBlock.block) voter0 in_proof )).
 Qed.
   
 (* Expected to be used in messages with precommit votes*)

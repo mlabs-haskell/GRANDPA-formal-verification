@@ -1,29 +1,35 @@
-Require Import Blocks.                 
-Require Import Votes.                  
+Require Import Blocks.AnyBlock.
+Require Import Votes.
 Require Import Preliminars.
 Require Import Round.
 
+Export Round.
+
 Require Import Nat.
+
+Require Import Classes.Eqb.
+
+Open Scope eqb.
 
 Variant Estimate 
   {total_voters:nat}
   {prevote_voters : Voters} 
   {precommit_voters: Voters}
   {round_time:Time}
-  {round_number:nat}
+  {round_number:RoundNumber}
   {time_increment: Time}
   (round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment)
   : AnyBlock -> Type
   :=
-    | EstimateOrigin : round_number = 0 -> Estimate round_state (existT _ 0 OriginBlock)
+    | EstimateOrigin : round_number = RoundNumber.from_nat 0 -> Estimate round_state (AnyBlock.to_any OriginBlock)
     |EstimateC 
     {new_block_number : nat}
     (new_block : Block new_block_number)
     {g_block_number: nat}
     (g_prevote: Block g_block_number)
-    (g_prevote_is_some : g ( get_prevote_votes round_state) = Some (existT _ g_block_number g_prevote))
+    (g_prevote_is_some : g ( get_prevote_votes round_state) = Some (AnyBlock.to_any g_prevote))
     (new_block_is_ancestor_of_g: Prefix new_block g_prevote)
-    : Estimate round_state (existT _ new_block_number new_block).
+    : Estimate round_state (AnyBlock.to_any new_block).
 
 
 
@@ -33,7 +39,7 @@ Context {total_voters:nat}.
 Context {prevote_voters:Voters}.
 Context {precommit_voters: Voters}.
 Context {round_time : Time}.
-Context {round_number: nat}.
+Context {round_number: RoundNumber}.
 Context {time_increment : Time}.
 
 
@@ -42,7 +48,7 @@ Definition get_estimate_block
   {round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment}
   {n}
   {block : Block n}
-  (estimate :Estimate round_state (existT _ n block))
+  (estimate :Estimate round_state (AnyBlock.to_any block))
   : Block n
   :=
   match estimate with
@@ -57,8 +63,8 @@ Fixpoint get_estimate_aux_recursive {gv_block_number:nat}
   :=
   let find_block any_block := 
     match any_block with
-      | (existT _ block_number block,_)
-        => Blocks.eqb gv block
+      | (block,_)
+        => AnyBlock.to_any gv =? block
     end
   in
   match List.find find_block precommit_supermajority_blocks with 
@@ -87,7 +93,7 @@ Definition get_estimate_aux
       get_supermajority_blocks precommit_votes
     in
       get_estimate_aux_recursive 
-        (projT2 g_prevote_votes) 
+        (g_prevote_votes.(AnyBlock.block)) 
         precommit_supermajority_blocks
   end.
 
@@ -101,8 +107,8 @@ Definition get_estimate
   :=
  match round_state  with
   | InitialRoundState _ _ _ _ _ => 
-      if Nat.eqb round_number 0 then
-      Some (existT _ 0 OriginBlock)
+      if (RoundNumber.to_nat round_number) =? 0 then
+      Some (AnyBlock.to_any OriginBlock)
       else
       None
   | RoundStateUpdate _ _ _ _ _ _ _ _ _=> 
@@ -121,7 +127,7 @@ Context {total_voters: nat}.
 Context {prevote_voters:Voters  }.
 Context {precommit_voters: Voters }.
 Context {round_time : Time}.
-Context {round_number: nat}.
+Context {round_number: RoundNumber}.
 Context {time_increment : Time}.
 
 
@@ -147,9 +153,9 @@ Theorem get_estimate_output_is_estimate
       time_increment
   )
   (get_estimate_result
-    : get_estimate round_state = Some (existT _ block_number block)
+    : get_estimate round_state = Some (AnyBlock.to_any block)
   )
-  : Estimate round_state (existT _ block_number block).
+  : Estimate round_state (AnyBlock.to_any block).
 Proof.
 Admitted.
 (*  
@@ -169,16 +175,16 @@ Variant Completable
       (g_prevote: Block g_block_number)
       (g_prevote_is_some 
         : g ( get_prevote_votes round_state) 
-          = Some (existT _ g_block_number g_prevote)
+          = Some (AnyBlock.to_any g_prevote)
       )
-      (new_block_is_below_g: projT1 number_and_block < g_block_number)
+      (new_block_is_below_g: number_and_block.(AnyBlock.block_number) < g_block_number)
   | CompletableByImpossible 
       {g_block_number: nat}
       (g_prevote: Block g_block_number)
       (
         g_prevote_is_some 
         : g ( get_prevote_votes round_state) 
-          = Some (existT _ g_block_number g_prevote)
+          = Some (AnyBlock.to_any g_prevote)
       )
       (cant_have_supermajority 
         : forall n (block : Block n) 
@@ -206,3 +212,5 @@ Definition is_completable
 
 
 End State3.
+
+Close Scope eqb.

@@ -32,22 +32,6 @@ Inductive Block : nat -> Type:=
   | NewBlock {n} (oldBlock : Block n) (id:nat) : Block (S n).
 
 
-(** From time to time we need to form a type that can contain 
-  blocks of any lenght. In such cases we will use AnyBlock 
-   as the type.
-*)
-Definition AnyBlock := {n & Block n}.
-
-Definition to_any {n:nat} (b: Block n) : AnyBlock
-  := existT _ n b.
-
-(** 
-Example:
-  
-  [Definition newBlock_1 : AnyBlock := existT (fun n => Block n) 1 (NewBlock OriginBlock 1).]
-
-  [Check newBlock_1 : AnyBlock .]
-*)
 
 (** * Block Equality
   In the term
@@ -70,11 +54,6 @@ Fixpoint eqb {n m} (block1:Block n) (block2:Block m) :=
 
 Notation " b1 =? b2 " := (eqb b1 b2):blocks_scope.
 
-Definition anyblock_eqb (b1 b2: AnyBlock) : bool
-  := 
-    match b1 , b2 with 
-    | (existT _ n1 b1'), (existT _ n2 b2') => b1' =? b2'
-    end.
 
 Lemma eqb_implies_same_nat {n} (block1: Block n)
   : forall {m} (block2: Block m), block1 =? block2 = true -> n = m .
@@ -109,7 +88,7 @@ Proof.
     + auto.
 Qed.
 
-Lemma eqb_symmetric {n} (block1:Block n)
+Lemma eqb_symmetric_true {n} (block1:Block n)
   : forall {m} (block2:Block m) 
   , block1 =? block2 = true -> block2 =? block1 = true.
 Proof.
@@ -130,6 +109,21 @@ Proof.
          apply Nat.eqb_eq in eqb_id.
          auto.
       ++ auto. 
+Qed.
+
+Lemma eqb_symmetric {n} (block1:Block n)
+  : forall {m} (block2:Block m) 
+  , (block1 =? block2) = (block2 =? block1).
+Proof.
+  intros m block2.
+  destruct (block1 =? block2) eqn:H.
+  - apply eqb_symmetric_true in H.
+    auto.
+  - destruct (block2 =? block1) eqn:H2.
+    + apply eqb_symmetric_true in H2.
+      rewrite H2 in H.
+      auto.
+    + reflexivity.
 Qed.
 
 Lemma eqb_transitive {n} (b1:Block n)
@@ -196,47 +190,6 @@ Proof.
       apply eqb_reflexive.
 Qed.
 
-Lemma anyblock_eqb_reflexive (b1:AnyBlock)
-  : anyblock_eqb b1 b1 =true.
-Proof.
-  destruct b1 as [n b1'].
-  simpl.
-  apply eqb_reflexive.
-Qed.
-
-Lemma anyblock_eqb_transitive (b1 b2 b3:AnyBlock)
-  : anyblock_eqb b1 b2 =true 
-    -> anyblock_eqb b2 b3=true 
-    -> anyblock_eqb b1 b3=true.
-Proof.
-  destruct b1 as [n b1'].
-  destruct b2 as [m b2'].
-  destruct b3 as [r b3'].
-  simpl.
-  apply eqb_transitive.
-Qed.
-
-Lemma anyblock_eqb_symmetric_true (b1 b2:AnyBlock)
-  : anyblock_eqb b1 b2 =true -> anyblock_eqb b2 b1=true.
-Proof.
-  intro H.
-  destruct b1 as [n b1'].
-  destruct b2 as [m b2'].
-  simpl.
-  simpl in H.
-  apply eqb_symmetric, H.
-Qed.
-
-Lemma anyblock_eqb_symmetric_false (b1 b2:AnyBlock)
-  : anyblock_eqb b1 b2 =false -> anyblock_eqb b2 b1=false.
-Proof.
-  intro H.
-  destruct (anyblock_eqb b2 b1) eqn:H2.
-  -  apply anyblock_eqb_symmetric_true in H2.
-    rewrite H2 in H.
-    inversion H.
-  - reflexivity.
-Qed.
 
 Definition get_block_number {n : nat} (block : Block n) : nat :=
   match block with
@@ -429,7 +382,7 @@ Proof.
   assert (block2 = cast block1 same_nats).
     {
     apply cast_eqb_are_equal.
-    apply eqb_symmetric.
+    rewrite eqb_symmetric.
     assumption.
     }
     rewrite <- H.
@@ -591,7 +544,7 @@ Proof.
   - refine (RelatedAsParent _ _ H).
   - refine (RelatedAsChildren _ _ H).
   - apply RelatedAsEquals.
-    auto using eqb_symmetric.
+    auto using eqb_symmetric_true.
 Qed.
 
 Lemma prefix_implies_related  {n m} (block1:Block n) (block2:Block m) 
@@ -719,7 +672,7 @@ Proof.
   - destruct H as [prefix_proof_b3_b2].
     pose (same_bound_implies_related prefix_proof prefix_proof_b3_b2) as contra2.
     contradiction.
-  - pose (eqb_symmetric _ _ H) as b3_b2.
+  - pose (eqb_symmetric_true _ _ H) as b3_b2.
     pose (eqb_implies_same_nat _ _ b3_b2) as same_nat .
     pose  (eqb_blocks_are_prefix2 b3 b2 b3_b2 same_nat) as b3_b2_cast.
     pose (prefix_of_cast_right _ _ same_nat b3_b2_cast) as b3_prefix_b2. 

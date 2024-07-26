@@ -1,7 +1,16 @@
-Require Import List.
-Require Import ListFacts.
+Require List.
+Require Import DataTypes.List.Count.
+
+Import List.ListNotations.
+
+Require Import Classes.Eqb.
+Require Import Classes.Functor.
+Require Import Instances.List.
 
 Section Dictionary.
+
+Open Scope list_scope.
+Open Scope eqb_scope.
 
 Context {K V:Type}.
 
@@ -12,18 +21,12 @@ Arguments DictionaryC {T1 T2}.
 
 Definition empty:= @DictionaryC K V nil.
 
-Variable eqb_k: K -> K -> bool.
-Axiom eqb_k_reflexive : forall {k:K}, eqb_k k k = true.
-Axiom eqb_k_symmetric: forall {k1 k2:K} {b}, eqb_k k1 k2 =b -> eqb_k k2 k1 = b.
-Axiom eqb_k_transitive: forall {k1 k2 k3:K}, eqb_k k1 k2 =true -> eqb_k k2 k3 = true -> eqb_k k1 k3 = true.
-Variable eqb_v: V -> V -> bool.
-Axiom eqb_v_reflexive : forall v:V, eqb_v v v = true.
-Axiom eqb_v_symetric : forall {v1 v2:V} {b}, eqb_v v1 v2 =b -> eqb_v v2 v1 = b.
+Context `{eqb_k: Eqb K}.
+Context `{eqb_k_laws: @EqbLaws K eqb_k}.
+Context `{eqb_v: Eqb V}.
+Context `{eqb_v_laws: @EqbLaws V eqb_v}.
 
-Definition eqb_kv (p1 p2:K*V):bool
-  := eqb_k (fst p1) (fst p2) && eqb_v (snd p1) (snd p2). 
-
-Definition  to_list (dict:Dictionary K V): list (K*V)
+Definition to_list (dict:Dictionary K V): list (K*V)
   := 
   match dict with
   | DictionaryC l => l
@@ -36,20 +39,20 @@ Fixpoint add_aux (element: K*V) (dict:list (K*V)): list (K*V)
   | ((k',v'):: remain) => 
       let (k,v) := element 
       in
-      if eqb_k k k' 
+      if k =? k'
       then (k,v) :: remain
       else 
         (k',v'):: add_aux element remain
   end.
 
 Lemma add_aux_adds_new_at_end (k:K) (v:V) (l:list(K*V))
-  : (forall k' , In k' (List.map fst l) -> eqb_k k k' = false)
+  : (forall k' , List.In k' (List.map fst l) -> k =? k' = false)
   -> add_aux (k,v) l = l++((k,v)::nil). 
 Proof.
   induction l as [|[k3 v3] l HInd];intro Hin.
   - reflexivity.
   - simpl.
-    assert (eqb_k k k3 = false) as H.
+    assert (k =? k3 = false) as H.
     {
      + apply Hin.
        simpl.
@@ -73,13 +76,13 @@ Definition add (k:K) (v:V) (dict:Dictionary K V): Dictionary K V
 
 Definition lookup (k:K) (dict: Dictionary K V): option V
   :=
-  match find (fun p => eqb_k k (fst p)) (to_list dict) with
+  match List.find (fun p =>k =? (fst p)) (to_list dict) with
   | Some (_,v)=>Some v
   | None => None
   end.
 
 Lemma lookup_eqb_rewrite {k1 k2} d:
-  eqb_k k1 k2 = true -> lookup k1 d = lookup k2 d.
+  k1 =? k2 = true -> lookup k1 d = lookup k2 d.
 Proof.
   intro eqH.
   destruct d as [l].
@@ -87,17 +90,17 @@ Proof.
   - reflexivity.
   - unfold lookup.
     simpl.
-    destruct (eqb_k k1 k3) eqn:k1_k3.
-    + apply eqb_k_symmetric in eqH.
-      rewrite (eqb_k_transitive eqH k1_k3).
+    destruct (k1 =? k3) eqn:k1_k3.
+    + rewrite eqb_symmetry in eqH.
+      rewrite (@eqb_transitivity K eqb_k eqb_k_laws k2 k1 k3 eqH k1_k3).
       reflexivity.
     + enough(
-       eqb_k k2 k3 = false
+      k2 =? k3 = false
       ) as Hend.
       rewrite Hend.
       assumption.
-      destruct (eqb_k k2 k3) eqn:H4.
-      * pose (eqb_k_transitive eqH H4) as H5.
+      destruct (k2 =? k3) eqn:H4.
+      * pose (@eqb_transitivity _ _ _ k1 k2 k3 eqH H4) as H5.
         rewrite H5 in k1_k3.
         assumption.
       * reflexivity.
@@ -110,11 +113,11 @@ Proof.
   unfold lookup.
   simpl.
   induction l as [|[k' v'] remain Hind];intros k v;simpl.
-  - rewrite eqb_k_reflexive.
+  - rewrite eqb_reflexivity.
     reflexivity.
-  -  destruct (eqb_k k k') eqn:k_eq_k.
+  -  destruct (k =? k') eqn:k_eq_k.
     + simpl.
-      rewrite eqb_k_reflexive.
+      rewrite eqb_reflexivity.
       reflexivity.
     + simpl.
       rewrite k_eq_k.
@@ -123,7 +126,7 @@ Qed.
 
 Lemma add_really_adds_eqb_k d :
   forall k1 k2 v,
-  eqb_k k1 k2 = true ->
+  k1 =? k2 = true ->
    lookup k1 (add k2 v d) = Some v.
 Proof.
   destruct d as [l].
@@ -132,23 +135,23 @@ Proof.
   induction l as [|[k v'] remain Hind];intros k1 k2 v H;simpl.
   - rewrite H.
     reflexivity.
-  - destruct (eqb_k k2 k) eqn:k2_eq_k.
+  - destruct (k2 =? k) eqn:k2_eq_k.
     + simpl.
       rewrite H.
       reflexivity.
     + simpl.
-      destruct (eqb_k k1 k) eqn:k1_eq_k.
-      * pose (eqb_k_symmetric H) as H2.
-        pose (eqb_k_transitive H2 k1_eq_k) as H3.
-        rewrite k2_eq_k in H3.
-        inversion H3.
+      destruct (k1 =? k) eqn:k1_eq_k.
+      * rewrite (eqb_symmetry) in H.
+        apply (eqb_transitivity k2 k1 k H) in k1_eq_k.
+        rewrite k2_eq_k in k1_eq_k.
+        inversion k1_eq_k.
       * apply Hind.
         assumption.
 Qed.
 
 Definition from_list (l:list (K*V)): Dictionary K V
   :=
-  fold_right (fun p dict => add (fst p) (snd p) dict ) empty l.
+  List.fold_right (fun p dict => add (fst p) (snd p) dict ) empty l.
 
 
 Definition  update_with (k:K) (v:V) (f:option V -> V -> V) (dict:Dictionary K V): Dictionary K V
@@ -164,7 +167,7 @@ Proof.
 Qed.
 
 Lemma update_lookup_k_eqb k1 k2 v f d :
-eqb_k k1 k2 = true ->
+ k1 =? k2 = true ->
  lookup k1 (update_with k2 v f d)= Some (f (lookup k2 d) v).
 Proof.
   intro H.
@@ -176,7 +179,7 @@ Qed.
 
 
 Lemma update_lookup_keeps_others_k_eqb k1 v f d  
-  :  forall k2, eqb_k k2 k1 = false -> 
+  :  forall k2, k2 =? k1 = false -> 
   lookup k2 (update_with k1 v f d) = lookup k2 d.
 Proof.
   destruct d as [l].
@@ -191,13 +194,13 @@ Proof.
     unfold update_with.
     unfold lookup.
     simpl.
-    destruct (eqb_k k1 k3) eqn:k1_k3.
-    + assert (eqb_k k2 k3 = false) as k2_k3.
+    destruct (k1 =? k3) eqn:k1_k3.
+    + assert (k2 =? k3 = false) as k2_k3.
       {
-        destruct (eqb_k k2 k3) eqn:k2_k3.
-        - apply (eqb_k_symmetric) in k2_k3.
-          pose (eqb_k_transitive k1_k3 k2_k3) as contra.
-          apply (eqb_k_symmetric) in contra.
+        destruct (k2 =? k3) eqn:k2_k3.
+        - rewrite (eqb_symmetry) in k2_k3.
+          pose (eqb_transitivity _ _ _ k1_k3 k2_k3) as contra.
+          rewrite (eqb_symmetry) in contra.
           rewrite contra in H.
           exact H.
         - reflexivity.
@@ -207,7 +210,7 @@ Proof.
       rewrite H.
       reflexivity.
     + simpl.
-      destruct (eqb_k k2 k3) eqn:k2_k3. 
+      destruct (k2 =? k3) eqn:k2_k3. 
       * reflexivity.
       * unfold lookup in Hind.
         unfold update_with in Hind.
@@ -240,10 +243,9 @@ Proof.
     auto using WellFormedAdd.
 Qed.
 
-
 Lemma wellformed_means_unique_elements d (wf:WellFormedDict d) 
   : forall k, 
-    count eqb_k k (map fst (to_list d)) <= 1.
+    count k (map fst (to_list d)) <= 1.
 Proof.
   destruct d as [l].
   intro k.
@@ -267,7 +269,7 @@ Fixpoint eqb_aux (l: list (K * V)) (d:Dictionary K V) : bool
   | nil => true
   | (k,v)::r1 => 
       match lookup k d with
-      | Some v' => eqb_v v v' && eqb_aux r1 d
+      | Some v' => (v =? v') && eqb_aux r1 d
       | None => false
       end
   end.
@@ -371,7 +373,7 @@ Qed.
 *)
 
 Definition delete (k:K) (dict:Dictionary K V): Dictionary K V:=
-  from_list (List.filter (fun t => eqb_k k (fst t))  (to_list dict)).
+  from_list (List.filter (fun t =>  k =? (fst t))  (to_list dict)).
 
 Lemma delete_works (dict:Dictionary K V) 
   : forall k, lookup k (delete k dict) =None.
