@@ -64,73 +64,39 @@ Record VoterState := {
 
 Local Open Scope vector_scope.
 
-Definition make_initial_voter_state 
-  (prevote_voters:Voters ) 
-  (precommit_voters: Voters )
+(*
+  We assume that prevote_voters and preview_voters has the same number of 
+  round_number_of_voters
+ *)
+Definition make_state_zero
+  (prevote_voters:Voters) 
+  (preview_voters:Voters)
   : VoterState
   :=
-  let total_voters 
-      := 
-      List.length 
-        (Sets.to_list 
-          (Sets.from_list
-            (Sets.to_list 
-             (Voters.to_set prevote_voters) 
-             ++ Sets.to_list (Voters.to_set precommit_voters
-             ) 
-            )
-          )
-        )
-  in
-  (*
-  The estimate for the 0 round at the beginning is just the Origin block 
-  always!
-  *)
   let
     round_zero  :=
       InitialRoundState 
         0 
-        {|
-          to_set:= Sets.empty
-          ;round_number_of_voters:=0
-        |} 
-        {|
-          to_set:= Sets.empty
-          ;round_number_of_voters:=0
-        |} 
+        prevote_voters
+        preview_voters
         (Time.from_nat 0)
         (RoundNumber.from_nat 0)
   in
-  let 
-    round_one 
-    := 
-    InitialRoundState  total_voters prevote_voters precommit_voters (Time.from_nat 1) (RoundNumber.from_nat 1) 
-  in
-  let
-    tower :Vec (OpaqueRound.OpaqueRoundState) 2 :=
-    Vector.cons _
-      (OpaqueRound.OpaqueRoundStateC round_one) 
-      _
+  {|
+    round_number:= (RoundNumber.from_nat 0) 
+    ;prevoted_block := None
+    ;precommited_block := None
+    ;last_brodcasted_block := None
+    ;rounds := 
       (Vector.cons 
         _
         (OpaqueRound.OpaqueRoundStateC round_zero) 
         _
         (Vector.nil _)
       )
-  in
-  
-  {|
-    round_number := RoundNumber.from_nat 1
-    ;prevoted_block := None
-    ;precommited_block := None
-    ;last_brodcasted_block := Some (AnyBlock.to_any Block.OriginBlock)
-    ;rounds := tower
     ;pending_messages := Dictionary.empty
-    ;finalized_blocks 
-      := 
-      Sets.from_list 
-        (AnyBlock.to_any Block.OriginBlock :: List.nil )
-   |}.
+    ;finalized_blocks := Sets.empty
+  |}.
 
 
 Definition update_last_block  (vs:VoterState) (block:AnyBlock)

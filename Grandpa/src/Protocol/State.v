@@ -130,14 +130,13 @@ Definition get_round_bizantiners_number
 
 Definition make_initial_state_from 
   (round_zero_dict: Dictionary.Dictionary Voter VoterKind)
-  (round_one_dict: Dictionary.Dictionary Voter VoterKind)
   :State
   :=
   let as_list :=Dictionary.to_list round_zero_dict
   in
   let total_voters := List.length as_list
   in
-  match process_round_voters_from round_one_dict with
+  match process_round_voters_from round_zero_dict with
   | (bizantiners_number, prevote_voters_list, precommit_voters_list) 
     =>
     let prevote_voters 
@@ -147,7 +146,7 @@ Definition make_initial_state_from
       := Voters.from_list precommit_voters_list total_voters
     in
     let
-      init_vs  := VoterState.make_initial_voter_state prevote_voters precommit_voters
+      init_vs  := VoterState.make_state_zero prevote_voters precommit_voters
     in
     {|
       message_count:=0
@@ -170,6 +169,7 @@ Definition make_initial_state_from
   end.
 
 Open Scope math.
+
 Definition init_next_round_voter_state_from 
   (round_dictionary: Dictionary Voter VoterKind)
   (time:Time)

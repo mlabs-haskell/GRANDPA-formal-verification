@@ -573,15 +573,17 @@ Definition voters_round_step `{Io} (t:Time) (state:State): State :=
 CoInductive CoList (T:Type) :Type :=
   | CoCons : T -> CoList T -> CoList T.
 
+Arguments CoCons {T}.
+
 Fixpoint get_last_nat_aux {T} (n:nat) (colist:CoList T): T
   := 
   match n with 
   | 0 => match colist  with 
-         | CoCons _ element _ =>
+         | CoCons element _ =>
              element
           end
   | S m => match colist with 
-          | CoCons _ _ remain => get_last_nat_aux m remain
+          | CoCons _ remain => get_last_nat_aux m remain
           end
   end.
 
@@ -592,24 +594,21 @@ Definition get_last {T} (t:Time) (colist:CoList T): T
 CoFixpoint produce_states `{Io} (t:Time) (state:State): CoList State :=
   let new_state := voters_round_step t (update_votes t state)
   in
-  CoCons State new_state  (produce_states (Time.from_nat 1 +t) new_state).
+  CoCons state  (produce_states (Time.from_nat 1 +t) new_state).
 
 
 Definition get_state_up_to `{Io} (t:Time): State :=   
   let 
     zero_round_dict := io_get_round_voters (RoundNumber.from_nat 0)
   in
-  let 
-    one_round_dict := io_get_round_voters (RoundNumber.from_nat 0)
-  in
   get_last t 
   (
     produce_states 
       (Time.from_nat 0) 
-      (State.make_initial_state_from zero_round_dict one_round_dict )
+      (State.make_initial_state_from zero_round_dict)
   ). 
 
-(* Compute get_state_up_to 0. *)
+(*Compute get_state_up_to (Time.from_nat 0).*)
 
 
 Lemma get_global_finalized_blocks_are_related (state:State)
@@ -622,12 +621,8 @@ Lemma get_global_finalized_blocks_are_related (state:State)
 Admitted.
 
 
-(* for some reason /\ is disabled as notation *)
 
 Section ProtocolConsistency.
-
-
-
 Lemma voter_state_continuos_existence `{Io}
   (v:Voter)
   (t: Time)
