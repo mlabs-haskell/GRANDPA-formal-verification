@@ -730,7 +730,7 @@ Lemma round_precomits_consistent_over_time `{Io}
       = Some r2
   )
   (voters_are_equal: (OpaqueRound.get_precommit_voters r1) = (OpaqueRound.get_precommit_voters r2))
-  : (Votes.castVotes voters_are_equal (OpaqueRound.get_all_precommit_votes r1) = OpaqueRound.get_all_precommit_votes r2).
+  : (Votes.cast voters_are_equal (OpaqueRound.get_all_precommit_votes r1) = OpaqueRound.get_all_precommit_votes r2).
 Admitted.
 
 Lemma finalized_blocks_monotone_over_time `{Io}
