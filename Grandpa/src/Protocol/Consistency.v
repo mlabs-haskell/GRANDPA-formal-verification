@@ -32,17 +32,6 @@ Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
 
-Lemma produce_states_unfold_0 `{io:Io}
-  : get_state_up_to (Time.from_nat 0)  
-   = 
-    make_initial_state_from (io_get_round_voters (RoundNumber.from_nat 0)).
-Proof.
-  unfold get_state_up_to.
-  unfold get_last.
-  simpl.
-  reflexivity.
-Qed.
-
 Lemma initial_state_message_count_is_0 
   `{io:Io}
   :
