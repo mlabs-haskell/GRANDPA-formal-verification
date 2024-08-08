@@ -5,6 +5,13 @@ Require Import Time.
 Require Import RoundNumber.
 
 
+(** *FinalizedBlock
+
+This type ties a finalized block with all the information
+to identify the moment in witch the algorithm finalized the 
+block.
+*)
+
 Record FinalizedBlock := FinalizedBlockC {
   block : AnyBlock
   ;time:Time

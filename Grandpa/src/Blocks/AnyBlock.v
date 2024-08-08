@@ -82,7 +82,7 @@ Qed.
 Lemma eqb_transitivity (b1 b2 b3:AnyBlock)
   : (b1 =? b2) =true 
     -> (b2 =? b3) =true 
-    -> (b1 =? b3)=true.
+   -> (b1 =? b3)=true.
 Proof.
   destruct b1 as [n b1'].
   destruct b2 as [m b2'].
@@ -112,5 +112,9 @@ Instance EqbLawsAnyBlock : EqbLaws AnyBlock :={
 
 Global Existing Instance EqbLawsAnyBlock.
 
+
+Definition is_prefix b1 b2 : bool
+  :=
+  (Block.is_prefix b1.(AnyBlock.block) b2.(AnyBlock.block)).
 
 End Instances.

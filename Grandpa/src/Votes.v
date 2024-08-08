@@ -416,7 +416,7 @@ Lemma count_votes_works
   )
   =List.length (
        List.filter (
-         fun vote => is_prefix block vote.(Vote.block)
+         fun vote => Block.is_prefix block vote.(Vote.block)
        ) 
        votes.(vlist) 
       ).
@@ -478,7 +478,7 @@ Our implementation aproach is as follows:
    - Find the equivocate votes and the ones that aren't equivocate.
    - Count the non equivocate votes for every block.
    - Remove blocks that don't have at least [(n+f+1)/2] votes.
-      In this case [n:=length voters] and [f:= ]
+   In this case [n:=length voters] and [f:= floor(n/3)+1 ]
 *)
 
 Definition has_supermajority_predicate 
@@ -673,6 +673,9 @@ Proof.
 Qed.
 
 
+(**
+TODO: move to list facts
+*)
 Lemma superset_has_subset_majority_blocks_aux1  l p (b:AnyBlock) : 
   (exists v:nat, List.In (b,v) l /\ p (b,v)= true )
   -> exists v:nat, List.In (b,v) (List.filter p l).
@@ -768,6 +771,23 @@ Definition has_supermajority
   : bool
   := 
   0 <? List.length (get_supermajority_blocks  S) .
+
+Definition block_has_supermajority
+  {voters:Voters}
+  (block:AnyBlock)
+  (S:Votes voters)
+  :bool
+  :=
+  let blocks_with_super_majority := get_supermajority_blocks S 
+  in
+  match 
+    List.filter 
+      (fun x => AnyBlock.is_prefix block (fst x)) 
+      blocks_with_super_majority 
+  with
+  | List.nil => false
+  | _ => true 
+  end.
 
 Section Cast.
 

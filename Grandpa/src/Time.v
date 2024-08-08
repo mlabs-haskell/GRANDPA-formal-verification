@@ -2,6 +2,10 @@ Require Import DataTypes.NatWrapper.
 
 Export NatWrapper.
 
+(** 
+  See [NatWrapper].
+*)
+
 Variant TimePhantom :=  TimePhantomC.
 
 Definition Time := NatWrapper TimePhantom.

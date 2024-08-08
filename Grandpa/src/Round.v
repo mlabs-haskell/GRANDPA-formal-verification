@@ -15,6 +15,38 @@ Require Import Classes.Math.All.
 
 Open Scope math.
 
+(** *RoundState
+
+The original design of this type included plans to allow the augment 
+of round number, so the original name was something like [Rounds]. 
+
+However it was realized that mixing both, a particular round update 
+and all rounds update was a mistake. Is a mistake in the sense 
+that it increased the difficulty to work with Rounds in both sides, 
+programming and proofs. 
+
+Finally we choose to write [RoundState] to store only the content 
+of a particular round as seen by some unspecified voter. 
+
+This type by construction:
+
+  - Require to declare: 
+   - The total number of voters.
+   - The prevote and precommit voters for the round.
+   - The time we are starting the round
+   - The round number
+  - After the declaration a round can only:
+   - Add new prevote or precommit votes
+   - Increment the time for the round 
+      (this is suposse to be the time at witch we are updating 
+        the [RoundState])
+
+This ensure that the round remains consistent over time without the need 
+of any proof.
+Additionally this guarantees that we got the explicit time at witch 
+we got an update for a round.
+*)
+
 Inductive RoundState
   (total_voters:nat)
   (prevote_voters:Voters ) 
@@ -36,7 +68,7 @@ Inductive RoundState
       round_number
       (time_increment+ old_time_increment).
 
-Section State1.
+Section Getters.
 
 Context {total_voters:nat}.
 Context {prevote_voters:Voters  }.
@@ -99,7 +131,7 @@ Definition get_total_voters
   : nat
   := total_voters.
 
-End State1.
+End Getters.
 
 
 Fixpoint get_all_prevote_votes

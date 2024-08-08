@@ -30,10 +30,10 @@ Round number would be added later when we add Time and Rounds, this
 
 We don't have types for votes, instead when needed, we distinguish
 them by maintaining two different set of votes, one for precommits 
-and other for prevotes.
+and other for prevotes inside [RoundState].
 
 However, we want to tie a Vote with a particular set of Voters 
-and to ensure that the Vote is coherent.
+ to ensure that a collection of votes refers to the same set of voters.
 *)
 
 Record Vote

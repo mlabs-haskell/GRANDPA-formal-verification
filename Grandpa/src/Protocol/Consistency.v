@@ -11,6 +11,7 @@ Require Import Vectors.
 Require Import Sets.
 Require Import Message.
 Require Import DataTypes.List.Count.
+Require Import DataTypes.Option.
 Require Import Protocol.State.
 Require Import Protocol.StateMessages.
 Require Import Protocol.FinalizedBlock.
@@ -82,96 +83,347 @@ process_round_voters_from
   reflexivity.
 Qed.
 
-Lemma update_vote_for_voter_dont_touch_messages `{io:Io}
-  (t:Time)
+Definition ContinueVoterStates {A B} (f:A->A) (g:A -> Dictionary.Dictionary Voter B)
   (v:Voter)
-  (s:State)
-  : forall m, State.pending_messages (update_vote_for_voter t v s m) = State.pending_messages s.
-Proof.
-  intro m.
-  simpl.
-  unfold update_vote_for_voter.
-  destruct (is_message_processed_by s m v).
-  - reflexivity.
-  - destruct (io_accept_vote t m v).
-    + unfold accept_vote.
-      destruct (Dictionary.lookup v (voters_state s)).
-      * reflexivity.
-      * reflexivity.
-    + destruct (
-        PeanoNat.Nat.leb (NatWrapper.to_nat t)
-          (NatWrapper.to_nat (Message.time m + global_time_constant))
-        || (v =? voter m)
-        ).
-      * unfold accept_vote.
-        destruct (Dictionary.lookup v (voters_state s)).
-        ++ reflexivity.
-        ++ reflexivity.
-      * reflexivity.
-Qed.
+  := 
+  forall a
+    , is_some (Dictionary.lookup v (g a)) = true 
+    <-> is_some (Dictionary.lookup v (g (f a)))=true.
 
-Lemma update_votes_for_voter_dont_touch_messages_aux `{io:Io}
-  (t:Time)
-  (v:Voter)
-  : forall l s, State.pending_messages (List.fold_left (update_vote_for_voter t v) l s) = State.pending_messages s.
+Lemma is_some_iff_some {A} (x:option A) 
+  : is_some x = true <-> exists w, x = Some w.
 Proof.
-  intros l.
-  induction l.
-  - reflexivity.
-  - simpl.
-    intro s.
-    pose (IHl (update_vote_for_voter t v s a)) as H.
+  split.
+  - intro H.
+    destruct x.
+    + eauto.
+    + inversion H.
+  - intros [w H].
     rewrite H.
-    apply update_vote_for_voter_dont_touch_messages.
+    auto.
 Qed.
 
-
-(*
-  TODO: As this shows, messages aren't mark as processed!, so no collection of them!
-*)
-Lemma update_votes_for_voter_dont_touch_messages `{io:Io}
-  (t:Time)
-  (v:Voter)
-  (s:State)
-  : State.pending_messages (upate_votes_for_voter t s v) = State.pending_messages s.
+Lemma not_is_some_iff_none {A} (x:option A) 
+  : is_some x = false <-> x = None.
 Proof.
-  unfold upate_votes_for_voter.
-  apply update_votes_for_voter_dont_touch_messages_aux.
+split.
+- intros H.
+  destruct x.
+  + inversion H.
+  + auto.
+- intros H.
+  rewrite H.
+  auto.
 Qed.
+
+
+Lemma accept_vote_continues_voter_state `{io:Io}
+  (voter:Voter)
+  (m:Message)
+  :
+  ContinueVoterStates (fun s => accept_vote s voter m) State.voters_state voter.
+Proof.
+  intros state.
+  split.
+  - unfold accept_vote.
+    intro H.
+    apply is_some_iff_some in H.
+    destruct H as [old_vs H].
+    rewrite H.
+    unfold update_voter_state.
+    simpl.
+    apply is_some_iff_some.
+    exists (update_with_msg old_vs m).
+    apply Dictionary.add_really_adds.
+  - Admitted.
+
+
+
+Lemma voter_state_continuos_existence_in_accept_vote `{io:Io}
+  (state:State)
+  (voter1 voter2:Voter)
+  (m:Message)
+  (is_some_at_state: is_some (Dictionary.lookup voter1 state.(voters_state)) = true)
+  :
+    is_some (Dictionary.lookup voter1 (accept_vote state voter2 m).(voters_state)) = true.
+Proof.
+  unfold accept_vote.
+  destruct (Dictionary.lookup voter2 state.(State.voters_state)).
+  2: auto.
+  simpl.
+  destruct (voter1 =? voter2) eqn:v1_eqb_v2.  
+  - rewrite is_some_iff_some.
+    exists (update_with_msg v m).
+    apply Dictionary.add_really_adds_eqb_k.
+    auto.
+  - pose (Dictionary.lookup_add_result state.(State.voters_state) voter1 voter2 (update_with_msg v m)) as H.
+    destruct H as [ [eq_voters H  ] | ].
+    + rewrite eq_voters in v1_eqb_v2. discriminate v1_eqb_v2.
+    + rewrite is_some_iff_some.
+      rewrite is_some_iff_some in is_some_at_state.
+      destruct is_some_at_state as [w H_is_some].
+      rewrite H_is_some in H.
+      eauto.
+Qed.
+
+Lemma voter_state_continuos_existence_in_update_vote_for_voter `{io:Io}
+  (t:Time)
+  (voter1 voter2:Voter)
+  (state:State)
+  (m:Message)
+  (is_some_at_state:
+    is_some (Dictionary.lookup voter1 state.(voters_state)) = true)
+  : 
+  is_some (
+    Dictionary.lookup 
+      voter1
+      (StateMessages.update_vote_for_voter t voter2 state m).(voters_state) 
+  ) = true. 
+Proof.
+  unfold update_vote_for_voter.
+  destruct (is_message_processed_by state m voter2).
+  - auto.
+  - destruct (io_accept_vote t m voter2).
+    + eauto using voter_state_continuos_existence_in_accept_vote. 
+    + destruct (
+         PeanoNat.Nat.leb (NatWrapper.to_nat t)
+           (NatWrapper.to_nat (Message.time m + global_time_constant))
+         || (voter2 =? Message.voter m)
+      );
+      eauto using voter_state_continuos_existence_in_accept_vote.
+Qed.
+
+
+(*TODO: Move this to List facts*)
+Lemma fold_left_preserves_property_aux {A B} (P:A->Prop) (f: A -> B -> A)
+  (at_f:forall a b, P a -> P (f a b))
+  : forall l a0, P a0 -> P (List.fold_left f l a0 ).
+Proof.
+  induction l.
+  - auto.
+  - simpl.
+    auto using IHl.
+Qed.
+
+Lemma fold_left_preserves_property {A B} 
+  (P:A->Prop) 
+  (f: A -> B -> A) 
+  (l:list B) 
+  (a0:A) 
+  (at_a0:P a0)
+  (at_f:forall a b, P a -> P (f a b))
+  : P (List.fold_left f l a0).
+Proof.
+  apply fold_left_preserves_property_aux;auto.
+Qed.
+
+
+Lemma voter_state_continuos_existence_in_update_votes_for_voter `{io:Io}
+  (t:Time)
+  (voter1 voter2:Voter)
+  (state:State)
+  (is_some_at_state:
+    is_some (Dictionary.lookup voter1 state.(voters_state))  = true
+  )
+  : 
+   is_some 
+    (Dictionary.lookup 
+        voter1 
+        (StateMessages.update_votes_for_voter t state voter2).(voters_state)
+    )
+   = 
+   true.
+Proof.
+  unfold update_votes_for_voter.
+  apply fold_left_preserves_property.
+  - eauto.
+  - intros state2 m2 H2.
+    destruct (voter_state_continuos_existence_in_update_vote_for_voter t voter1 voter2 state2 m2 H2).
+    +  reflexivity.
+Qed.
+
+Lemma voter_state_continuos_existence_in_prune_message `{io:Io}
+  (voter:Voter)
+  (m:Message)
+  (state:State)
+  (is_some_at_state:
+    is_some (Dictionary.lookup voter state.(State.voters_state))  = true
+  )
+  :
+    is_some 
+      (Dictionary.lookup voter (prune_message state m).(State.voters_state))  
+    = 
+    true.
+Proof.
+  unfold prune_message.
+  destruct (
+    List.fold_left
+      (fun (acc : bool) (v : Voter) =>
+       acc && is_message_processed_by state m v)
+      get_all_time_participants true
+  );eauto. 
+Qed.
+
+Lemma prune_message_continues_voter_state_existence `{io:Io}
+  (voter:Voter)
+  (m:Message)
+  :ContinueVoterStates (fun s => prune_message s m) State.voters_state voter.
+Proof.
+  intro state.
+  split.
+  - apply voter_state_continuos_existence_in_prune_message.
+  - intros H.
+    unfold prune_message in  H.
+    destruct (
+      List.fold_left
+        (fun (acc : bool) (v : Voter) =>
+         acc && is_message_processed_by state m v)
+        get_all_time_participants true
+    );eauto.
+Qed.
+
+Lemma voter_state_continuos_existence_in_prune_messages `{io:Io}
+  (voter:Voter)
+  (state:State)
+  (is_some_at_state:
+    is_some (Dictionary.lookup voter state.(State.voters_state)) = true
+  )
+  :
+    is_some 
+      (Dictionary.lookup voter (prune_messages state).(State.voters_state))
+    = 
+    true.
+Proof.
+  unfold prune_messages.
+  apply fold_left_preserves_property.
+  - eauto.
+  - eauto using voter_state_continuos_existence_in_prune_message.
+Qed.
+
+
+
+Lemma prune_messages_continues_voter_state_existence `{io:Io}
+  (voter:Voter)
+  :
+  ContinueVoterStates prune_messages State.voters_state voter.
+Proof.
+  intros state.
+  split.
+  - apply voter_state_continuos_existence_in_prune_messages.
+  - intros H.
+    unfold prune_messages in H.
+    destruct (Dictionary.lookup voter (voters_state state)) eqn:result_voter.
+    + auto.
+    + simpl.
+      enough (
+        (Dictionary.lookup voter
+         (voters_state
+            (List.fold_left prune_message
+               (List.map snd (Dictionary.to_list (pending_messages state)))
+               state))) = None
+      ).
+      * rewrite <- not_is_some_iff_none in H0.
+        rewrite <- H.
+        rewrite <- H0.
+        auto.
+      * apply fold_left_preserves_property .
+        ++ auto.
+        ++ intros state2 m Hnone.
+           destruct (Dictionary.lookup voter (voters_state (prune_message state2 m))) eqn:H3.
+           -- 
+            pose (prune_message_continues_voter_state_existence voter m state2) as H2.
+            rewrite is_some_iff_some in H2.
+            rewrite is_some_iff_some in H2.
+            destruct H2 as [ _ H2].
+            destruct H2 as [v2 H2].
+            +++ eauto.
+            +++ exfalso. 
+                rewrite Hnone in H2.
+                inversion H2.
+          -- auto.
+Qed.
+
+  
+Lemma voter_state_continuos_existence_in_update_votes `{io:Io}
+  (t:Time)
+  (voter:Voter)
+  (state:State)
+  (is_some_at_state:
+    is_some (Dictionary.lookup voter state.(voters_state)) = true
+  )
+  : 
+    is_some (Dictionary.lookup 
+        voter 
+        (StateMessages.update_votes t state).(voters_state) )
+      = 
+      true.
+Proof.
+  unfold update_votes.
+  apply voter_state_continuos_existence_in_prune_messages.
+  apply fold_left_preserves_property.
+  - eauto. 
+  - intros state2 voter2 H. 
+    pose (voter_state_continuos_existence_in_update_votes_for_voter t voter voter2 state2).
+    apply e.
+    auto.
+Qed.
+
+
+
+Lemma voter_state_continuos_existence_in_voters_round_step `{io:Io}
+  (v:Voter)
+  (state:State)
+  (t:Time)
+  (
+    is_some_at_state
+    : is_some (
+       Dictionary.lookup 
+        v 
+        (voters_state state)
+      )= true
+  )
+    : is_some (
+        Dictionary.lookup 
+        v 
+        (voters_state ( voters_round_step t state))
+      ) = true.
+Proof.
+  Admitted.
+
+
   
 Lemma voter_state_continuos_existence_step_1 `{io:Io}
   (v:Voter)
   (
     is_some_at_0
-    : exists vs1
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to (Time.from_nat 0))) = Some vs1
+        (voters_state (get_state_up_to (Time.from_nat 0)))
+        )= true
   )
-    : exists vs2
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to (Time.from_nat 1) )) = Some vs2.
+        (voters_state (get_state_up_to (Time.from_nat 1) ))
+        ) = true.
 Proof.
-  destruct is_some_at_0 as [vs H].
-  simpl.
   unfold get_state_up_to.
-  unfold get_state_up_to in H.
-  remember (make_initial_state_from (io_get_round_voters (RoundNumber.from_nat 0))) as state0 eqn:eq_state0.
-  unfold produce_states.
-  unfold produce_states in H.
-  unfold get_last.
-  unfold get_last in H.
   simpl.
-  simpl in H.
-  unfold update_votes.
-  unfold prune_messages.
-  unfold prune_message.
-  unfold upate_votes_for_voter.
-  unfold update_vote_for_voter.
-  unfold accept_vote.
-  simpl.
-  Admitted.
+  apply voter_state_continuos_existence_in_voters_round_step.
+  apply voter_state_continuos_existence_in_update_votes.
+  auto.
+Qed.
+
+
+Lemma get_state_up_to_unfold `{io:Io} (t:Time) 
+  :
+  let new_t := Time.from_nat 1 + t
+  in
+  get_state_up_to new_t = voters_round_step new_t (update_votes new_t (get_state_up_to t)).
+Proof.
+  auto.
+Qed.
 
 
 Lemma voter_state_continuos_existence_step `{io:Io}
@@ -179,41 +431,54 @@ Lemma voter_state_continuos_existence_step `{io:Io}
   (t: Time)
   (
     is_some_at_t
-    : exists vs1
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to t)) = Some vs1
+        (voters_state (get_state_up_to t)) 
+      )=true
   )
-    : exists vs2
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to ((Time.from_nat 1)+t)%natWrapper )) = Some vs2.
+        (voters_state (get_state_up_to ((Time.from_nat 1)+t)%natWrapper )) 
+      ) = true.
 Proof.
-  destruct is_some_at_t as [vs H].
   destruct t as [t0].
   induction t0.
   - apply voter_state_continuos_existence_step_1.
-    eauto.
-  - 
-  Admitted.
+    auto.
+  - rewrite get_state_up_to_unfold.
+    apply voter_state_continuos_existence_in_voters_round_step.
+    apply voter_state_continuos_existence_in_update_votes.
+    auto.
+Qed.
 
-Lemma voter_state_continuos_existence `{Io}
+Lemma voter_state_continuos_existence `{io:Io}
   (v:Voter)
   (t: Time)
   (
     is_some_at_t
-    : exists vs1
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to t)) = Some vs1
+        (voters_state (get_state_up_to t))
+      )= true
   )
   (t_increment:Time)
-    : exists vs2
-      , Dictionary.lookup 
+    : is_some(
+        Dictionary.lookup 
         v 
-        (voters_state (get_state_up_to (t_increment+t)%natWrapper )) = Some vs2.
+        (voters_state (get_state_up_to (t_increment+t)%natWrapper ))
+      ) = true.
 Proof.
-  Admitted.
+  destruct t_increment as [n_increment].
+  induction n_increment.
+  - simpl.
+    auto.
+  - pose (voter_state_continuos_existence_step v (Time.from_nat n_increment + t)) as H.
+    apply H.
+    auto.
+Qed.
 
 Lemma round_continuos_existence `{Io}
   (v:Voter)
@@ -376,5 +641,6 @@ Proof.
 (*TODO: add consistency of total_number_of_voters param
   that is passed to both prevote and precommit set of voters for every round
 *)
-  
+
+
 End ProtocolConsistency.
