@@ -15,6 +15,7 @@ Require Import DataTypes.List.Inb.
 Require Import DataTypes.Sets.
 
 Require Import Classes.Eqb.
+Require Import Classes.Functor.
 
 Require Import Voter.
 Require Import Voters.
@@ -23,6 +24,8 @@ Require Import Vote.
 Export Voter.
 Export Voters.
 Export Vote.
+
+Require Import Coq.Logic.JMeq.
 
 Open Scope bool.
 Open Scope blocks_scope.
@@ -413,7 +416,7 @@ Lemma count_votes_works
   )
   =List.length (
        List.filter (
-         fun vote => is_prefix block vote.(Vote.block)
+         fun vote => Block.is_prefix block vote.(Vote.block)
        ) 
        votes.(vlist) 
       ).
@@ -475,7 +478,7 @@ Our implementation aproach is as follows:
    - Find the equivocate votes and the ones that aren't equivocate.
    - Count the non equivocate votes for every block.
    - Remove blocks that don't have at least [(n+f+1)/2] votes.
-      In this case [n:=length voters] and [f:= ]
+   In this case [n:=length voters] and [f:= floor(n/3)+1 ]
 *)
 
 Definition has_supermajority_predicate 
@@ -670,6 +673,9 @@ Proof.
 Qed.
 
 
+(**
+TODO: move to list facts
+*)
 Lemma superset_has_subset_majority_blocks_aux1  l p (b:AnyBlock) : 
   (exists v:nat, List.In (b,v) l /\ p (b,v)= true )
   -> exists v:nat, List.In (b,v) (List.filter p l).
@@ -766,78 +772,67 @@ Definition has_supermajority
   := 
   0 <? List.length (get_supermajority_blocks  S) .
 
+Definition block_has_supermajority
+  {voters:Voters}
+  (block:AnyBlock)
+  (S:Votes voters)
+  :bool
+  :=
+  let blocks_with_super_majority := get_supermajority_blocks S 
+  in
+  match 
+    List.filter 
+      (fun x => AnyBlock.is_prefix block (fst x)) 
+      blocks_with_super_majority 
+  with
+  | List.nil => false
+  | _ => true 
+  end.
 
-Require Import Coq.Logic.JMeq.
+Section Cast.
 
-
-Lemma castVote 
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  (v:Vote voters1)
-  :Vote voters2.
-Proof.
-  destruct v.
-  assert (Voters.In voter voters2) as H.
-  - rewrite <- are_eq.
-    assumption.
-  - refine (VoteC _ _ block voter H ).
-Defined.
-
-Lemma jmeq_vote 
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  (v:Vote voters1)
-  : JMeq v (castVote are_eq v).
-Proof.
-  subst.
-  destruct v.
-  simpl.
-  reflexivity.
-Qed.
-
-Lemma jmeq_vote2
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  :JMeq (Vote voters1) (Vote voters2).
-Proof.
-  subst.
-  reflexivity.
-Qed.
-
-
-Lemma identity_castVote (voters:Voters) (v:Vote voters) 
-  : castVote eq_refl v = v . 
-Proof.
-  destruct v.
-  auto.
-Qed.
-
-
-
-Lemma castVotes 
+Lemma cast
   {voters1 voters2 : Voters} 
   (are_eq: voters1 = voters2) 
   (v:Votes voters1) : Votes voters2.
 Proof.
-  destruct v.
-  remember (List.map (castVote are_eq) vlist0) as votes_list2.
+  destruct v as [vlist].
+  remember (map (Vote.cast are_eq) vlist) as votes_list2.
   refine (VotesC voters2 votes_list2).
 Defined.
 
-Lemma identity_castVotes (voters:Voters) (v:Votes voters) 
-  : castVotes eq_refl v = v . 
+Lemma cast_list_jemq
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (l : list (Vote voters1))
+  : JMeq l (List.map (Vote.cast are_eq) l).
 Proof.
-  destruct v.
-  simpl.
-  enough (List.map (castVote eq_refl) vlist0 = vlist0).
-  - rewrite H. auto.
-  - induction vlist0.
-    + auto.
-    + simpl.
-      rewrite identity_castVote.
-      rewrite IHvlist0.
-      auto.
+  subst.
+  induction l.
+  - simpl. apply JMeq_refl.
+  - apply JMeq_eq in IHl.
+    simpl.
+    rewrite <- IHl.
+    pose (Vote.cast_jmeq eq_refl a) as w.
+    apply JMeq_eq in w.
+    rewrite <- w.
+    reflexivity.
 Qed.
+
+Lemma cast_jmeq 
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (vs:Votes voters1)
+  : JMeq vs (cast are_eq vs).
+Proof.
+  subst.
+  destruct vs as [vlist].
+  simpl.
+  pose (cast_list_jemq eq_refl vlist).
+  rewrite <- j.
+  reflexivity.
+Qed.
+End Cast.
 
 
 Close Scope blocks.

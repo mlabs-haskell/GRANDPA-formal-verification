@@ -2,6 +2,10 @@ Require Import DataTypes.NatWrapper.
 
 Export NatWrapper.
 
+(** 
+  See [NatWrapper].
+*)
+
 Variant RoundNumberPhantom :=  RoundNumberPhantomC.
 
 Definition RoundNumber := NatWrapper RoundNumberPhantom.

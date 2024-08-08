@@ -67,4 +67,3 @@ Definition calculate_max_bizantiners
   | _ => total/3
   end
   .
-

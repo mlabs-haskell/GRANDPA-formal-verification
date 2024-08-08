@@ -10,6 +10,16 @@ Require Import Message.
 
 Require Import Classes.Math.All.
 
+(** *OpaqueRoundState
+This didn't exist in the paper, is a convenient newtype around [RoundState].
+
+The [OpaqueRoundState] type allow us to store different rounds in a single 
+collection like a [vector] or a [list].
+
+Another advantage is that we don't need to explicitly pass around the 
+parameters of a round.
+*)
+
 Variant OpaqueRoundState: Type := 
   | OpaqueRoundStateC {total_voters round_number}
     {prevote_voters:Voters}
@@ -47,7 +57,7 @@ Definition get_start_time (o:OpaqueRoundState) : Time
 Definition get_round_number (o:OpaqueRoundState) : RoundNumber
   :=
   match o with 
-  | OpaqueRoundStateC r => Round.get_round_number r 
+  | OpaqueRoundStateC r => Round.get_round_number r
   end.
 
 Definition get_total_voters (o:OpaqueRoundState) : nat
@@ -86,6 +96,17 @@ Definition get_estimate (o:OpaqueRoundState)
 Open Scope math.
 Open Scope natWrapper.
 
+(**
+It add the precommit or prevote vote represented
+by a message to the particular round it is related to.
+
+If the message came from a voter outside of the set of 
+precommiters or prevoters for the round, we ignore the vote. 
+In the paper they assumed that every participant is capable 
+to determine the round participants.
+
+If the message isn't a precommit or prevote we do nothing.
+*)
 Definition update_votes_with_msg
   (opaque:OpaqueRoundState)
   (msg:Message)

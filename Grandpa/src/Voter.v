@@ -15,6 +15,11 @@ For this reason we choose to use naturals.
 
 Additionally we use the newtype pattern as we would work 
 a lot with other types isomorphic to naturals.
+
+We aren't using the NatWrapper module here as 
+it doesn't make sense to make operations over the voters
+other than equality.
+
 *)
 Record Voter : Type := VoterC { to_nat:nat }.
 
