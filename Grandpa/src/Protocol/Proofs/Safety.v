@@ -5,6 +5,7 @@ Require Import Time.
 Require Import RoundNumber.
 Require Import Preliminars.
 Require Import DataTypes.List.Count.
+Require Import DataTypes.List.Fold.
 Require Import Protocol.FinalizedBlock.
 Require Import Protocol.Io.
 Require Import Protocol.Protocol.
@@ -16,21 +17,13 @@ Require Import Classes.Eqb.
 Require Import Classes.Math.All.
 Require Import Instances.List.
 
+Require Protocol.Proofs.Consistency.
+
 Open Scope bool.
 Open Scope list.
 Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
-
-Lemma get_global_finalized_blocks_are_related (state:State)
-  (b1 b2 : AnyBlock) 
-  (b1_in 
-    : List.In b1 (List.map (FinalizedBlock.block) state.(global_finalized_blocks)))
-  (b2_in 
-    : List.In b2 (List.map (FinalizedBlock.block) state.(global_finalized_blocks)))
-  : Related b1.(AnyBlock.block) b2.(AnyBlock.block).
-Admitted.
-
 
 Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
   :Prop
@@ -39,22 +32,170 @@ Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
     \/
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
 
+Definition voter_is_hones_at_round `{Io} (v:Voter) (r:RoundNumber) : bool
+  := 
+  (0 <? count v (get_round_honest_voters r))%nat.
+
+
+Lemma voter_round_step_aux_dont_finalize_blocks `{Io}
+  (t:Time) 
+  (state:State) 
+  (voter:Voter)
+  :
+  State.global_finalized_blocks state 
+  = 
+  State.global_finalized_blocks (voter_round_step_aux t state voter).
+Admitted.
+
+Lemma update_votes_dont_finalize_blocks `{Io}
+  (t:Time)
+  (state:State)
+  :
+  State.global_finalized_blocks (StateMessages.update_votes t state) 
+  =
+  State.global_finalized_blocks state.
+Admitted.
+
+Lemma round_zero_only_finalises_origin_block `{io:Io}
+  :
+  State.global_finalized_blocks 
+    (get_state_up_to (Time.from_nat 0))
+  =
+  let origin_voters := Voters.from_list List.nil 0
+  in
+  {|
+    FinalizedBlock.block := AnyBlock.to_any OriginBlock
+    ;FinalizedBlock.time := Time.from_nat 0
+    ;FinalizedBlock.round_number := RoundNumber.from_nat 0
+    ;FinalizedBlock.submitter_voter:= Voter.from_nat 0
+    ;FinalizedBlock.voters:= origin_voters
+    ;FinalizedBlock.precommit_votes:= Votes.VotesC origin_voters List.nil
+  |} :: List.nil.
+Proof.
+  unfold get_state_up_to.
+  unfold make_initial_state_from.
+  destruct (process_round_voters_from (io_get_round_voters (from_nat 0))) as [[_ prevote_voters_list] precommit_voters_list].
+  auto.
+Qed.
+
+Definition global_finalization_step `{io:Io}
+  (t:Time) 
+  (state:State) 
+  : State 
+  :=
+  List.fold_left 
+    (fun new_state info => finalization t new_state (fst info) (snd info))
+    (Dictionary.to_list state.(State.voters_state))
+    state.
+
+Lemma voter_round_step_finalises `{io:Io}
+  (t:Time)
+  (state:State)
+  (voter:Voter)
+  {vs:VoterState.VoterState}
+  (has_voter_state: get_voter_state voter state = Some vs)
+  : 
+  global_finalized_blocks (voter_round_step t state voter)
+  =
+  global_finalized_blocks (finalization t state voter vs)
+  .
+Proof.
+  unfold voter_round_step.
+  rewrite has_voter_state.
+  rewrite <- voter_round_step_aux_dont_finalize_blocks.
+  auto.
+Qed.
+
+Lemma fold_voter_step_finalises `{io:Io}
+  (t:Time)
+  (state:State)
+  : 
+  global_finalized_blocks
+    (List.fold_left (voter_round_step t)
+       (List.map fst (Dictionary.to_list (voters_state state))) state) =
+  global_finalized_blocks
+    (List.fold_left
+       (fun (new_state : State) (info : Voter * VoterState.VoterState) =>
+        finalization t new_state (fst info) (snd info))
+       (Dictionary.to_list (voters_state state)) state).
+Proof.
+  Admitted.
+
+Lemma voters_round_step_finalized_exactly `{io:Io}
+  (t:Time)
+  (state:State)
+  :
+  State.global_finalized_blocks (voters_round_step t state)
+  =
+  State.global_finalized_blocks (global_finalization_step t state).
+Proof.
+  unfold voters_round_step.
+  unfold global_finalization_step.
+  simpl.
+  apply fold_voter_step_finalises.
+Qed.
+
+
+Lemma finalized_blocks_after_round_came_from_finalize_block_step `{io:Io}
+  (t:Time)
+  (state:State)
+  :
+  State.global_finalized_blocks 
+    (voters_round_step 
+      t
+      (StateMessages.update_votes t state) 
+    ) 
+  =
+  State.global_finalized_blocks (global_finalization_step 
+    t state).
+Proof.
+  rewrite <- voters_round_step_finalized_exactly.
+  Admitted.
+
+Lemma finalized_blocks_after_round_came_from_finalize_block `{io:Io}
+  (t:Time)
+  :
+  State.global_finalized_blocks (get_state_up_to (Time.from_nat 1+t)) 
+  =
+  State.global_finalized_blocks (global_finalization_step 
+    (Time.from_nat 1+ t) (get_state_up_to t)).
+Proof.
+  rewrite Consistency.get_state_up_to_unfold.
+  apply finalized_blocks_after_round_came_from_finalize_block_step.
+Qed.
+
 Lemma theorem_4_1_eq_aux `{Io} 
   (t:Time)
   (fb: FinalizedBlock)
   (b1_in:List.In fb (global_finalized_blocks (get_state_up_to t)))
-  : exists (v:Voter) (vr:OpaqueRound.OpaqueRoundState) (vr2:OpaqueRound.OpaqueRoundState)
+  : 
+  exists 
+  (vr:OpaqueRound.OpaqueRoundState) 
+  (vr2:OpaqueRound.OpaqueRoundState)
   ,
+  let v := fb.(FinalizedBlock.submitter_voter)
+  in
     (
-      State.get_voter_opaque_round (get_state_up_to fb.(FinalizedBlock.time) ) v fb.(FinalizedBlock.round_number)
+      State.get_voter_opaque_round 
+        (get_state_up_to fb.(FinalizedBlock.time) ) 
+        v 
+        fb.(FinalizedBlock.round_number)
       =
       Some vr
     )
     /\
-    (g (OpaqueRound.get_all_precommit_votes vr) = Some fb.(FinalizedBlock.block))
+    (
+      g 
+        (OpaqueRound.get_all_precommit_votes vr) 
+      = 
+      Some fb.(FinalizedBlock.block)
+    )
     /\
     (
-      State.get_voter_opaque_round (get_state_up_to (t+(Time.from_nat 2)*global_time_constant)) v fb.(FinalizedBlock.round_number)
+      State.get_voter_opaque_round 
+        (get_state_up_to (t+(Time.from_nat 2)*global_time_constant)) 
+        v 
+        fb.(FinalizedBlock.round_number)
       = 
       Some vr2
     ).
@@ -92,11 +233,22 @@ Qed.
 Lemma theorem_4_1_eq `{Io} 
   (t:Time)
   (fb1 fb2 : FinalizedBlock)
-  (un_related:Unrelated fb1.(FinalizedBlock.block).(AnyBlock.block) fb2.(FinalizedBlock.block).(AnyBlock.block))
+  (un_related:
+    Unrelated 
+      fb1.(FinalizedBlock.block).(AnyBlock.block) 
+      fb2.(FinalizedBlock.block).(AnyBlock.block)
+  )
   (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
   (fb2_in:List.In fb2 (global_finalized_blocks (get_state_up_to t)))
   (finalized_same_round : fb1.(FinalizedBlock.round_number) = fb2.(FinalizedBlock.round_number))
-  : exists (t3:Time) (v:Voter) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  :
+  exists 
+    (t3:Time) 
+    (v:Voter) 
+    (r_n:RoundNumber) 
+    (r:OpaqueRound.OpaqueRoundState) 
+    (s:Sets.DictionarySet Voter)
+    , 
     (
       (
         State.get_voter_opaque_round (get_state_up_to t3) v fb1.(FinalizedBlock.round_number) = Some r
@@ -146,11 +298,26 @@ Proof.
 Lemma theorem_4_1_lt `{Io} 
   (t:Time)
   (fb1 fb2 : FinalizedBlock)
-  (un_related:Unrelated fb1.(FinalizedBlock.block).(AnyBlock.block) fb2.(FinalizedBlock.block).(AnyBlock.block))
+  (un_related:
+    Unrelated 
+      fb1.(FinalizedBlock.block).(AnyBlock.block) 
+      fb2.(FinalizedBlock.block).(AnyBlock.block)
+  )
   (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
   (fb2_in:List.In fb2 (global_finalized_blocks (get_state_up_to t)))
-  (symmetry_hipotesis: fb1.(FinalizedBlock.round_number) < fb2.(FinalizedBlock.round_number))
-  : exists (t3:Time) (v:Voter) (r_n:RoundNumber) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  (symmetry_hipotesis: 
+    fb1.(FinalizedBlock.round_number) 
+    < 
+    fb2.(FinalizedBlock.round_number)
+  )
+  : 
+  exists 
+    (t3:Time) 
+    (v:Voter) 
+    (r_n:RoundNumber) 
+    (r:OpaqueRound.OpaqueRoundState) 
+    (s:Sets.DictionarySet Voter)
+    , 
     (
       (
         State.get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
@@ -186,10 +353,25 @@ Admitted.
 Theorem theorem_4_1 `{Io} 
   (t:Time)
   (fb1 fb2 : FinalizedBlock)
-  (un_related:Unrelated fb1.(FinalizedBlock.block).(AnyBlock.block) fb2.(FinalizedBlock.block).(AnyBlock.block))
-  (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
-  (fb2_in:List.In fb2 (global_finalized_blocks (get_state_up_to t)))
-  : exists (t3:Time) (v:Voter) (r_n:RoundNumber) (r:OpaqueRound.OpaqueRoundState) (s:Sets.DictionarySet Voter), 
+  (un_related:
+    Unrelated 
+      fb1.(FinalizedBlock.block).(AnyBlock.block) 
+      fb2.(FinalizedBlock.block).(AnyBlock.block)
+  )
+  (fb1_in:
+    List.In fb1 (global_finalized_blocks (get_state_up_to t))
+  )
+  (fb2_in:
+    List.In fb2 (global_finalized_blocks (get_state_up_to t))
+  )
+  : 
+  exists 
+    (t3:Time) 
+    (v:Voter) 
+    (r_n:RoundNumber) 
+    (r:OpaqueRound.OpaqueRoundState) 
+    (s:Sets.DictionarySet Voter)
+    , 
     (
       (
         State.get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
@@ -227,11 +409,6 @@ Proof.
     apply (theorem_4_1_lt b2 b1 round_finalized_2 round_finalized_1 t2 t1 un_related2 state t state_is_from_protocol b2_in b1_in);try assumption.  
 Qed.
      *)
-
-
-Definition voter_is_hones_at_round `{Io} (v:Voter) (r:RoundNumber) : bool
-  := 
-  (0 <? count v (get_round_honest_voters r))%nat.
 
 
 Corollary corollary_4_3 
@@ -273,4 +450,3 @@ Close Scope list.
 Close Scope eqb.
 Close Scope math.
 Close Scope natWrapper.
-

@@ -8,6 +8,7 @@ Require Import OpaqueRound.
 Require Import Votes.
 Require Import AnyBlock.
 
+(*
 Lemma lemma_4_4 
   {Io}
   (v1 v2 : Voter)
@@ -23,3 +24,4 @@ Lemma lemma_4_4
   (precommit_subset: VotesIsSubset (OpaqueRound.get_all_precommit_votes or1) (OpaqueRound.get_all_precommit_votes or2) )
   (e1 e2 : AnyBlock)
   :bool.
+*)

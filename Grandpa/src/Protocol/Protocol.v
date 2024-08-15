@@ -202,8 +202,9 @@ Definition build_and_send_primary_estimate
 
 (**
 Create a message that the given block is being finalized, 
-adds it to the local collection of finalized blocks, 
-and send the message.
+adds it to both the local collection of finalized blocks, 
+and the global collection. 
+Then we send the message.
 *)
 Definition build_and_send_finalized_block
   (t:Time)
@@ -212,6 +213,7 @@ Definition build_and_send_finalized_block
   (vs:VoterState)
   (b:AnyBlock)
   (votes:Message.FinalizeBlock)
+  (opaque:OpaqueRound.OpaqueRoundState)
   :State
   :=
       let new_message : Message.Message 
@@ -230,11 +232,18 @@ Definition build_and_send_finalized_block
         := 
         VoterState.update_add_finalized_block vs b
       in
+      let finalized_block := 
+        FinalizedBlock.make_with_round t voter b opaque
+      in
+      State.update_add_finalized_block
+        (
         advance_count
           (update_voter_state 
             (update_message state new_message) 
             voter updated_voter_state
-          ).
+          )
+        ) 
+        finalized_block.
 
 
 Definition prevoter_step_aux `{Io} (t:Time) (state:State) (voter:Voter) (vs:VoterState)
@@ -488,7 +497,7 @@ Qed.
 
 (**
 Made to me used together with get_blocks_to_finalize.
-Take a block and all the info needed to build a [FinalizedBlock],
+Take a block and all the info needed to build a [FinalizeBlock],
 then adds it to the finalized_blocks in the global state.
 *)
 Definition finalize_block (t:Time) 
@@ -511,7 +520,7 @@ Definition finalize_block (t:Time)
         ;precommits:= OpaqueRound.get_all_precommit_votes opaque
       |}
     in
-    build_and_send_finalized_block t state voter vs b fin_msg
+    build_and_send_finalized_block t state voter vs b fin_msg opaque
   | None => state
   end.
  

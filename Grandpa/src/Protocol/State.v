@@ -72,6 +72,17 @@ Definition remove_message (state:State) (msg:Message): State :=
     ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
+Definition update_add_finalized_block (state:State) (fb:FinalizedBlock):State 
+  :=
+  {|
+    message_count:=state.(message_count)
+    ;pending_messages:=state.(pending_messages)
+    ;voters_state:=state.(voters_state)
+    ;global_finalized_blocks:=
+      List.cons fb state.(global_finalized_blocks)
+  |}.
+
+
 End Update.
 
 Section ProcessIo.

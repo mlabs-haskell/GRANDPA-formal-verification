@@ -217,7 +217,7 @@ Proof.
       contradiction.
 Qed.
 
-(* Función g *)
+(* Function g *)
 Definition g 
   {voters:Voters}
   (T : Votes voters) 

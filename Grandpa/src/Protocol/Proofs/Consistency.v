@@ -11,6 +11,7 @@ Require Import Vectors.
 Require Import Sets.
 Require Import Message.
 Require Import DataTypes.List.Count.
+Require Import DataTypes.List.Fold.
 Require Import DataTypes.Option.
 Require Import Protocol.State.
 Require Import Protocol.StateMessages.
@@ -82,6 +83,23 @@ process_round_voters_from
   destruct p.
   reflexivity.
 Qed.
+
+Lemma get_state_up_to_0_is_initial_state `{Io}
+  :
+  let state_0 :=
+    (make_initial_state_from 
+      (io_get_round_voters 
+        (RoundNumber.from_nat 0)
+      )
+    )
+  in
+    get_state_up_to (Time.from_nat 0) 
+    =
+    state_0.
+Proof.
+  auto.
+Qed.
+
 
 Definition ContinueVoterStates {A B} (f:A->A) (g:A -> Dictionary.Dictionary Voter B)
   (v:Voter)
@@ -163,6 +181,7 @@ Proof.
       rewrite is_some_iff_some in is_some_at_state.
       destruct is_some_at_state as [w H_is_some].
       rewrite H_is_some in H.
+      destruct H as [_ H].
       eauto.
 Qed.
 
@@ -192,31 +211,6 @@ Proof.
       );
       eauto using voter_state_continuos_existence_in_accept_vote.
 Qed.
-
-
-(*TODO: Move this to List facts*)
-Lemma fold_left_preserves_property_aux {A B} (P:A->Prop) (f: A -> B -> A)
-  (at_f:forall a b, P a -> P (f a b))
-  : forall l a0, P a0 -> P (List.fold_left f l a0 ).
-Proof.
-  induction l.
-  - auto.
-  - simpl.
-    auto using IHl.
-Qed.
-
-Lemma fold_left_preserves_property {A B} 
-  (P:A->Prop) 
-  (f: A -> B -> A) 
-  (l:list B) 
-  (a0:A) 
-  (at_a0:P a0)
-  (at_f:forall a b, P a -> P (f a b))
-  : P (List.fold_left f l a0).
-Proof.
-  apply fold_left_preserves_property_aux;auto.
-Qed.
-
 
 Lemma voter_state_continuos_existence_in_update_votes_for_voter `{io:Io}
   (t:Time)
@@ -408,8 +402,7 @@ Lemma voter_state_continuos_existence_step_1 `{io:Io}
         (voters_state (get_state_up_to (Time.from_nat 1) ))
         ) = true.
 Proof.
-  unfold get_state_up_to.
-  simpl.
+  cbn.
   apply voter_state_continuos_existence_in_voters_round_step.
   apply voter_state_continuos_existence_in_update_votes.
   auto.
