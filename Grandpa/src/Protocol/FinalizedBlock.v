@@ -9,7 +9,7 @@ Require Import OpaqueRound.
 (** *FinalizedBlock
 
 This type ties a finalized block with all the information
-to identify the moment in witch the algorithm finalized the 
+to identify the moment in witch the algorithm finalized the
 block.
 *)
 
@@ -25,7 +25,7 @@ Record FinalizedBlock := FinalizedBlockC {
 
 Definition make_with_round
   (t:Time)
-  (voter:Voter) 
+  (voter:Voter)
   (b:AnyBlock)
   (opaque:OpaqueRoundState)
   : FinalizedBlock
@@ -37,8 +37,3 @@ Definition make_with_round
   ;voters:=OpaqueRound.get_precommit_voters opaque
   ;precommit_votes:= OpaqueRound.get_all_precommit_votes opaque
   |}.
-
-   
-(* TODO: 
-   Maybe add make_with_round : Vote -> AnyBlock -> Round -> FinalizedBlock.
- *)

@@ -10,11 +10,11 @@ Proof.
     auto using IHl.
 Qed.
 
-Lemma fold_left_preserves_property {A B} 
-  (P:A->Prop) 
-  (f: A -> B -> A) 
-  (l:list B) 
-  (a0:A) 
+Lemma fold_left_preserves_property {A B}
+  (P:A->Prop)
+  (f: A -> B -> A)
+  (l:list B)
+  (a0:A)
   (at_a0:P a0)
   (at_f:forall a b, P a -> P (f a b))
   : P (List.fold_left f l a0).
@@ -22,7 +22,7 @@ Proof.
   apply fold_left_preserves_property_aux;auto.
 Qed.
 
-Lemma fold_left_same_action_on_element_means_same {A B C} 
+Lemma fold_left_same_action_on_element_means_same {A B C}
   (h: A -> C)
   (f: A -> B -> A)
   (g: A -> B -> A)
@@ -36,7 +36,7 @@ Lemma fold_left_same_action_on_element_means_same {A B C}
 Proof.
   induction l as [|b1 l IH].
   - auto.
-  - Search List.fold_right.
+  -
     simpl.
     intro a0.
     rewrite IH.

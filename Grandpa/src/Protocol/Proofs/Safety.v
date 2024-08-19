@@ -17,7 +17,7 @@ Require Import Classes.Eqb.
 Require Import Classes.Math.All.
 Require Import Instances.List.
 
-Require Protocol.Proofs.Consistency.
+Require Protocol.Proofs.Consistency.old_consistency.
 
 Open Scope bool.
 Open Scope list.
@@ -61,16 +61,7 @@ Lemma round_zero_only_finalises_origin_block `{io:Io}
   State.global_finalized_blocks
     (get_state_up_to (Time.from_nat 0))
   =
-  let origin_voters := Voters.from_list List.nil 0
-  in
-  {|
-    FinalizedBlock.block := AnyBlock.to_any OriginBlock
-    ;FinalizedBlock.time := Time.from_nat 0
-    ;FinalizedBlock.round_number := RoundNumber.from_nat 0
-    ;FinalizedBlock.submitter_voter:= Voter.from_nat 0
-    ;FinalizedBlock.voters:= origin_voters
-    ;FinalizedBlock.precommit_votes:= Votes.VotesC origin_voters List.nil
-  |} :: List.nil.
+  (State.global_finalized_blocks initial_state).
 Proof.
   unfold get_state_up_to.
   unfold make_initial_state_from.
@@ -160,7 +151,7 @@ Lemma finalized_blocks_after_round_came_from_finalize_block `{io:Io}
   State.global_finalized_blocks (global_finalization_step
     (Time.from_nat 1+ t) (get_state_up_to t)).
 Proof.
-  rewrite Consistency.get_state_up_to_unfold.
+  rewrite old_consistency.get_state_up_to_unfold.
   apply finalized_blocks_after_round_came_from_finalize_block_step.
 Qed.
 
