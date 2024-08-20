@@ -34,12 +34,16 @@ Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
 
-Lemma initial_state_message_count_is_0 
+(*TODO: Deprecated, we keep all them here until we find the right module
+  to put them on.
+*)
+
+Lemma initial_state_message_count_is_0
   `{io:Io}
   :
-  State.message_count 
-    (make_initial_state_from 
-      (io_get_round_voters 
+  State.message_count
+    (make_initial_state_from
+      (io_get_round_voters
         (RoundNumber.from_nat 0)
       )
     ) =0.
@@ -59,12 +63,12 @@ process_round_voters_from
   reflexivity.
 Qed.
 
-Lemma initial_state_pending_messages_empty 
+Lemma initial_state_pending_messages_empty
   `{io:Io}
   :
   State.pending_messages
-    (make_initial_state_from 
-      (io_get_round_voters 
+    (make_initial_state_from
+      (io_get_round_voters
         (RoundNumber.from_nat 0)
       )
     ) = Dictionary.empty .
@@ -87,13 +91,13 @@ Qed.
 Lemma get_state_up_to_0_is_initial_state `{Io}
   :
   let state_0 :=
-    (make_initial_state_from 
-      (io_get_round_voters 
+    (make_initial_state_from
+      (io_get_round_voters
         (RoundNumber.from_nat 0)
       )
     )
   in
-    get_state_up_to (Time.from_nat 0) 
+    get_state_up_to (Time.from_nat 0)
     =
     state_0.
 Proof.
@@ -103,12 +107,12 @@ Qed.
 
 Definition ContinueVoterStates {A B} (f:A->A) (g:A -> Dictionary.Dictionary Voter B)
   (v:Voter)
-  := 
+  :=
   forall a
-    , is_some (Dictionary.lookup v (g a)) = true 
+    , is_some (Dictionary.lookup v (g a)) = true
     <-> is_some (Dictionary.lookup v (g (f a)))=true.
 
-Lemma is_some_iff_some {A} (x:option A) 
+Lemma is_some_iff_some {A} (x:option A)
   : is_some x = true <-> exists w, x = Some w.
 Proof.
   split.
@@ -121,7 +125,7 @@ Proof.
     auto.
 Qed.
 
-Lemma not_is_some_iff_none {A} (x:option A) 
+Lemma not_is_some_iff_none {A} (x:option A)
   : is_some x = false <-> x = None.
 Proof.
 split.
@@ -169,7 +173,7 @@ Proof.
   destruct (Dictionary.lookup voter2 state.(State.voters_state)).
   2: auto.
   simpl.
-  destruct (voter1 =? voter2) eqn:v1_eqb_v2.  
+  destruct (voter1 =? voter2) eqn:v1_eqb_v2.
   - rewrite is_some_iff_some.
     exists (update_with_msg v m).
     apply Dictionary.add_really_adds_eqb_k.
@@ -192,18 +196,18 @@ Lemma voter_state_continuos_existence_in_update_vote_for_voter `{io:Io}
   (m:Message)
   (is_some_at_state:
     is_some (Dictionary.lookup voter1 state.(voters_state)) = true)
-  : 
+  :
   is_some (
-    Dictionary.lookup 
+    Dictionary.lookup
       voter1
-      (StateMessages.update_vote_for_voter t voter2 state m).(voters_state) 
-  ) = true. 
+      (StateMessages.update_vote_for_voter t voter2 state m).(voters_state)
+  ) = true.
 Proof.
   unfold update_vote_for_voter.
   destruct (is_message_processed_by state m voter2).
   - auto.
   - destruct (io_accept_vote t m voter2).
-    + eauto using voter_state_continuos_existence_in_accept_vote. 
+    + eauto using voter_state_continuos_existence_in_accept_vote.
     + destruct (
          PeanoNat.Nat.leb (NatWrapper.to_nat t)
            (NatWrapper.to_nat (Message.time m + global_time_constant))
@@ -219,13 +223,13 @@ Lemma voter_state_continuos_existence_in_update_votes_for_voter `{io:Io}
   (is_some_at_state:
     is_some (Dictionary.lookup voter1 state.(voters_state))  = true
   )
-  : 
-   is_some 
-    (Dictionary.lookup 
-        voter1 
+  :
+   is_some
+    (Dictionary.lookup
+        voter1
         (StateMessages.update_votes_for_voter t state voter2).(voters_state)
     )
-   = 
+   =
    true.
 Proof.
   unfold update_votes_for_voter.
@@ -244,9 +248,9 @@ Lemma voter_state_continuos_existence_in_prune_message `{io:Io}
     is_some (Dictionary.lookup voter state.(State.voters_state))  = true
   )
   :
-    is_some 
-      (Dictionary.lookup voter (prune_message state m).(State.voters_state))  
-    = 
+    is_some
+      (Dictionary.lookup voter (prune_message state m).(State.voters_state))
+    =
     true.
 Proof.
   unfold prune_message.
@@ -255,7 +259,7 @@ Proof.
       (fun (acc : bool) (v : Voter) =>
        acc && is_message_processed_by state m v)
       get_all_time_participants true
-  );eauto. 
+  );eauto.
 Qed.
 
 Lemma prune_message_continues_voter_state_existence `{io:Io}
@@ -283,9 +287,9 @@ Lemma voter_state_continuos_existence_in_prune_messages `{io:Io}
     is_some (Dictionary.lookup voter state.(State.voters_state)) = true
   )
   :
-    is_some 
+    is_some
       (Dictionary.lookup voter (prune_messages state).(State.voters_state))
-    = 
+    =
     true.
 Proof.
   unfold prune_messages.
@@ -324,20 +328,20 @@ Proof.
         ++ auto.
         ++ intros state2 m Hnone.
            destruct (Dictionary.lookup voter (voters_state (prune_message state2 m))) eqn:H3.
-           -- 
+           --
             pose (prune_message_continues_voter_state_existence voter m state2) as H2.
             rewrite is_some_iff_some in H2.
             rewrite is_some_iff_some in H2.
             destruct H2 as [ _ H2].
             destruct H2 as [v2 H2].
             +++ eauto.
-            +++ exfalso. 
+            +++ exfalso.
                 rewrite Hnone in H2.
                 inversion H2.
           -- auto.
 Qed.
 
-  
+
 Lemma voter_state_continuos_existence_in_update_votes `{io:Io}
   (t:Time)
   (voter:Voter)
@@ -345,18 +349,18 @@ Lemma voter_state_continuos_existence_in_update_votes `{io:Io}
   (is_some_at_state:
     is_some (Dictionary.lookup voter state.(voters_state)) = true
   )
-  : 
-    is_some (Dictionary.lookup 
-        voter 
+  :
+    is_some (Dictionary.lookup
+        voter
         (StateMessages.update_votes t state).(voters_state) )
-      = 
+      =
       true.
 Proof.
   unfold update_votes.
   apply voter_state_continuos_existence_in_prune_messages.
   apply fold_left_preserves_property.
-  - eauto. 
-  - intros state2 voter2 H. 
+  - eauto.
+  - intros state2 voter2 H.
     pose (voter_state_continuos_existence_in_update_votes_for_voter t voter voter2 state2).
     apply e.
     auto.
@@ -371,34 +375,34 @@ Lemma voter_state_continuos_existence_in_voters_round_step `{io:Io}
   (
     is_some_at_state
     : is_some (
-       Dictionary.lookup 
-        v 
+       Dictionary.lookup
+        v
         (voters_state state)
       )= true
   )
     : is_some (
-        Dictionary.lookup 
-        v 
+        Dictionary.lookup
+        v
         (voters_state ( voters_round_step t state))
       ) = true.
 Proof.
   Admitted.
 
 
-  
+
 Lemma voter_state_continuos_existence_step_1 `{io:Io}
   (v:Voter)
   (
     is_some_at_0
     : is_some(
-        Dictionary.lookup 
-        v 
+        Dictionary.lookup
+        v
         (voters_state (get_state_up_to (Time.from_nat 0)))
         )= true
   )
     : is_some(
-        Dictionary.lookup 
-        v 
+        Dictionary.lookup
+        v
         (voters_state (get_state_up_to (Time.from_nat 1) ))
         ) = true.
 Proof.
@@ -409,7 +413,7 @@ Proof.
 Qed.
 
 
-Lemma get_state_up_to_unfold `{io:Io} (t:Time) 
+Lemma get_state_up_to_unfold `{io:Io} (t:Time)
   :
   let new_t := Time.from_nat 1 + t
   in
@@ -425,15 +429,15 @@ Lemma voter_state_continuos_existence_step `{io:Io}
   (
     is_some_at_t
     : is_some(
-        Dictionary.lookup 
-        v 
-        (voters_state (get_state_up_to t)) 
+        Dictionary.lookup
+        v
+        (voters_state (get_state_up_to t))
       )=true
   )
     : is_some(
-        Dictionary.lookup 
-        v 
-        (voters_state (get_state_up_to ((Time.from_nat 1)+t)%natWrapper )) 
+        Dictionary.lookup
+        v
+        (voters_state (get_state_up_to ((Time.from_nat 1)+t)%natWrapper ))
       ) = true.
 Proof.
   destruct t as [t0].
@@ -452,15 +456,15 @@ Lemma voter_state_continuos_existence `{io:Io}
   (
     is_some_at_t
     : is_some(
-        Dictionary.lookup 
-        v 
+        Dictionary.lookup
+        v
         (voters_state (get_state_up_to t))
       )= true
   )
   (t_increment:Time)
     : is_some(
-        Dictionary.lookup 
-        v 
+        Dictionary.lookup
+        v
         (voters_state (get_state_up_to (t_increment+t)%natWrapper ))
       ) = true.
 Proof.
@@ -499,11 +503,11 @@ Lemma round_prevoters_consistent_over_time `{Io}
   )
   (t_increment:Time)
   :exists r2,
-  State.get_voter_opaque_round 
+  State.get_voter_opaque_round
     (get_state_up_to (t_increment+t))
-    v 
-    r_n 
-    = Some r2 
+    v
+    r_n
+    = Some r2
   /\ (OpaqueRound.get_prevote_voters r2 = OpaqueRound.get_prevote_voters r1).
 Proof.
   destruct (round_continuos_existence v t r_n r1 is_some_at_t t_increment)
@@ -534,11 +538,11 @@ Lemma round_precommiters_consistent_over_time `{Io}
   )
   (t_increment:Time)
   :exists r2,
-  State.get_voter_opaque_round 
+  State.get_voter_opaque_round
     (get_state_up_to (t_increment+t))
-    v 
-    r_n 
-    = Some r2 
+    v
+    r_n
+    = Some r2
   /\ (OpaqueRound.get_precommit_voters r2 = OpaqueRound.get_precommit_voters r1).
 Admitted.
 
@@ -553,11 +557,11 @@ Lemma round_precomits_consistent_over_time `{Io}
   )
   (t_increment:Time)
   (r2:OpaqueRound.OpaqueRoundState)
-  (is_some_at_t_increment: 
-    State.get_voter_opaque_round 
+  (is_some_at_t_increment:
+    State.get_voter_opaque_round
       (get_state_up_to (t_increment+t))
-      v 
-      r_n 
+      v
+      r_n
       = Some r2
   )
   (voters_are_equal: (OpaqueRound.get_precommit_voters r1) = (OpaqueRound.get_precommit_voters r2))
@@ -567,7 +571,7 @@ Admitted.
 Lemma finalized_blocks_monotone_over_time `{Io}
   (t:Time)
   (t_increment:Time)
-  : exists  l, 
+  : exists  l,
   (global_finalized_blocks (get_state_up_to (t_increment + t)))
   =
   l ++ (global_finalized_blocks (get_state_up_to t)).
@@ -591,8 +595,8 @@ Lemma votes_are_monotone_over_time `{Io}
   (related_t:t1 <= t2)
   (state_is_from_protocol: get_state_up_to t)
   (b_in
-    :List.In 
-      (to_any b) 
+    :List.In
+      (to_any b)
       (List.map ( fun x => fst (fst x)) (global_finalized_blocks state))
   )
   .
@@ -603,7 +607,7 @@ Lemma finalized_block_time_leq
   (fb: FinalizedBlock.FinalizedBlock)
   `{Io}
   (b_in
-    :List.In 
+    :List.In
       fb
       (global_finalized_blocks (get_state_up_to t))
   )
@@ -615,16 +619,16 @@ Lemma finalized_block_came_from_voter
   (fb: FinalizedBlock.FinalizedBlock)
   `{Io}
   (b_in
-    :List.In 
+    :List.In
       fb
       (global_finalized_blocks (get_state_up_to t))
   )
   :exists (r:OpaqueRound.OpaqueRoundState)
     , State.get_voter_opaque_round (get_state_up_to fb.(FinalizedBlock.time)) fb.(FinalizedBlock.submitter_voter) fb.(FinalizedBlock.round_number)
       = Some r
-    /\ 
-      g 
-        (OpaqueRound.get_all_precommit_votes 
+    /\
+      g
+        (OpaqueRound.get_all_precommit_votes
           r
         ) = Some fb.(FinalizedBlock.block) .
 Proof.

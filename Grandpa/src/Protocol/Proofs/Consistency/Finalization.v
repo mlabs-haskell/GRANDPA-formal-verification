@@ -17,15 +17,16 @@ Require Import Protocol.State.
 Require Import Protocol.StateMessages.
 Require Import Protocol.FinalizedBlock.
 Require Import Protocol.Protocol.
+Require Import Protocol.Io.
 
 Require Import Classes.Functor.
 Require Import Classes.Eqb.
 Require Import Classes.Math.All.
 Require Import Instances.List.
 
+Require Protocol.Proofs.Consistency.VoterStateExists.
 
-Require Import Protocol.Io.
-Require Import Protocol.
+
 
 Section ProtocolFinalizationConsistency.
 
@@ -36,12 +37,20 @@ Open Scope math.
 Open Scope natWrapper.
 
 
-
-Theorem all_voters_verify_finalization `{io:Io}
+(** Voter can confirm supermajority of any FinalizedBlock eventually
+  For all [fb:FinalizedBlock], and all [v:Voter],
+   after enough [t_increment:Time] the voter see the votes
+   that confirm the supermajority of the [fb].
+*)
+(*
+  TODO: We May need to add as axiom that the origin block is
+   has this.
+*)
+Theorem all_voters_verify_finalization_eventually `{io:Io}
   (fb:FinalizedBlock)
   (v:Voter)
   (v_participates_in_protocol:
-    exists vs,  get_voter_state v initial_state = Some vs)
+    VoterStateExists.IsParticipant v)
   :
   let t_min := (fb.(FinalizedBlock.time) +  ((Time.from_nat 2) * global_time_constant) )
   in
