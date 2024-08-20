@@ -28,6 +28,16 @@ Require Import Instances.List.
 Require Import Protocol.Io.
 Require Import Protocol.
 
+(**
+Proof that all participants of the protocol has a state
+in the protocol at any time.
+See the constraints for the round 0 in the Io class.
+We ask for the voters of all time to be participants of the
+vote 0.
+This requirement isn't a big restriction for the model and is a good
+theoretical tool to have.
+*)
+
 Section ProtocolVoterStateExistsConsistency.
 
 Open Scope bool.

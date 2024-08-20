@@ -27,16 +27,7 @@ Require Import Classes.Math.All.
 Require Import Instances.List.
 
 Require Protocol.Proofs.Consistency.VoterStateExists.
-
-Section ProtocolRound.
-
-Open Scope bool.
-Open Scope list.
-Open Scope eqb.
-Open Scope math.
-Open Scope natWrapper.
-
-(*
+(**
   We have tree main proofs here:
     - If a [v:Voter] sees [r:OpaqueRound] at some [t:Time],
       they see a [r2:RoundState] for [(t2:Time) >= t].
@@ -48,6 +39,16 @@ Open Scope natWrapper.
       then the same voter [v] agree that [b] has supermajority
       at [(t2:Time) >= t].
 *)
+
+(*TODO: Maybe make this a folder and split the three results there?*)
+
+Section ProtocolRound.
+
+Open Scope bool.
+Open Scope list.
+Open Scope eqb.
+Open Scope math.
+Open Scope natWrapper.
 
 
 (*TODO: Maybe this is worthless*)

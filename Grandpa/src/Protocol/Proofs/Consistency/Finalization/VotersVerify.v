@@ -26,6 +26,10 @@ Require Import Instances.List.
 
 Require Protocol.Proofs.Consistency.VoterStateExists.
 
+(**
+  This module focus is to proof that every finalized blocks
+  has supermajority after synchronisation.
+*)
 
 
 Section ProtocolFinalizationConsistency.
@@ -36,8 +40,7 @@ Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
 
-
-(** Voter can confirm supermajority of any FinalizedBlock eventually
+(** Voter can confirm supermajority of any FinalizedBlock eventually.
   For all [fb:FinalizedBlock], and all [v:Voter],
    after enough [t_increment:Time] the voter see the votes
    that confirm the supermajority of the [fb].
