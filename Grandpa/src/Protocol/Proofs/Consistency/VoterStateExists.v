@@ -38,6 +38,13 @@ This requirement isn't a big restriction for the model and is a good
 theoretical tool to have.
 *)
 
+(*We dont have a VoterState folder for two reasons:
+  - The we can't use just [VoterState] in side expressions,
+    as coq cannot know if we refer to this module or the one
+    definiing VoterState.
+  - We are only interested (for now) in the Existence.
+*)
+
 Section ProtocolVoterStateExistsConsistency.
 
 Open Scope bool.
