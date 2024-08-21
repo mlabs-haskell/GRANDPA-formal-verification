@@ -18,6 +18,8 @@ Require Import Classes.Math.All.
 Require Import Instances.List.
 
 Require Protocol.Proofs.Consistency.old_consistency.
+Require Protocol.Proofs.Consistency.Rounds.Existence.
+Require Protocol.Proofs.Consistency.Finalization.SubmmiterFinalized.
 
 Open Scope bool.
 Open Scope list.
@@ -25,8 +27,10 @@ Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
 
+Require Import Lia.
+
 Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
-  :Prop
+:Prop
   :=
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_prevote_votes opaque) = true)
     \/
@@ -37,8 +41,13 @@ Definition voter_is_hones_at_round `{Io} (v:Voter) (r:RoundNumber) : bool
   (0 <? count v (get_round_honest_voters r))%nat.
 
 
+(*
+  TODO: Add a module to Finalization called [SubmitterIsParticipant]
+that proofs that all finalizations are done by a participant of
+   the protocol and move this lemma there
+*)
 Lemma theorem_4_1_eq_aux `{Io}
-  (t:Time)
+(t:Time)
   (fb: FinalizedBlock)
   (b1_in:List.In fb (global_finalized_blocks (get_state_up_to t)))
   :
@@ -63,7 +72,7 @@ Lemma theorem_4_1_eq_aux `{Io}
       =
       Some fb.(FinalizedBlock.block)
     )
-    /\
+  /\
     (
       State.get_voter_opaque_round
         (get_state_up_to (t+(Time.from_nat 2)*global_time_constant))
@@ -123,7 +132,7 @@ Lemma theorem_4_1_eq `{io:Io}
     ,
     (
       (
-        State.get_voter_opaque_round (get_state_up_to t3) v fb1.(FinalizedBlock.round_number) = Some r
+        Rounds.Existence.IsRoundAt v t3 fb1.(FinalizedBlock.round_number) r
       )
       /\
       (
@@ -137,6 +146,93 @@ Lemma theorem_4_1_eq `{io:Io}
       (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters fb1.(FinalizedBlock.round_number) ))
     ).
 Proof.
+  (**
+    We are going to prove that the voter who finalized the  block [fb1]
+     at t + synchronisation can see block [fb2] as finalized and has enough
+     information to find the set of byzantine voters.
+    Why t+synchronisation time?
+    To have [fb1] and [fb2] as finalized blocks, we
+      must have that [t > max(fb1.time,fb2.time) ]
+    So, after synchronisation time we guaranteed that the voter who finalized
+     [fb1] can see the finalization information of [fb2].
+    We can state this in the lemma explicitly, but is easier to apply it
+     in the main theorem if leave it as `exists t3` instead.
+
+  *)
+  remember (t + (Time.from_nat 2) * global_time_constant) as new_t eqn:new_t_eq.
+  exists new_t.
+  remember fb1.(FinalizedBlock.submitter_voter) as v.
+  remember fb1.(FinalizedBlock.round_number) as r_n.
+  exists v.
+  (*
+  First step, proof that at t + synchronisation time, the voter of [fb1] has
+     a [RoundState].
+  In the paper this isn't needed, but without this, we can begin the proof.
+  *)
+  assert (exists r, Rounds.Existence.IsRoundAt v new_t r_n r).
+  {
+    (*Proof that [fb1.submitter_voter] has a voter state at the
+        finalization time [fb1.time]
+      TODO: remove this part definign has_vs, not needed anymore
+    *)
+    pose (SubmmiterFinalized.finalized_block_was_submitted fb1 fb1_in) as was_finalized.
+    destruct was_finalized as [ vs_initial [ r_finalization (vs_is_participant & r_is_at_t1 & in_finalization_list)  ] ].
+    assert (forall t, exists vs, get_voter_state v (get_state_up_to t) = Some vs) as has_vs.
+    {
+      eapply VoterStateExists.participants_has_voter_state_always.
+      unfold VoterStateExists.IsParticipant.
+      exists vs_initial.
+      subst v.
+      assumption.
+    }
+
+    (*Proof that [v] (the voter who submitted fb1) was a participant of round 0
+      this is a basic requirement of a lot of Consistency lemmas.
+      *)
+    assert (VoterStateExists.IsParticipant v) as has_vs_at_init.
+    {
+      subst v.
+      unfold VoterStateExists.IsParticipant.
+      eauto.
+    }
+
+    (*
+      We have a lemma that allow us to conclude the existence of the round that we want.
+      TODO: assert first that fb1.time <= t and fb2.time <= 2
+    *)
+    pose (Rounds.Existence.continuous_existence has_vs_at_init t ((Time.from_nat 2) * global_time_constant) r_n) as e.
+    simpl in e.
+    rewrite new_t_eq.
+    simpl.
+    apply e.
+    clear e.
+    remember (t - fb1.(FinalizedBlock.time) :Time) as t_increment.
+    assert ( t = fb1.(FinalizedBlock.time) + t_increment) as H.
+    {
+      subst t_increment.
+      destruct (fb1.(FinalizedBlock.time)) as [nt_fb1] eqn:fb1_t_eq.
+      simpl.
+      destruct t as [nt_t] eqn:t_eq.
+      simpl.
+      enough (nt_t = nt_fb1 + (nt_t - nt_fb1))%nat as H .
+      rewrite H at 1. auto.
+      apply Arith_base.le_plus_minus_stt.
+      pose (Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least _ fb1_in) as H.
+      rewrite fb1_t_eq in H.
+      simpl in H.
+      lia.
+    }
+    rewrite H.
+    clear H.
+    eapply (Rounds.Existence.continuous_existence has_vs_at_init fb1.(FinalizedBlock.time) t_increment r_n).
+    subst v.
+    subst r_n.
+    eauto.
+  }
+  destruct H as [r H].
+  exists r.
+Qed.
+
   (*
   remember (t + (Time.from_nat 2) * global_time_constant) as new_t eqn:new_t_eq.
   exists new_t.
@@ -192,7 +288,7 @@ Lemma theorem_4_1_lt `{io:Io}
     ,
     (
       (
-        State.get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
+        Rounds.Existence.IsRoundAt v t3 r_n r
       )
       /\
       (
@@ -269,7 +365,7 @@ Theorem theorem_4_1 `{io:Io}
           All the rest of the statements reference to the view of
           this particular voter v.
       *)
-        State.get_voter_opaque_round (get_state_up_to t3) v r_n = Some r
+        Rounds.Existence.IsRoundAt v t3 r_n r
       )
       /\
       ((* Exists a set [s] with at least [1+f] voters of round [r].*)

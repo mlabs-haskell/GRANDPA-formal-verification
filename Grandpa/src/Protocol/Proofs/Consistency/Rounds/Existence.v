@@ -53,7 +53,7 @@ Theorem continuous_existence `{io:Io}
   {v:Voter}
   (v_in_initial_state : VoterStateExists.IsParticipant v)
   :forall t t_increment rn,
-      exists r, IsRoundAt v t rn r
+      (exists r, IsRoundAt v t rn r)
       -> exists r2, IsRoundAt v (t+t_increment) rn r2.
 (*TODO: Critical*)
 Admitted.
