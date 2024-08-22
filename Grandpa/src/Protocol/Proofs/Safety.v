@@ -6,6 +6,7 @@ Require Import RoundNumber.
 Require Import Preliminars.
 Require Import DataTypes.List.Count.
 Require Import DataTypes.List.Fold.
+Require Import DataTypes.Sets.
 Require Import Protocol.FinalizedBlock.
 Require Import Protocol.Io.
 Require Import Protocol.Protocol.
@@ -15,10 +16,13 @@ Require Import PeanoNat.
 Require Import Classes.Functor.
 Require Import Classes.Eqb.
 Require Import Classes.Math.All.
+Require Import Classes.Math.Semigroup.
 Require Import Instances.List.
 
 Require Protocol.Proofs.Consistency.old_consistency.
 Require Protocol.Proofs.Consistency.Rounds.Existence.
+Require Protocol.Proofs.Consistency.Rounds.Continuous.
+Require Protocol.Proofs.Consistency.Rounds.Supermajority.
 Require Protocol.Proofs.Consistency.Finalization.SubmmiterFinalized.
 
 Open Scope bool.
@@ -33,83 +37,95 @@ Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
 :Prop
   :=
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_prevote_votes opaque) = true)
-    \/
+   \/
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
 
 Definition voter_is_hones_at_round `{Io} (v:Voter) (r:RoundNumber) : bool
   :=
   (0 <? count v (get_round_honest_voters r))%nat.
 
+Lemma time_decomposition (t1 t2:Time) (leq_proof:t1 <= t2)
+  :(t2 = t1 + (t2 - t1)).
+Proof.
+destruct t1 as [nt1] eqn:t1_eq.
+destruct t2 as [nt2] eqn:t2_eq.
+simpl.
+simpl in leq_proof.
+enough (nt2 = nt1 + (nt2 - nt1))%nat as H .
+rewrite <- H at 1. auto.
+apply Arith_base.le_plus_minus_stt.
+assumption.
+Qed.
 
-(*
-  TODO: Add a module to Finalization called [SubmitterIsParticipant]
-that proofs that all finalizations are done by a participant of
-   the protocol and move this lemma there
-*)
-Lemma theorem_4_1_eq_aux `{Io}
-(t:Time)
+
+Lemma theorem_4_1_eq_aux `{io:Io}
+  {t:Time}
   (fb: FinalizedBlock)
-  (b1_in:List.In fb (global_finalized_blocks (get_state_up_to t)))
+  (fb_in:List.In fb (global_finalized_blocks (get_state_up_to t)))
   :
-  exists
-  (vr:OpaqueRound.OpaqueRoundState)
-  (vr2:OpaqueRound.OpaqueRoundState)
-  ,
   let v := fb.(FinalizedBlock.submitter_voter)
   in
-    (
-      State.get_voter_opaque_round
-        (get_state_up_to fb.(FinalizedBlock.time) )
-        v
-        fb.(FinalizedBlock.round_number)
-      =
-      Some vr
-    )
-    /\
-    (
-      g
-        (OpaqueRound.get_all_precommit_votes vr)
-      =
-      Some fb.(FinalizedBlock.block)
-    )
+  let r_n := fb.(FinalizedBlock.round_number)
+  in
+  VoterStateExists.IsParticipant v
   /\
-    (
-      State.get_voter_opaque_round
-        (get_state_up_to (t+(Time.from_nat 2)*global_time_constant))
-        v
-        fb.(FinalizedBlock.round_number)
-      =
-      Some vr2
-    ).
+  forall t_increment:Time,
+    exists r,
+    (Existence.IsRoundAt v (t+t_increment) r_n r)
+  .
 Proof.
-  Admitted.
-  (*
-  pose (finalized_block_time_leq b1 round_finalized t1 t b1_in) as t1_leq_t.
-  remember (t+(Time.from_nat 2)*global_time_constant) as new_t eqn:new_t_eq.
-  assert (List.In (to_any b1,t1, round_finalized) (global_finalized_blocks (get_state_up_to new_t))) as b1_in_new_t.
-  {
-    pose (finalized_blocks_monotone_over_time2 t (new_t - t) (to_any b1, t1,round_finalized) b1_in).
-    enough ((new_t - t +t) = new_t) as H0.
-    rewrite <- H0.
-    assumption.
-    admit.
-    (* lia. *)
-    }
-  destruct (finalized_block_came_from_voter b1 round_finalized t1 new_t  b1_in_new_t) as [v [vr [is_some_vr g_vr]]].
-  exists v.
-  pose (round_continuos_existence v t1 round_finalized vr is_some_vr (new_t - t1)) as vr_exists_at_new_t.
-  assert (new_t - t1 +t1 = new_t) as is_new_t. admit. (* lia. *)
-  Admitted.
+  remember fb.(FinalizedBlock.submitter_voter) as v.
+  remember fb.(FinalizedBlock.round_number) as r_n.
+  pose (SubmmiterFinalized.finalized_block_was_submitted fb fb_in) as was_finalized.
+  destruct was_finalized as [ vs_initial [ r_finalization (vs_is_participant & r_is_at_t1 & in_finalization_list)  ] ].
+  (*Proof that [fb1.submitter_voter] has a voter state at the
+      at any time.
   *)
+  assert (forall t, exists vs, get_voter_state v (get_state_up_to t) = Some vs) as has_vs.
+  {
+    eapply VoterStateExists.participants_has_voter_state_always.
+    unfold VoterStateExists.IsParticipant.
+    exists vs_initial.
+    subst v.
+    assumption.
+  }
+
+  (* Specialize the previous lemma to time 0.*)
+  assert (VoterStateExists.IsParticipant v) as has_vs_at_init.
+  {
+    subst v.
+    unfold VoterStateExists.IsParticipant.
+    eauto.
+  }
+
+  split. assumption.
+
+  intros t_increment.
+  remember (t + t_increment) as new_t eqn:new_t_eq.
   (*
-  rewrite is_new_t in vr_exists_at_new_t.
-  simpl in vr_exists_at_new_t.
-  destruct vr_exists_at_new_t as [vr2 is_some_vr2].
-  exists vr.
-  exists vr2.
-  auto.
+    We have a lemma that allow us to conclude the existence of the round
+     that we want but we need to show first that  fb.time < t .
+  *)
+  rewrite new_t_eq.
+  apply (Rounds.Existence.continuous_existence has_vs_at_init t t_increment r_n).
+  assert ( t = fb.(FinalizedBlock.time) + (t - fb.(FinalizedBlock.time))) as H.
+  {
+    apply time_decomposition.
+    destruct (time fb) eqn:fbt_eq.
+    pose (Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least _ fb_in) as H.
+    destruct t.
+    rewrite fbt_eq in H.
+    simpl in H.
+    simpl.
+    lia.
+  }
+  rewrite H.
+  eapply (Rounds.Existence.continuous_existence has_vs_at_init fb.(FinalizedBlock.time) (t-fb.(FinalizedBlock.time)) r_n ).
+  subst v r_n.
+  eauto.
 Qed.
-   *)
+
+
 
 
 Lemma theorem_4_1_eq `{io:Io}
@@ -159,107 +175,117 @@ Proof.
      in the main theorem if leave it as `exists t3` instead.
 
   *)
-  remember (t + (Time.from_nat 2) * global_time_constant) as new_t eqn:new_t_eq.
+  remember ((Time.from_nat 2) * global_time_constant : Time) as t_increment.
+  remember (t + t_increment) as new_t eqn:new_t_eq.
   exists new_t.
   remember fb1.(FinalizedBlock.submitter_voter) as v.
   remember fb1.(FinalizedBlock.round_number) as r_n.
   exists v.
-  (*
-  First step, proof that at t + synchronisation time, the voter of [fb1] has
-     a [RoundState].
-  In the paper this isn't needed, but without this, we can begin the proof.
-  *)
-  assert (exists r, Rounds.Existence.IsRoundAt v new_t r_n r).
-  {
-    (*Proof that [fb1.submitter_voter] has a voter state at the
-        finalization time [fb1.time]
-      TODO: remove this part definign has_vs, not needed anymore
-    *)
-    pose (SubmmiterFinalized.finalized_block_was_submitted fb1 fb1_in) as was_finalized.
-    destruct was_finalized as [ vs_initial [ r_finalization (vs_is_participant & r_is_at_t1 & in_finalization_list)  ] ].
-    assert (forall t, exists vs, get_voter_state v (get_state_up_to t) = Some vs) as has_vs.
-    {
-      eapply VoterStateExists.participants_has_voter_state_always.
-      unfold VoterStateExists.IsParticipant.
-      exists vs_initial.
-      subst v.
-      assumption.
-    }
-
-    (*Proof that [v] (the voter who submitted fb1) was a participant of round 0
-      this is a basic requirement of a lot of Consistency lemmas.
-      *)
-    assert (VoterStateExists.IsParticipant v) as has_vs_at_init.
-    {
-      subst v.
-      unfold VoterStateExists.IsParticipant.
-      eauto.
-    }
-
-    (*
-      We have a lemma that allow us to conclude the existence of the round that we want.
-      TODO: assert first that fb1.time <= t and fb2.time <= 2
-    *)
-    pose (Rounds.Existence.continuous_existence has_vs_at_init t ((Time.from_nat 2) * global_time_constant) r_n) as e.
-    simpl in e.
-    rewrite new_t_eq.
-    simpl.
-    apply e.
-    clear e.
-    remember (t - fb1.(FinalizedBlock.time) :Time) as t_increment.
-    assert ( t = fb1.(FinalizedBlock.time) + t_increment) as H.
-    {
-      subst t_increment.
-      destruct (fb1.(FinalizedBlock.time)) as [nt_fb1] eqn:fb1_t_eq.
-      simpl.
-      destruct t as [nt_t] eqn:t_eq.
-      simpl.
-      enough (nt_t = nt_fb1 + (nt_t - nt_fb1))%nat as H .
-      rewrite H at 1. auto.
-      apply Arith_base.le_plus_minus_stt.
-      pose (Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least _ fb1_in) as H.
-      rewrite fb1_t_eq in H.
-      simpl in H.
-      lia.
-    }
-    rewrite H.
-    clear H.
-    eapply (Rounds.Existence.continuous_existence has_vs_at_init fb1.(FinalizedBlock.time) t_increment r_n).
-    subst v.
-    subst r_n.
-    eauto.
-  }
-  destruct H as [r H].
+  pose (theorem_4_1_eq_aux fb1 fb1_in) as temp.
+  destruct temp as [vs_is_participant exists_round_after_t].
+  pose (exists_round_after_t t_increment) as exists_round_at_new_t.
+  destruct exists_round_at_new_t as [r r_at_new_t].
   exists r.
-Qed.
+
+  assert (
+    t + t_increment
+    =
+    fb1.(FinalizedBlock.time) + ((t+t_increment) - fb1.(FinalizedBlock.time))
+  ) as new_t_eq_t_finalization.
+  {
+    apply time_decomposition.
+    destruct (fb1.(FinalizedBlock.time)) eqn:fbt_eq.
+    pose (Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least _ fb1_in) as H.
+    rewrite fbt_eq in H.
+    destruct t.
+    simpl.
+    simpl in H.
+    lia.
+  }
+
+  destruct (SubmmiterFinalized.finalized_block_was_submitted fb1 fb1_in)
+    as [_ [r_finalization [ _ [ r_at_finalization _ ] ]]].
+
+
+  (*TODO: we dont require this part ? (proof still unfinished right now)*)
+  rewrite new_t_eq_t_finalization in r_at_new_t.
+  pose (
+    Rounds.Continuous.rounds_are_updates
+      vs_is_participant
+      r_finalization
+      r
+      r_at_finalization
+      r_at_new_t
+  ) as r_is_update.
+
+
+  destruct (SubmmiterFinalized.finalized_block_has_supermajority_at_finalization _ fb1_in)
+    as [vs_finalization2 [ r_finalization2 ( vs2_is_state & r2_at_finalization & fb1_has_supermajority_at_fbt)]].
+  assert (r_finalization2 = r_finalization).
+  {
+    unfold Existence.IsRoundAt in r_at_finalization.
+    unfold Existence.IsRoundAt in r2_at_finalization.
+    clear r_is_update.
+    rewrite r2_at_finalization in r_at_finalization.
+    inversion r_at_finalization.
+    auto.
+  }
+  subst r_finalization2.
+  clear r2_at_finalization.
+  clear vs2_is_state.
+  clear vs_finalization2.
+
+  pose (
+    Rounds.Supermajority.supermajority_consistence
+    vs_is_participant
+    r_at_finalization
+    r_at_new_t
+    fb1_has_supermajority_at_fbt
+  ) as fb1_has_supermajority_at_newt.
+
+  (* Until here, we have a proof that at time t + synchronisation, we have a
+     valid round state for the round that finalized fb1 and that fb1
+     indeed has supermajority in this round.
+  *)
+  assert (Votes.block_has_supermajority fb2.(FinalizedBlock.block) (OpaqueRound.get_all_prevote_votes r) = true).
+  {
+    admit.
+  }
+
+  destruct (Votes.is_safe (OpaqueRound.get_all_prevote_votes r)) eqn:His_safe.
+  - (* This is false
+      use superset_has_subset_majority_blocks
+       then use blocks_with_super_majority_are_related
+       both from Voters
+    *)
+    exfalso. admit.
+  - unfold Votes.is_safe in His_safe.
+    remember (
+       (split_voters_by_equivocation
+        (OpaqueRound.get_all_prevote_votes r))
+    ) as voters_splitted.
+    destruct  voters_splitted as [equivocate_voters other].
+    exists (Sets.from_list equivocate_voters).
+
+    split.
+    + rewrite new_t_eq.
+      rewrite new_t_eq_t_finalization.
+      simpl.
+      subst r_n.
+      subst v.
+      auto.
+    + split.
+      ++ admit. (*  need to prove that the split gave us unque voters, mmm, maybe convert the list to set in is_safe and back to ensure this for free?*)
+      ++ admit. (* the paper says that equivocate_voters are byzantiner, so we may change the conclusion to that, in such case, this is freely done by the fact that we found that the set is unsafe, maybe modify the conclusions to that?. *)
+
+
+
+
 
   (*
-  remember (t + (Time.from_nat 2) * global_time_constant) as new_t eqn:new_t_eq.
-  exists new_t.
-  destruct (theorem_4_1_eq_aux b1 round_finalized t1 t b1_in) as [v [v1r [v1r2 [is_some_v1r [g_v1r is_some_v1r2]]]]].
-  exists v.
-  exists v1r2.
-  remember (List.filter (fun v3 => Votes.voter_voted_in_votes v3 (OpaqueRound.get_all_precommit_votes v1r2)) (get_round_bizantine_voters round_finalized)) as s_as_list eqn:s_as_list_eq.
-  remember (Sets.from_list s_as_list) as s.
-  exists s.
-  rewrite <- new_t_eq in is_some_v1r2.
-  split.
-  assumption.
-  split.
-  - destruct (theorem_4_1_eq_aux b2 round_finalized t2 t b2_in) as [v2 [v2r [v2r2 [is_some_v2r [g_v2r is_some_v2r2]]]]].
+
   *)
-    (*
-       TODO in 3.8 :
-       we need to show that after t+2*global_time_constant v has got all the votes on v2r, and as such we have
-       a supermajority for both blocks in this round (b1 and b2) at this time.
-       Then we destruct the Votes.is_safe predicate applied in the precommits at time t + 2*global_time_constant
-       In the False case, we end this sub-proof.
-       In the True case, b_1 and b_2 are related by a lemma in the Votes.v about supermajority on safe sets, contra with un_related
-    *)
-  (*
-    The other two parts to be proved, are a consequency of the construction of the list (literally they are in the predicate that build the list).
-   *)
-    Admitted.
+  Admitted.
 
 
 
@@ -336,7 +362,8 @@ Additionally, we need to state the theorem conclusion in
 terms of the particular view of a particular voter at some time.
 This, since we don't have a notion of
   " all the votes emitted for a round at a time"
-ad
+But from this theorem and the fact that all voters synchronize eventually
+we can conclude that this result happens for any voter
 *)
 Theorem theorem_4_1 `{io:Io}
   (t:Time)

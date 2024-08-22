@@ -219,7 +219,7 @@ Proof.
   reflexivity.
 Qed.
  *)
-
+(*TODO: remove this *)
 Definition some_to_nat (x:option nat)
   :=
   match x with
@@ -727,7 +727,7 @@ Proof.
 Qed.
 
 
-(* TODO:  Really important *)
+(* TODO: Critical!  Really important *)
 Lemma superset_has_subset_majority_blocks
   {voters:Voters}
   (S : Votes voters)

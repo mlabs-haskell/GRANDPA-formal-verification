@@ -496,7 +496,7 @@ Next Obligation.
 Qed.
 
 (**
-Made to me used together with get_blocks_to_finalize.
+Made to be used together with get_blocks_to_finalize.
 Take a block and all the info needed to build a [FinalizeBlock],
 then adds it to the finalized_blocks in the global state.
 *)

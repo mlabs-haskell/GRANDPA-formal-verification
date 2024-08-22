@@ -52,21 +52,26 @@ then the same voter [v] agree that [b] has supermajority
 at [(t2:Time) >= t].
 *)
 Theorem supermajority_consistence `{io:Io}
+  {b:AnyBlock}
   {v:Voter}
   (v_in_initial_state: VoterStateExists.IsParticipant v)
   {t t_increment : Time}
   {r_n: RoundNumber}
-  (r_start:OpaqueRoundState)
-  (r_end:OpaqueRoundState)
+  {r_start:OpaqueRoundState}
+  {r_end:OpaqueRoundState}
   (has_round_at_t:
     Existence.IsRoundAt v t r_n r_start
   )
   (has_round_at_t_plus_t_increment:
     Existence.IsRoundAt v (t+t_increment) r_n r_end
   )
-  (*TODO: Critical, put the right type here*)
-  : IsUpdateOf r_start r_end.
-(*TODO: Critical, especially for safety*)
+  (has_supermajority_proof: Votes.block_has_supermajority b (get_all_prevote_votes r_start) = true)
+  : Votes.block_has_supermajority b (get_all_prevote_votes r_end) = true.
+(*TODO: Critical, especially for safety, for this:
+  - Rounds Continuous  gave us that one round is update of the other
+  - Extract that prevoter_votes sets must be related (the one in start is subset of the one in super_set)
+  - Use the Voters module functions to conclude.
+*)
 Admitted.
 
 End Supermajority.

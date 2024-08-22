@@ -84,5 +84,27 @@ Corollary in_finalization_list_means_time_is_at_least `{io:Io}
   :  fb.(FinalizedBlock.time) < t.
 Admitted.
 
+Theorem finalized_block_has_supermajority_at_finalization `{io:Io}
+  {t:Time}
+  (fb:FinalizedBlock)
+  (in_finalization_list: List.In fb (global_finalized_blocks (get_state_up_to t) ))
+  :
+  let v := fb.(FinalizedBlock.submitter_voter)
+  in
+  let t := fb.(FinalizedBlock.time)
+  in
+  let r_n := fb.(FinalizedBlock.round_number)
+  in
+  let state := update_votes t (get_state_up_to t)
+  in
+  (exists vs r,
+    (get_voter_state v initial_state = Some vs)
+    /\
+    (Existence.IsRoundAt v t r_n r)
+    /\
+    Votes.block_has_supermajority fb.(FinalizedBlock.block) (OpaqueRound.get_all_prevote_votes r) = true
+  ).
+Admitted.
+
 
 End SubmitterFinalized.
