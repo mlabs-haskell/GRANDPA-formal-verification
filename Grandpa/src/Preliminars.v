@@ -11,23 +11,23 @@ Require DataTypes.List.Inb.
 Open Scope list.
 
 Definition find_highest_block_join
-  (existencial:AnyBlock) 
+  (existencial:AnyBlock)
   (acc:list AnyBlock)
   : list AnyBlock
-    := 
+    :=
   match acc with
   | List.nil => List.cons existencial List.nil
   | List.cons block others =>
          if block.(AnyBlock.block_number) <? existencial.(AnyBlock.block_number)
          then List.cons existencial List.nil
-         else 
-          if block.(AnyBlock.block_number) =?  existencial.(AnyBlock.block_number) 
+         else
+          if block.(AnyBlock.block_number) =?  existencial.(AnyBlock.block_number)
           then List.cons existencial acc
           else
             acc
   end.
 
-Lemma find_highest_block_join_never_nil (existencial:AnyBlock) (blocks: list AnyBlock) 
+Lemma find_highest_block_join_never_nil (existencial:AnyBlock) (blocks: list AnyBlock)
   : find_highest_block_join existencial blocks <> nil.
 Proof.
   intro H.
@@ -40,13 +40,13 @@ Proof.
     + destruct (h_block_number =? block_number);inversion H.
 Qed.
 
-Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock) 
+Lemma find_highest_block_join_monotone (existencial:AnyBlock) (blocks:list AnyBlock)
   (blocks_has_same_height: exists n, forall block, List.In block blocks -> block.(AnyBlock.block_number) = n )
-  :forall result_block, 
+  :forall result_block,
     List.In result_block (find_highest_block_join existencial blocks)
       -> existencial.(AnyBlock.block_number) <= result_block.(AnyBlock.block_number)
-          /\ 
-          forall block, List.In block blocks 
+          /\
+          forall block, List.In block blocks
             -> block.(AnyBlock.block_number) <= result_block.(AnyBlock.block_number).
 Proof.
   intros [block_number block] H.
@@ -56,11 +56,11 @@ Proof.
   Admitted.
 
 Definition find_highest_blocks (blocks:list AnyBlock): list AnyBlock
-  := 
+  :=
   List.fold_right find_highest_block_join List.nil blocks .
 
 
-Lemma find_highest_blocks_nil_iff_nil (blocks: list AnyBlock) 
+Lemma find_highest_blocks_nil_iff_nil (blocks: list AnyBlock)
   : find_highest_blocks blocks = nil <-> blocks = nil.
 Proof.
   split.
@@ -92,13 +92,13 @@ Proof.
   - intros H.
   Admitted.
 
-Lemma find_highest_blocks_have_same_lenght blocks 
+Lemma find_highest_blocks_have_same_lenght blocks
   :forall (n:nat) (block1:Block n) (m:nat) (block2: Block m)
     ,List.In (AnyBlock.to_any block1) (find_highest_blocks blocks)
     -> List.In (AnyBlock.to_any block2) (find_highest_blocks blocks)
       -> n = m.
 Proof.
-  (* 
+  (*
     consequence of find_highest_blocks_works
      (maybe we need to prove this to proof find_highest_blocks_works ?)
   *)
@@ -113,19 +113,19 @@ Proof.
   Admitted.
 
 Lemma find_highest_blocks_outpu_is_unique (blocks:list AnyBlock)
-  b 
+  b
   : forall n, count b blocks <=n
    -> count b (find_highest_blocks blocks) <=1.
 Proof.
   Admitted.
 
-Lemma find_highest_blocks_on_safe_set_lenght 
+Lemma find_highest_blocks_on_safe_set_lenght
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   (is_safe_t: is_safe T = true)
-  : 
-  List.length 
-    (find_highest_blocks 
+  :
+  List.length
+    (find_highest_blocks
       (List.map fst (get_supermajority_blocks T)
       )
     )<=1.
@@ -190,14 +190,14 @@ Proof.
          and the fact that (not proved yet) filter is monotone with respect to count.*)
       Admitted.
 
-Lemma find_highest_blocks_on_safe_set 
+Lemma find_highest_blocks_on_safe_set
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   (is_safe_t: is_safe T = true)
-  : get_supermajority_blocks T <> nil 
-    -> {b & 
-        find_highest_blocks 
-          (List.map fst (get_supermajority_blocks T)) = b::nil 
+  : get_supermajority_blocks T <> nil
+    -> {b &
+        find_highest_blocks
+          (List.map fst (get_supermajority_blocks T)) = b::nil
       }.
 Proof.
   intro Hnil.
@@ -218,12 +218,12 @@ Proof.
 Qed.
 
 (* Function g *)
-Definition g 
+Definition g
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   : option AnyBlock
-  := 
-  let blocks_with_super_majority 
+  :=
+  let blocks_with_super_majority
     := get_supermajority_blocks T
   in
     match find_highest_blocks (List.map fst blocks_with_super_majority) with
@@ -232,7 +232,7 @@ Definition g
     end.
 
 
-Lemma gt_some_implies_supermajority_not_empty 
+Lemma gt_some_implies_supermajority_not_empty
   {voters:Voters }
   (T: Votes voters)
   {gt_block_number: nat}
@@ -250,32 +250,32 @@ Qed.
 
 
 
-Lemma from_g_to_votes_safe_set 
+Lemma from_g_to_votes_safe_set
   {voters:Voters}
   (T: Votes voters )
   (is_safe_t:is_safe T = true)
   (gt_anyblock:AnyBlock)
   (gt_is_result : g T = Some gt_anyblock)
-  : 
-    {vote_number:nat 
-      & List.In 
-        (gt_anyblock,vote_number) 
+  :
+    {vote_number:nat
+      & List.In
+        (gt_anyblock,vote_number)
         (get_supermajority_blocks T)
     }.
 Proof.
   destruct gt_anyblock as [gt_block_number gt_block] eqn:Hremember.
   pose (
-    gt_some_implies_supermajority_not_empty 
-      
-      T 
-      gt_block 
+    gt_some_implies_supermajority_not_empty
+
+      T
+      gt_block
       gt_is_result
   ) as super_t_not_nil.
   pose (
-    find_highest_blocks_on_safe_set 
-    
-    T 
-    is_safe_t 
+    find_highest_blocks_on_safe_set
+
+    T
+    is_safe_t
     super_t_not_nil
   ) as g_t_result.
   destruct g_t_result as [b eq_b].
@@ -301,11 +301,11 @@ Qed.
 #[local]
 Open Scope type_scope.
 
-Lemma lemma_2_5_2 
+Lemma lemma_2_5_2
   {voters:Voters}
   (T: Votes voters)
   (is_safe_t: is_safe T = true)
-  (S: Votes voters)  
+  (S: Votes voters)
   (is_sub_set: VotesIsSubset S T )
   {gs_block_number: nat}
   (gs : Block gs_block_number)
@@ -366,7 +366,7 @@ Proof.
     unfold g.
     rewrite gt_eq.
     reflexivity.
-  } 
+  }
   (* pose (from_g_to_votes_safe_set T is_safe_t _ gt_result ) as gt_in_super_t. *)
   pose (List.in_eq gt_anyblock nil) as gt_in_find.
   rewrite <- gt_eq in gt_in_find.
@@ -385,59 +385,81 @@ Proof.
   refine (existT _ gt_anyblock (gt_result, (related, gs_number_leq_gt_number))).
 Qed.
 
-  
 
-Variant ImpossibleSupermajority 
+
+Definition impossible_to_have_supermajority {voters:Voters} (S:Votes voters)
+  (b:AnyBlock)
+  :bool
+  :=
+  let (equivocate_voters, non_equivocate_voters)
+    := Votes.split_voters_by_equivocation S
+  in
+  let number_of_equivocates := List.length equivocate_voters
+  in
+  let count
+    :=
+    Votes.count_votes
+      (filter_votes_by_voters_subset
+        voters
+        S
+        (Voters.from_list non_equivocate_voters voters.(round_number_of_voters))
+      )
+  in
+  let negative_votes
+    :=
+    List.filter
+      ( fun x => negb (AnyBlock.is_prefix b (fst x)))
+      (Dictionary.to_list count)
+  in
+    Voters.length voters
+    +
+    (Voters.calculate_max_bizantiners voters) +1
+  <=?
+    2 *  (number_of_equivocates + List.length negative_votes).
+
+
+Definition ImpossibleSupermajority
   {voters:Voters}
-  (T: Votes voters)
-  {block_number: nat}
-  (block: Block block_number)
-  :Prop
-  := 
-  | ImpossibleSupermajorityC
-    (S: Votes voters)
-    (subset_proof:VotesIsSubset S T)
-    (non_related_proof:forall anyblock, 
-      List.In anyblock (List.map Vote.to_anyblock S.(vlist)) 
-      -> (Prefix anyblock.(AnyBlock.block) block * False) )
-      :
-      (List.length (Voters.to_list voters) +  1) 
-      + 
-      (* This condition must be changed, we want to 
-         have here the intersection of S and the 
-         equivocate set of voters
-      *)
-        (2* List.length (intersection T  S).(Votes.vlist)) 
-          < 
-          2 * (List.length S.(Votes.vlist) + List.length (fst (split_voters_by_equivocation T))) 
-        ->
-      ImpossibleSupermajority T block.
+  (S: Votes voters)
+  (block:AnyBlock)
+  := (impossible_to_have_supermajority S block = true).
 
 
-Definition PossibleSupermajority 
+Definition PossibleSupermajority
   {voters:Voters}
   (T: Votes voters )
-  {block_number: nat}
-  (block: Block block_number)
-  : Prop 
+  (block:AnyBlock)
+  : Prop
   := not (ImpossibleSupermajority T block ).
-        
+
+Definition ImpossibleSupermajorityForAnyChildren
+  {voters:Voters}
+  (S: Votes voters)
+  (block:AnyBlock)
+  :Prop
+  := (forall  child,
+    AnyBlock.is_prefix block child = true
+    -> ImpossibleSupermajority S child
+    )
+    /\
+    List.length (Sets.to_list (Sets.from_list (Votes.votes_to_voters_list S)))
+    > 2 * (Voters.calculate_max_bizantiners voters) +1
+    .
 
 
-Lemma lemma_2_6_1 
+Lemma lemma_2_6_1
   {voters:Voters}
   (T: Votes voters)
-  {block1_number block2_number: nat}
-  (block1: Block block1_number)
-  (block2: Block block2_number)
-  (is_prefix_b1_b2: Prefix block1 block2)
-  : ImpossibleSupermajority T block1 
+  (block1 block2: AnyBlock)
+  (is_prefix_b1_b2: Prefix block1.(AnyBlock.block) block2.(AnyBlock.block))
+  : ImpossibleSupermajority T block1
       -> ImpossibleSupermajority T block2.
 Proof.
+  (*
   intro H.
   destruct H as [S subset_proof non_related_proof ineq].
-  enough (forall anyblock, 
-      List.In anyblock (List.map Vote.to_anyblock (votes_to_list S)) 
+  enough (forall anyblock,
+      List.In anyblock (List.map Vote.to_anyblock (votes_to_list S))
       -> Prefix anyblock.(AnyBlock.block) block2 * False ).
   {apply (ImpossibleSupermajorityC T block2 S subset_proof H ineq). }
   intros anyblock any_in_list.
@@ -446,24 +468,25 @@ Proof.
   pose (prefix_transitive _ _ _ any_prefix_b1 is_prefix_b1_b2 ) as left1.
   auto.
 Qed.
+   *)
+(*TODO: Critial!*)
+Admitted.
 
-Lemma lemma_2_6_2 
+Lemma lemma_2_6_2
   {voters:Voters}
   (S T: Votes voters)
   (is_sub_set: VotesIsSubset S T )
-  {block_number : nat}
-  (block: Block block_number)
-  : ImpossibleSupermajority S block 
+  (block: AnyBlock)
+  : ImpossibleSupermajority S block
       -> ImpossibleSupermajority T block.
 Proof.
   intro H.
   destruct H as [S2 subset_proof non_related_proof ineq].
-  pose (is_votes_subset_transitive S2 S T subset_proof is_sub_set) as s2_subset_t. 
-(* 
+(*
  *)
 Admitted.
 
-Lemma lemma_2_6_3 
+Lemma lemma_2_6_3
   {voters:Voters}
   (S: Votes voters)
   {gs_block_number:nat}
@@ -472,7 +495,7 @@ Lemma lemma_2_6_3
   {block_number : nat}
   (block: Block block_number)
   (unrelated_proof: Unrelated block gs)
-  : ImpossibleSupermajority S block.
+  : ImpossibleSupermajority S (AnyBlock.to_any block).
 Admitted.
 
 Close Scope list.

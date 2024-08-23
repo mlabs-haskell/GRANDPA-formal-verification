@@ -391,6 +391,24 @@ Definition count_votes
   | out => flat_votes_dictionary out
   end.
 
+Definition count_with_equivocations
+  {voters:Voters}
+  (T : Votes voters)
+  : BlockDictionary
+  :=
+  let (equivocate_voters, non_equivocate_voters)
+    := split_voters_by_equivocation T
+  in
+  let number_of_equivocates := List.length equivocate_voters
+  in
+    count_votes
+      (filter_votes_by_voters_subset
+        voters
+        T
+        (Voters.from_list non_equivocate_voters voters.(round_number_of_voters))
+      )
+  .
+
 Lemma count_votes_nil_is_zero
   {voters:Voters}
   (votes: Votes voters)
@@ -789,6 +807,16 @@ Definition block_has_supermajority
   | List.nil => false
   | _ => true
   end.
+
+Corollary blocks_that_has_supermajority_are_related
+  {voters:Voters}
+  (b1 b2:AnyBlock)
+  (S:Votes voters)
+  (s_is_safe : is_safe S = true)
+  : b1.(AnyBlock.block) ~ b2.(AnyBlock.block).
+Admitted.
+  (*TODO: critical*)
+
 
 Section Cast.
 
