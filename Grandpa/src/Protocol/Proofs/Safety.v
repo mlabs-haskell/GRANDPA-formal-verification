@@ -24,6 +24,10 @@ Require Protocol.Proofs.Consistency.Rounds.Existence.
 Require Protocol.Proofs.Consistency.Rounds.Continuous.
 Require Protocol.Proofs.Consistency.Rounds.Supermajority.
 Require Protocol.Proofs.Consistency.Finalization.SubmmiterFinalized.
+Require Protocol.Proofs.Consistency.Finalization.VotersVerify.
+
+(* we use dependent induction*)
+Require Import Coq.Program.Equality.
 
 Open Scope bool.
 Open Scope list.
@@ -41,7 +45,7 @@ Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
     (Votes.voter_voted_in_votes v (OpaqueRound.get_all_precommit_votes opaque) = true).
 
 Definition voter_is_hones_at_round `{Io} (v:Voter) (r:RoundNumber) : bool
-  :=
+:=
   (0 <? count v (get_round_honest_voters r))%nat.
 
 Lemma time_decomposition (t1 t2:Time) (leq_proof:t1 <= t2)
@@ -144,22 +148,11 @@ Lemma theorem_4_1_eq `{io:Io}
     (t3:Time)
     (v:Voter)
     (r:OpaqueRound.OpaqueRoundState)
-    (s:Sets.DictionarySet Voter)
     ,
     (
-      (
-        Rounds.Existence.IsRoundAt v t3 fb1.(FinalizedBlock.round_number) r
-      )
+      Rounds.Existence.IsRoundAt v t3 fb1.(FinalizedBlock.round_number) r
       /\
-      (
-        List.length (Sets.to_list s)
-        >=
-        1+ Voters.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
-      )%nat
-      /\
-      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
-      /\
-      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters fb1.(FinalizedBlock.round_number) ))
+      Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
     ).
 Proof.
   (**
@@ -195,7 +188,11 @@ Proof.
   {
     apply time_decomposition.
     destruct (fb1.(FinalizedBlock.time)) eqn:fbt_eq.
-    pose (Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least _ fb1_in) as H.
+    pose (
+      Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least
+        _
+        fb1_in
+    ) as H.
     rewrite fbt_eq in H.
     destruct t.
     simpl.
@@ -207,7 +204,6 @@ Proof.
     as [_ [r_finalization [ _ [ r_at_finalization _ ] ]]].
 
 
-  (*TODO: we dont require this part ? (proof still unfinished right now)*)
   rewrite new_t_eq_t_finalization in r_at_new_t.
   pose (
     Rounds.Continuous.rounds_are_updates
@@ -219,8 +215,18 @@ Proof.
   ) as r_is_update.
 
 
-  destruct (SubmmiterFinalized.finalized_block_has_supermajority_at_finalization _ fb1_in)
-    as [vs_finalization2 [ r_finalization2 ( vs2_is_state & r2_at_finalization & fb1_has_supermajority_at_fbt)]].
+  destruct (
+    SubmmiterFinalized.finalized_block_has_supermajority_at_finalization
+      _
+      fb1_in
+  )
+    as [vs_finalization2 [ r_finalization2 (
+        vs2_is_state
+        &
+        r2_at_finalization
+        &
+        fb1_has_supermajority_at_fbt
+    )]].
   assert (r_finalization2 = r_finalization).
   {
     unfold Existence.IsRoundAt in r_at_finalization.
@@ -247,49 +253,85 @@ Proof.
      valid round state for the round that finalized fb1 and that fb1
      indeed has supermajority in this round.
   *)
-  assert (Votes.block_has_supermajority fb2.(FinalizedBlock.block) (OpaqueRound.get_all_prevote_votes r) = true).
+  assert (
+    Votes.block_has_supermajority
+      fb2.(FinalizedBlock.block)
+      (OpaqueRound.get_all_prevote_votes r)
+    =
+    true
+  ) as fb2_has_supermajority_at_new_t.
   {
-    admit.
+    pose (
+      VotersVerify.all_voters_verify_finalization_eventually
+        fb2
+        fb1.(FinalizedBlock.submitter_voter)
+        vs_is_participant
+        (
+          fb1.(FinalizedBlock.time)
+          + (
+            (t + t_increment) - fb1.(FinalizedBlock.time)
+          )
+        )
+    ) as H .
+
+    destruct H as [r3 (r3_at_new_t & r3_has_super_majority)].
+    - destruct fb2.(FinalizedBlock.time) as [nt_fb2] eqn:Hfb2.
+      pose (
+        Finalization.SubmmiterFinalized.in_finalization_list_means_time_is_at_least
+          _
+          fb2_in
+      ) as H.
+      rewrite Hfb2 in H.
+
+      destruct fb1.(FinalizedBlock.time) as [nt_fb1].
+      subst t_increment.
+      destruct global_time_constant as [nt_global].
+      destruct t as [nt].
+      simpl.
+      simpl in H.
+      lia.
+    - enough (
+        r = r3
+      ) as H.
+      {
+        rewrite H.
+        auto.
+      }
+      unfold Existence.IsRoundAt in r_at_new_t.
+      simpl in r_at_new_t.
+      simpl in r3_at_new_t.
+      rewrite <- finalized_same_round in r3_at_new_t.
+      subst r_n.
+      rewrite r_at_new_t in r3_at_new_t.
+      injection r3_at_new_t.
+      auto.
   }
 
   destruct (Votes.is_safe (OpaqueRound.get_all_prevote_votes r)) eqn:His_safe.
-  - (* This is false
-      use superset_has_subset_majority_blocks
-       then use blocks_with_super_majority_are_related
-       both from Voters
+  - (* This is false, we have that the blocks are related
+       but they aren't!
     *)
-    exfalso. admit.
-  - unfold Votes.is_safe in His_safe.
-    remember (
-       (split_voters_by_equivocation
-        (OpaqueRound.get_all_prevote_votes r))
-    ) as voters_splitted.
-    destruct  voters_splitted as [equivocate_voters other].
-    exists (Sets.from_list equivocate_voters).
+    exfalso.
+    apply un_related.
+    apply (
+      Votes.blocks_that_has_supermajority_are_related
+        fb1.(FinalizedBlock.block)
+        fb2.(FinalizedBlock.block)
+        (OpaqueRound.get_all_prevote_votes r)
+        His_safe
+    ).
 
-    split.
+  - split.
     + rewrite new_t_eq.
       rewrite new_t_eq_t_finalization.
       simpl.
       subst r_n.
       subst v.
       auto.
-    + split.
-      ++ admit. (*  need to prove that the split gave us unque voters, mmm, maybe convert the list to set in is_safe and back to ensure this for free?*)
-      ++ admit. (* the paper says that equivocate_voters are byzantiner, so we may change the conclusion to that, in such case, this is freely done by the fact that we found that the set is unsafe, maybe modify the conclusions to that?. *)
+    + auto.
+Qed.
 
-
-
-
-
-  (*
-
-  *)
-  Admitted.
-
-
-
-Lemma theorem_4_1_lt `{io:Io}
+Lemma theorem_4_1_step `{io:Io}
   (t:Time)
   (fb1 fb2 : FinalizedBlock)
   (un_related:
@@ -299,10 +341,12 @@ Lemma theorem_4_1_lt `{io:Io}
   )
   (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
   (fb2_in:List.In fb2 (global_finalized_blocks (get_state_up_to t)))
-  (symmetry_hipotesis:
-    fb1.(FinalizedBlock.round_number)
-    <
+  (step_hipotesis:
+    RoundNumber.from_nat 1
+    =
     fb2.(FinalizedBlock.round_number)
+    -
+    fb1.(FinalizedBlock.round_number)
   )
   :
   exists
@@ -310,24 +354,95 @@ Lemma theorem_4_1_lt `{io:Io}
     (v:Voter)
     (r_n:RoundNumber)
     (r:OpaqueRound.OpaqueRoundState)
-    (s:Sets.DictionarySet Voter)
     ,
     (
-      (
-        Rounds.Existence.IsRoundAt v t3 r_n r
-      )
+      Rounds.Existence.IsRoundAt v t3 r_n r
+      /\(
+          (
+          fb1.(FinalizedBlock.round_number)
+          <= r_n
+          )
+          /\
+          (
+          r_n
+          <=fb2.(FinalizedBlock.round_number)
+          )
+        )
       /\
-      (
-        List.length (Sets.to_list s)
-        >=
-        1+ Voters.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
-      )%nat
-      /\
-      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
-      /\
-      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters r_n))
+      Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
     ).
+Admitted.
+
+Lemma theorem_4_1_lt `{io:Io}
+  (t:Time)
+  (fb1 : FinalizedBlock)
+  (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
+  :
+  forall n fb2,
+    n = RoundNumber.to_nat (fb2.(FinalizedBlock.round_number) - fb1.(FinalizedBlock.round_number))
+    ->
+    Unrelated
+      fb1.(FinalizedBlock.block).(AnyBlock.block)
+      fb2.(FinalizedBlock.block).(AnyBlock.block)
+    ->
+    List.In fb2 (global_finalized_blocks (get_state_up_to t))
+    ->
+    (
+      fb1.(FinalizedBlock.round_number)
+      <
+      fb2.(FinalizedBlock.round_number)
+    )
+    ->
+  (
+  exists
+    (t3:Time)
+    (v:Voter)
+    (r_n:RoundNumber)
+    (r:OpaqueRound.OpaqueRoundState)
+    ,
+    (
+      Rounds.Existence.IsRoundAt v t3 r_n r
+      /\(
+          (
+          fb1.(FinalizedBlock.round_number)
+          <= r_n
+          )
+          /\
+          (
+          r_n
+          <=fb2.(FinalizedBlock.round_number)
+          )
+        )
+      /\
+      Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
+    )
+  ).
 Proof.
+  (*
+  destruct (
+    fb1
+  ) as [
+    b1 t1 rn1 v1 voters1 precommits1
+  ].
+  destruct (
+    fb2
+  ) as [
+    b2 t2 rn2 v2 voters2 precommits2
+  ].
+  simpl in un_related.
+  simpl in symmetry_hipotesis.
+   *)
+  dependent induction n.
+  - destruct fb1.(FinalizedBlock.round_number) as [n1].
+    intros fb2 h  unrelated fb2_in symmetry_hipotesis.
+    destruct fb2.(FinalizedBlock.round_number) as [n2].
+    simpl in *.
+    exfalso.
+    lia.
+  - intros fb2 h  unrelated fb2_in symmetry_hipotesis.
+    apply (theorem_4_1_step t). try assumption.
+    simpl in * .
+
   (*
   dependent induction b1.
   - pose (originBlock_is_always_prefix b2) as contra.
@@ -385,27 +500,11 @@ Theorem theorem_4_1 `{io:Io}
     (v:Voter)
     (r_n:RoundNumber)
     (r:OpaqueRound.OpaqueRoundState)
-    (s:Sets.DictionarySet Voter)
     ,
     (
-      ((* Exists a voter [v] that sees the round [r] at time [t3].
-          All the rest of the statements reference to the view of
-          this particular voter v.
-      *)
-        Rounds.Existence.IsRoundAt v t3 r_n r
-      )
+      Rounds.Existence.IsRoundAt v t3 r_n r
       /\
-      ((* Exists a set [s] with at least [1+f] voters of round [r].*)
-        List.length (Sets.to_list s)
-        >=
-        1+ Voters.calculate_max_bizantiners (OpaqueRound.get_prevote_voters r)
-      )%nat
-      /\
-      (*  All voters of  [s] emitted a vote  in round [r]. *)
-      (forall v2, List.In v2 (Sets.to_list s) -> VoterVotedInRound v2 r)
-      /\
-      (* All voters of [s] are byzantine voters for round [r] *)
-      (forall v3, List.In v3 (Sets.to_list s) -> List.In v3 (get_round_bizantine_voters r_n))
+      Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
     ).
 Proof.
   (* Use naturals trichotomy to stablish for [fb1] y [fb2] tree possible cases:
@@ -459,11 +558,10 @@ Proof.
     exists v3.
     exists (fb1.(FinalizedBlock.round_number)).
     exists r.
-    exists s.
-    assumption.
+    split;assumption.
     (*Focus case fb2 was finalized in a round below fb1 *)
   -
-    (*Telling coq that the fact that two blocks are unrelated is symmetric*)
+    (*Telling coq the fact that two blocks are unrelated is symmetric*)
     pose (
       Blocks.Block.unrelated_symmetric
         fb1.(block).(AnyBlock.block)
@@ -479,7 +577,7 @@ Proof.
       un_related2
       fb2_in
       fb1_in
-    );try assumption.
+    ). assumption.
 Qed.
 
 
@@ -513,7 +611,7 @@ Corollary corollary_4_3
       Block.is_prefix b_finalized.(AnyBlock.block) eb.(AnyBlock.block) = true
     ).
 Proof.
-  (*TODO: delayed until 3.8
+  (*TODO: delayed
    *)
   Admitted.
 

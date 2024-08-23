@@ -60,7 +60,7 @@ Theorem all_voters_verify_finalization_eventually `{io:Io}
   let r_n := fb.(FinalizedBlock.round_number)
   in
   forall t,
-  t >= t_min ->
+  t_min <= t  ->
   let state := get_state_up_to t
   in
   (exists r, get_voter_opaque_round state v r_n = Some r
