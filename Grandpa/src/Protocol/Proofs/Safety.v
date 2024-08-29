@@ -525,6 +525,8 @@ Proof.
   (*Solve the case fb1 finalized in a round below fb2, by using lemma
      [theorem_4_1_lt] for it.
   *)
+  Admitted.
+  (*
   - apply (
       theorem_4_1_lt
         t
@@ -579,38 +581,40 @@ Proof.
       fb1_in
     ). assumption.
 Qed.
-
+   *)
 
 Corollary corollary_4_3
   `{Io}
-  (round_finalized_number:RoundNumber)
-  (time_finalied:Time)
-  (b_finalized:AnyBlock)
-  (v:Voter)
-  (r_n:RoundNumber)
-  (is_honest: voter_is_hones_at_round v r_n = true)
-  (t_increment:Time)
-  (r_n_geq: r_n >= round_finalized_number)
-  (opaque_r_n : OpaqueRound.OpaqueRoundState)
-  (opaque_from_state
-    :
-    State.get_voter_opaque_round (get_state_up_to (t_increment + time_finalied) ) v r_n
-    = Some opaque_r_n
+  (fb:FinalizedBlock)
+  (fb_in:
+  List.In fb (global_finalized_blocks (get_state_up_to (Time.from_nat 1 + fb.(FinalizedBlock.time))))
   )
-  (r_n_completable:
-   OpaqueRound.is_completable opaque_r_n = true
-  )
-  :exists (eb:AnyBlock),
-    (
-      OpaqueRound.get_estimate opaque_r_n
-      =
-      Some eb
-    )
+  :
+  forall n v nt,
+  let t := (Time.from_nat nt + fb.(FinalizedBlock.time))
+  in
+  let rn := (RoundNumber.from_nat n +fb.(FinalizedBlock.round_number))
+  in
+  voter_is_hones_at_round v rn = true
+  ->
+    (*TODO: complete this, it must say that forall voters the byzantine number should be lower than the max cuota for a safe set*)
+  (forall rm, fb.(FinalizedBlock.round_number) <= rm -> rm <= rn -> forall v2, is_safe )
+  exists r,
+    get_voter_opaque_round (get_state_up_to t) v rn  = Some r
     /\
     (
-      Block.is_prefix b_finalized.(AnyBlock.block) eb.(AnyBlock.block) = true
-    ).
+      OpaqueRound.is_completable r = true
+      -> exists eb,
+          (
+            OpaqueRound.get_estimate r = Some eb
+            /\
+            Related eb.(AnyBlock.block) fb.(FinalizedBlock.block).(AnyBlock.block)
+          )
+    )
+  .
 Proof.
+  dependent induction n.
+  2:{
   (*TODO: delayed
    *)
   Admitted.
