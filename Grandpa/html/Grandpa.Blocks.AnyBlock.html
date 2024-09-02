@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Blocks.AnyBlock</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Blocks.AnyBlock</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.Block.html#"><span class="id" title="library">Blocks.Block</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Blocks.Block.html#"><span class="id" title="module">Block</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.Nat.html#"><span class="id" title="library">Instances.Nat</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.Tuple.html#"><span class="id" title="library">Instances.Tuple</span></a>.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+From time to time we need to form a type that can contain 
+  blocks of any lenght. In such cases we will use AnyBlock 
+   as the type.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <a id="AnyBlock" class="idref" href="#AnyBlock"><span class="id" title="record">AnyBlock</span></a> <br/>
+&nbsp;&nbsp;:= <br/>
+&nbsp;&nbsp;<span class="id" title="var">AnyBlockC</span> {<br/>
+&nbsp;&nbsp;<a id="block_number" class="idref" href="#block_number"><span class="id" title="projection">block_number</span></a>: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
+&nbsp;&nbsp;; <a id="block" class="idref" href="#block"><span class="id" title="projection">block</span></a> : <a class="idref" href="Grandpa.Blocks.Block.html#Block"><span class="id" title="inductive">Block</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#block_number:2"><span class="id" title="method">block_number</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_any" class="idref" href="#to_any"><span class="id" title="definition">to_any</span></a> {<a id="n:4" class="idref" href="#n:4"><span class="id" title="binder">n</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a>} (<a id="b:5" class="idref" href="#b:5"><span class="id" title="binder">b</span></a>: <a class="idref" href="Grandpa.Blocks.Block.html#Block"><span class="id" title="inductive">Block</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#n:4"><span class="id" title="variable">n</span></a>) : <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
+&nbsp;&nbsp;:= <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlockC"><span class="id" title="constructor">AnyBlockC</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#n:4"><span class="id" title="variable">n</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b:5"><span class="id" title="variable">b</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="Instances" class="idref" href="#Instances"><span class="id" title="section">Instances</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="eqb" class="idref" href="#eqb"><span class="id" title="definition">eqb</span></a> (<a id="b1:6" class="idref" href="#b1:6"><span class="id" title="binder">b1</span></a> <a id="b2:7" class="idref" href="#b2:7"><span class="id" title="binder">b2</span></a>: <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>) : <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;:=  <a class="idref" href="Grandpa.Blocks.Block.html#eqb"><span class="id" title="definition">Block.eqb</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:6"><span class="id" title="variable">b1</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">block</span></a>) <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:7"><span class="id" title="variable">b2</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">block</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbAnyBlock" class="idref" href="#EqbAnyBlock"><span class="id" title="instance">EqbAnyBlock</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#Eqb"><span class="id" title="class">Eqb</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a> :={<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a>:= <a class="idref" href="Grandpa.Blocks.AnyBlock.html#eqb"><span class="id" title="definition">eqb</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#EqbAnyBlock"><span class="id" title="instance">EqbAnyBlock</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="eqb_reflexivity" class="idref" href="#eqb_reflexivity"><span class="id" title="lemma">eqb_reflexivity</span></a> (<a id="b1:8" class="idref" href="#b1:8"><span class="id" title="binder">b1</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:8"><span class="id" title="variable">b1</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:8"><span class="id" title="variable">b1</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="eqb_transitivity" class="idref" href="#eqb_transitivity"><span class="id" title="lemma">eqb_transitivity</span></a> (<a id="b1:9" class="idref" href="#b1:9"><span class="id" title="binder">b1</span></a> <a id="b2:10" class="idref" href="#b2:10"><span class="id" title="binder">b2</span></a> <a id="b3:11" class="idref" href="#b3:11"><span class="id" title="binder">b3</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:9"><span class="id" title="variable">b1</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:10"><span class="id" title="variable">b2</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:10"><span class="id" title="variable">b2</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b3:11"><span class="id" title="variable">b3</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <br/>
+&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:9"><span class="id" title="variable">b1</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b3:11"><span class="id" title="variable">b3</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)=</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="eqb_symmetry" class="idref" href="#eqb_symmetry"><span class="id" title="lemma">eqb_symmetry</span></a> (<a id="b1:12" class="idref" href="#b1:12"><span class="id" title="binder">b1</span></a> <a id="b2:13" class="idref" href="#b2:13"><span class="id" title="binder">b2</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:12"><span class="id" title="variable">b1</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:13"><span class="id" title="variable">b2</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:13"><span class="id" title="variable">b2</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:12"><span class="id" title="variable">b1</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbLawsAnyBlock" class="idref" href="#EqbLawsAnyBlock"><span class="id" title="instance">EqbLawsAnyBlock</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#EqbLaws"><span class="id" title="class">EqbLaws</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a> :={<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_reflexivity"><span class="id" title="method">eqb_reflexivity</span></a> := <a class="idref" href="Grandpa.Blocks.AnyBlock.html#eqb_reflexivity"><span class="id" title="lemma">eqb_reflexivity</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_symmetry"><span class="id" title="method">eqb_symmetry</span></a> := <a class="idref" href="Grandpa.Blocks.AnyBlock.html#eqb_symmetry"><span class="id" title="lemma">eqb_symmetry</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_transitivity"><span class="id" title="method">eqb_transitivity</span></a> := <a class="idref" href="Grandpa.Blocks.AnyBlock.html#eqb_transitivity"><span class="id" title="lemma">eqb_transitivity</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#EqbLawsAnyBlock"><span class="id" title="instance">EqbLawsAnyBlock</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="is_prefix" class="idref" href="#is_prefix"><span class="id" title="definition">is_prefix</span></a> <a id="b1:14" class="idref" href="#b1:14"><span class="id" title="binder">b1</span></a> <a id="b2:15" class="idref" href="#b2:15"><span class="id" title="binder">b2</span></a> : <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;(<a class="idref" href="Grandpa.Blocks.Block.html#is_prefix"><span class="id" title="definition">Block.is_prefix</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b1:14"><span class="id" title="variable">b1</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>) <a class="idref" href="Grandpa.Blocks.AnyBlock.html#b2:15"><span class="id" title="variable">b2</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>)).<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#Instances"><span class="id" title="section">Instances</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

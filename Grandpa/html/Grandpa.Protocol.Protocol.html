@@ -1,0 +1,900 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Protocol.Protocol</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Protocol.Protocol</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="library">Voters</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Preliminars.html#"><span class="id" title="library">Preliminars</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Estimate.html#"><span class="id" title="library">Estimate</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.OpaqueRound.html#"><span class="id" title="library">OpaqueRound</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Round.html#"><span class="id" title="library">Round</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Time.html#"><span class="id" title="library">Time</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.RoundNumber.html#"><span class="id" title="library">RoundNumber</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.VoterState.html#"><span class="id" title="library">VoterState</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#"><span class="id" title="library">Vectors</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Message.html#"><span class="id" title="library">Message</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Count.html#"><span class="id" title="library">DataTypes.List.Count</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Option.html#"><span class="id" title="library">DataTypes.Option</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.State.html#"><span class="id" title="library">Protocol.State</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.StateMessages.html#"><span class="id" title="library">Protocol.StateMessages</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#"><span class="id" title="library">Protocol.FinalizedBlock</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Program.Equality.html#"><span class="id" title="library">Program.Equality</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Functor.html#"><span class="id" title="library">Classes.Functor</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.All.html#"><span class="id" title="library">Classes.Math.All</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.List.html#"><span class="id" title="library">Instances.List</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Io.html#"><span class="id" title="library">Protocol.Io</span></a>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.micromega.Lia.html#"><span class="id" title="library">Lia</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">list</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">natWrapper</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+*Protocol
+
+<div class="paragraph"> </div>
+
+The main functions of this module are:
+<ul class="doclist">
+<li> <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a></span>
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#voters_round_step"><span class="id" title="definition">voters_round_step</span></a></span>
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+Of the same importance but no defined in this module is the
+  <span class="inlinecode"><span class="id" title="var">StateMessages.update_votes</span></span> function.
+
+<div class="paragraph"> </div>
+
+The <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a></span> function is in charge of performing the
+main loop of the simulation. It just take the 0 state
+and feed the <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#voter_round_step"><span class="id" title="definition">voter_round_step</span></a></span> and  <span class="inlinecode"><span class="id" title="var">StateMessages.update_votes</span></span> functions
+with the right states for the corresponding <span class="inlinecode"><span class="id" title="keyword">Time</span></span> until
+we reach the desired Time.
+
+<div class="paragraph"> </div>
+
+At every time <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Vectors.Vector.html#t"><span class="id" title="inductive">t</span></a></span>, we have two stages:
+<ul class="doclist">
+<li> Update the local state of every voter according to the messages received
+    by that voter up to this time.
+
+</li>
+<li> Proceed to run the Grandpa protocol or to act as a byzantine voter
+    for every voter of the protocol.
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+The <span class="inlinecode"><span class="id" title="var">StateMessages.update_votes</span></span> function models the message passing
+between participants.
+
+<div class="paragraph"> </div>
+
+The <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#voters_round_step"><span class="id" title="definition">voters_round_step</span></a></span> function models the actions of the participants
+at a particular time and global state of the protocol.
+
+<div class="paragraph"> </div>
+
+See the documentation of each function for details.
+
+<div class="paragraph"> </div>
+
+Other functions of high interest:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step_legit"><span class="id" title="definition">prevoter_step_legit</span></a></span> what a honest prevoter does
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#precommit_step_legit"><span class="id" title="definition">precommit_step_legit</span></a></span> what a honest precommiter does
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#finalize_block"><span class="id" title="definition">finalize_block</span></a></span>
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+
+<div class="paragraph"> </div>
+
+Given a block <span class="inlinecode"><span class="id" title="var">b</span></span>, looks in all the blocks produced by block producer
+for this round and time.
+Filters all the blocks <span class="inlinecode"><span class="id" title="var">x</span></span> such that <span class="inlinecode"><span class="id" title="var">b</span></span> <span class="inlinecode">&lt;=?</span> <span class="inlinecode"><span class="id" title="var">x</span></span>.
+And gets the block with the higher block number.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="look_for_best_chain_for_block" class="idref" href="#look_for_best_chain_for_block"><span class="id" title="definition">look_for_best_chain_for_block</span></a> `{<a id="H:1" class="idref" href="#H:1"><span class="id" title="binder">Io</span></a>} (<a id="t:2" class="idref" href="#t:2"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="v:3" class="idref" href="#v:3"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="ablock:4" class="idref" href="#ablock:4"><span class="id" title="binder">ablock</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<a id="block_number:5" class="idref" href="#block_number:5"><span class="id" title="binder">block_number</span></a>,<a id="block:6" class="idref" href="#block:6"><span class="id" title="binder">block</span></a>) := <a class="idref" href="Grandpa.Protocol.Protocol.html#ablock:4"><span class="id" title="variable">ablock</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="available_blocks:7" class="idref" href="#available_blocks:7"><span class="id" title="binder">available_blocks</span></a> := <a class="idref" href="Grandpa.Protocol.Io.html#block_producer"><span class="id" title="method">block_producer</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:2"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#v:3"><span class="id" title="variable">v</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="blocks_that_contains_it:9" class="idref" href="#blocks_that_contains_it:9"><span class="id" title="binder">blocks_that_contains_it</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#filter"><span class="id" title="definition">List.filter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <a id="x:8" class="idref" href="#x:8"><span class="id" title="binder">x</span></a> ⇒ <a class="idref" href="Grandpa.Blocks.AnyBlock.html#is_prefix"><span class="id" title="definition">AnyBlock.is_prefix</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#ablock:4"><span class="id" title="variable">ablock</span></a>  <a class="idref" href="Grandpa.Protocol.Protocol.html#x:8"><span class="id" title="variable">x</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.DataTypes.Sets.html#to_list"><span class="id" title="definition">Sets.to_list</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#available_blocks:7"><span class="id" title="variable">available_blocks</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#blocks_that_contains_it:9"><span class="id" title="variable">blocks_that_contains_it</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a>(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#fold_left"><span class="id" title="definition">List.fold_left</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <a id="x:11" class="idref" href="#x:11"><span class="id" title="binder">x</span></a> <a id="y:12" class="idref" href="#y:12"><span class="id" title="binder">y</span></a> ⇒ <span class="id" title="keyword">if</span> (<a class="idref" href="Grandpa.Protocol.Protocol.html#x:11"><span class="id" title="variable">x</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block_number"><span class="id" title="projection">AnyBlock.block_number</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#6b7621b45fff0af5e2b2cbb2bc2d4e1d"><span class="id" title="notation">&lt;?</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#y:12"><span class="id" title="variable">y</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block_number"><span class="id" title="projection">AnyBlock.block_number</span></a>))%<span class="id" title="var">nat</span> <span class="id" title="keyword">then</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#y:12"><span class="id" title="variable">y</span></a> <span class="id" title="keyword">else</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#x:11"><span class="id" title="variable">x</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#blocks_that_contains_it:9"><span class="id" title="variable">blocks_that_contains_it</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#to_any"><span class="id" title="definition">AnyBlock.to_any</span></a> <a class="idref" href="Grandpa.Blocks.Block.html#OriginBlock"><span class="id" title="constructor">OriginBlock</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Creates a prevote message for the given block,
+adds it to the local state (to set that the voter already voted),
+and sends the message.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="build_and_send_prevote" class="idref" href="#build_and_send_prevote"><span class="id" title="definition">build_and_send_prevote</span></a><br/>
+&nbsp;&nbsp;(<a id="t:13" class="idref" href="#t:13"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:14" class="idref" href="#state:14"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:15" class="idref" href="#voter:15"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:16" class="idref" href="#vs:16"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;(<a id="b:17" class="idref" href="#b:17"><span class="id" title="binder">b</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="new_message:18" class="idref" href="#new_message:18"><span class="id" title="binder">new_message</span></a> : <a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message.Message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:= <a class="idref" href="Grandpa.Message.html#from_nat"><span class="id" title="definition">Message.from_nat</span></a> (1 <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#0dacc1786c5ba797d47dd85006231633"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:14"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#message_count"><span class="id" title="projection">message_count</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">Message.block</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#b:17"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>:=<a class="idref" href="Grandpa.Message.html#PreVoteMessage"><span class="id" title="constructor">Message.PreVoteMessage</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:16"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">Message.time</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#t:13"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:15"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:=<a class="idref" href="Grandpa.DataTypes.Sets.html#from_list"><span class="id" title="definition">Sets.from_list</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:15"><span class="id" title="variable">voter</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id="up_prevote:19" class="idref" href="#up_prevote:19"><span class="id" title="binder">up_prevote</span></a> := <a class="idref" href="Grandpa.VoterState.html#update_prevoted"><span class="id" title="definition">VoterState.update_prevoted</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:16"><span class="id" title="variable">vs</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:17"><span class="id" title="variable">b</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="up_round:20" class="idref" href="#up_round:20"><span class="id" title="binder">up_round</span></a> := <a class="idref" href="Grandpa.VoterState.html#update_votes_with_msg"><span class="id" title="definition">VoterState.update_votes_with_msg</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#up_prevote:19"><span class="id" title="variable">up_prevote</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:18"><span class="id" title="variable">new_message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#advance_count"><span class="id" title="definition">advance_count</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_voter_state"><span class="id" title="definition">update_voter_state</span></a> (<a class="idref" href="Grandpa.Protocol.State.html#update_message"><span class="id" title="definition">update_message</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:14"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:18"><span class="id" title="variable">new_message</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:15"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#up_round:20"><span class="id" title="variable">up_round</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Creates a precommit message for the given block,
+adds it to the local state (to set that the voter already voted),
+and sends the message.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="build_and_send_precommit" class="idref" href="#build_and_send_precommit"><span class="id" title="definition">build_and_send_precommit</span></a><br/>
+&nbsp;&nbsp;(<a id="t:21" class="idref" href="#t:21"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:22" class="idref" href="#state:22"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:23" class="idref" href="#voter:23"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:24" class="idref" href="#vs:24"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;(<a id="b:25" class="idref" href="#b:25"><span class="id" title="binder">b</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="new_message:26" class="idref" href="#new_message:26"><span class="id" title="binder">new_message</span></a> : <a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message.Message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:= <a class="idref" href="Grandpa.Message.html#from_nat"><span class="id" title="definition">Message.from_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#S"><span class="id" title="constructor">S</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:22"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#message_count"><span class="id" title="projection">message_count</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">Message.block</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#b:25"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>:=<a class="idref" href="Grandpa.Message.html#PreCommitMessage"><span class="id" title="constructor">Message.PreCommitMessage</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:24"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">Message.time</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#t:21"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:23"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:=<a class="idref" href="Grandpa.DataTypes.Sets.html#from_list"><span class="id" title="definition">Sets.from_list</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:23"><span class="id" title="variable">voter</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id="up_precommit:27" class="idref" href="#up_precommit:27"><span class="id" title="binder">up_precommit</span></a> := <a class="idref" href="Grandpa.VoterState.html#update_precommit"><span class="id" title="definition">VoterState.update_precommit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:24"><span class="id" title="variable">vs</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:25"><span class="id" title="variable">b</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="up_round:28" class="idref" href="#up_round:28"><span class="id" title="binder">up_round</span></a> := <a class="idref" href="Grandpa.VoterState.html#update_votes_with_msg"><span class="id" title="definition">VoterState.update_votes_with_msg</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#up_precommit:27"><span class="id" title="variable">up_precommit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:26"><span class="id" title="variable">new_message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#advance_count"><span class="id" title="definition">advance_count</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_voter_state"><span class="id" title="definition">update_voter_state</span></a> (<a class="idref" href="Grandpa.Protocol.State.html#update_message"><span class="id" title="definition">update_message</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:22"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:26"><span class="id" title="variable">new_message</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:23"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#up_round:28"><span class="id" title="variable">up_round</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="build_and_send_primary_estimate" class="idref" href="#build_and_send_primary_estimate"><span class="id" title="definition">build_and_send_primary_estimate</span></a><br/>
+&nbsp;&nbsp;(<a id="t:29" class="idref" href="#t:29"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:30" class="idref" href="#state:30"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:31" class="idref" href="#voter:31"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:32" class="idref" href="#vs:32"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;(<a id="b:33" class="idref" href="#b:33"><span class="id" title="binder">b</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="new_message:34" class="idref" href="#new_message:34"><span class="id" title="binder">new_message</span></a> : <a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message.Message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:= <a class="idref" href="Grandpa.Message.html#from_nat"><span class="id" title="definition">Message.from_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#S"><span class="id" title="constructor">S</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:30"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#message_count"><span class="id" title="projection">message_count</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">Message.block</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#b:33"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>:=<a class="idref" href="Grandpa.Message.html#EstimateMessage"><span class="id" title="constructor">Message.EstimateMessage</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:32"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">Message.time</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#t:29"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:31"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:=<a class="idref" href="Grandpa.DataTypes.Sets.html#from_list"><span class="id" title="definition">Sets.from_list</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:31"><span class="id" title="variable">voter</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="updated_voter_state:35" class="idref" href="#updated_voter_state:35"><span class="id" title="binder">updated_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.VoterState.html#update_last_block"><span class="id" title="definition">VoterState.update_last_block</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:32"><span class="id" title="variable">vs</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:33"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#advance_count"><span class="id" title="definition">advance_count</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_voter_state"><span class="id" title="definition">update_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_message"><span class="id" title="definition">update_message</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:30"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:34"><span class="id" title="variable">new_message</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:31"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#updated_voter_state:35"><span class="id" title="variable">updated_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Create a message that the given block is being finalized,
+adds it to both the local collection of finalized blocks,
+and the global collection.
+Then we send the message.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="build_and_send_finalized_block" class="idref" href="#build_and_send_finalized_block"><span class="id" title="definition">build_and_send_finalized_block</span></a><br/>
+&nbsp;&nbsp;(<a id="t:36" class="idref" href="#t:36"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:37" class="idref" href="#state:37"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:38" class="idref" href="#voter:38"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:39" class="idref" href="#vs:39"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;(<a id="b:40" class="idref" href="#b:40"><span class="id" title="binder">b</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;(<a id="votes:41" class="idref" href="#votes:41"><span class="id" title="binder">votes</span></a>:<a class="idref" href="Grandpa.Message.html#FinalizeBlock"><span class="id" title="record">Message.FinalizeBlock</span></a>)<br/>
+&nbsp;&nbsp;(<a id="opaque:42" class="idref" href="#opaque:42"><span class="id" title="binder">opaque</span></a>:<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="new_message:43" class="idref" href="#new_message:43"><span class="id" title="binder">new_message</span></a> : <a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message.Message</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:= <a class="idref" href="Grandpa.Message.html#from_nat"><span class="id" title="definition">Message.from_nat</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#S"><span class="id" title="constructor">S</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:37"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#message_count"><span class="id" title="projection">message_count</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">Message.block</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#b:40"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>:=<a class="idref" href="Grandpa.Message.html#FinalizationMessage"><span class="id" title="constructor">Message.FinalizationMessage</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#votes:41"><span class="id" title="variable">votes</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:39"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">Message.time</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#t:36"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:38"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:=<a class="idref" href="Grandpa.DataTypes.Sets.html#from_list"><span class="id" title="definition">Sets.from_list</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:38"><span class="id" title="variable">voter</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="updated_voter_state:44" class="idref" href="#updated_voter_state:44"><span class="id" title="binder">updated_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.VoterState.html#update_add_finalized_block"><span class="id" title="definition">VoterState.update_add_finalized_block</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:39"><span class="id" title="variable">vs</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:40"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="finalized_block:45" class="idref" href="#finalized_block:45"><span class="id" title="binder">finalized_block</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#make_with_round"><span class="id" title="definition">FinalizedBlock.make_with_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:36"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:38"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:40"><span class="id" title="variable">b</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:42"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#update_add_finalized_block"><span class="id" title="definition">State.update_add_finalized_block</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#advance_count"><span class="id" title="definition">advance_count</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_voter_state"><span class="id" title="definition">update_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.State.html#update_message"><span class="id" title="definition">update_message</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:37"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_message:43"><span class="id" title="variable">new_message</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:38"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#updated_voter_state:44"><span class="id" title="variable">updated_voter_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#finalized_block:45"><span class="id" title="variable">finalized_block</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="prevoter_step_aux" class="idref" href="#prevoter_step_aux"><span class="id" title="definition">prevoter_step_aux</span></a> `{<a id="H:46" class="idref" href="#H:46"><span class="id" title="binder">Io</span></a>} (<a id="t:47" class="idref" href="#t:47"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="state:48" class="idref" href="#state:48"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>) (<a id="voter:49" class="idref" href="#voter:49"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="vs:50" class="idref" href="#vs:50"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="tower:51" class="idref" href="#tower:51"><span class="id" title="binder">tower</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:50"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#rounds"><span class="id" title="projection">VoterState.rounds</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#get"><span class="id" title="definition">Vectors.get</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#tower:51"><span class="id" title="variable">tower</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:50"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">-</span></a>1) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;|<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">previous_round</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="ref_block:52" class="idref" href="#ref_block:52"><span class="id" title="binder">ref_block</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:50"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#last_brodcasted_block"><span class="id" title="projection">last_brodcasted_block</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Preliminars.html#g"><span class="id" title="definition">g</span></a> (<a class="idref" href="Grandpa.Round.html#get_all_prevote_votes"><span class="id" title="definition">Round.get_all_prevote_votes</span></a> <span class="id" title="var">previous_round</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a><a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">previous_round</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">g_prev</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">estimate_prev</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Blocks.Block.html#is_prefix"><span class="id" title="definition">Block.is_prefix</span></a> <span class="id" title="var">estimate_prev</span>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>) <span class="id" title="var">b</span>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="Grandpa.Blocks.Block.html#is_prefix"><span class="id" title="definition">Block.is_prefix</span></a> <span class="id" title="var">b</span>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>) <span class="id" title="var">g_prev</span>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block"><span class="id" title="projection">AnyBlock.block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">previous_round</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">previous_round</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">previous_round</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Classes.Functor.html#map"><span class="id" title="method">map</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#look_for_best_chain_for_block"><span class="id" title="definition">look_for_best_chain_for_block</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:47"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:49"><span class="id" title="variable">voter</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#ref_block:52"><span class="id" title="variable">ref_block</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span>) ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_prevote"><span class="id" title="definition">build_and_send_prevote</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:47"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:48"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:49"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:50"><span class="id" title="variable">vs</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:48"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:48"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="prevoter_step_legit" class="idref" href="#prevoter_step_legit"><span class="id" title="definition">prevoter_step_legit</span></a> `{<a id="H:53" class="idref" href="#H:53"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:54" class="idref" href="#t:54"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:55" class="idref" href="#state:55"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:56" class="idref" href="#voter:56"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="category:57" class="idref" href="#category:57"><span class="id" title="binder">category</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterCategory"><span class="id" title="inductive">VoterCategory</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:58" class="idref" href="#vs:58"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:58"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#prevoted_block"><span class="id" title="projection">prevoted_block</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:55"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="tower:59" class="idref" href="#tower:59"><span class="id" title="binder">tower</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:58"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#rounds"><span class="id" title="projection">VoterState.rounds</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#get"><span class="id" title="definition">Vectors.get</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#tower:59"><span class="id" title="variable">tower</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:58"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">round_</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Estimate.html#try_to_complete_round"><span class="id" title="axiom">Estimate.try_to_complete_round</span></a> <span class="id" title="var">round_</span>  <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step_aux"><span class="id" title="definition">prevoter_step_aux</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:54"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:55"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:56"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:58"><span class="id" title="variable">vs</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a>⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:54"><span class="id" title="variable">t</span></a><a class="idref" href="Grandpa.DataTypes.NatWrapper.html#d44469564eec84e813491d96446c355e"><span class="id" title="notation">&lt;=?</span></a> <a class="idref" href="Grandpa.Round.html#get_start_time"><span class="id" title="definition">Round.get_start_time</span></a> <span class="id" title="var">round_</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#70b7e7c9fc769ba72b0aca5e5bf37e5f"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Time.html#from_nat"><span class="id" title="definition">Time.from_nat</span></a> 2<a class="idref" href="Grandpa.DataTypes.NatWrapper.html#70b7e7c9fc769ba72b0aca5e5bf37e5f"><span class="id" title="notation">)*</span></a><a class="idref" href="Grandpa.Protocol.Io.html#global_time_constant"><span class="id" title="method">global_time_constant</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step_aux"><span class="id" title="definition">prevoter_step_aux</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:54"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:55"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:56"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:58"><span class="id" title="variable">vs</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#state:55"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:55"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="prevoter_step" class="idref" href="#prevoter_step"><span class="id" title="definition">prevoter_step</span></a> `{<a id="H:60" class="idref" href="#H:60"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:61" class="idref" href="#t:61"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:62" class="idref" href="#state:62"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:63" class="idref" href="#voter:63"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="category:64" class="idref" href="#category:64"><span class="id" title="binder">category</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterCategory"><span class="id" title="inductive">VoterCategory</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:65" class="idref" href="#vs:65"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#category:64"><span class="id" title="variable">category</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#Bizantine"><span class="id" title="constructor">VoterState.Bizantine</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Io.html#io_bizantine_vote"><span class="id" title="method">io_bizantine_vote</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:61"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:63"><span class="id" title="variable">voter</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_prevote"><span class="id" title="definition">build_and_send_prevote</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:61"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:62"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:63"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:65"><span class="id" title="variable">vs</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:62"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#Honest"><span class="id" title="constructor">VoterState.Honest</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step_legit"><span class="id" title="definition">prevoter_step_legit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:61"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:62"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:63"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#category:64"><span class="id" title="variable">category</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:65"><span class="id" title="variable">vs</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="precommit_step_legit" class="idref" href="#precommit_step_legit"><span class="id" title="definition">precommit_step_legit</span></a> `{<a id="H:67" class="idref" href="#H:67"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:68" class="idref" href="#t:68"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:69" class="idref" href="#state:69"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:70" class="idref" href="#voter:70"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="category:71" class="idref" href="#category:71"><span class="id" title="binder">category</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterCategory"><span class="id" title="inductive">VoterCategory</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:72" class="idref" href="#vs:72"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="tower:73" class="idref" href="#tower:73"><span class="id" title="binder">tower</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:72"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#rounds"><span class="id" title="projection">VoterState.rounds</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:72"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#precommited_block"><span class="id" title="projection">precommited_block</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#get"><span class="id" title="definition">Vectors.get</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#tower:73"><span class="id" title="variable">tower</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:72"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">r</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#get"><span class="id" title="definition">Vectors.get</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#tower:73"><span class="id" title="variable">tower</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:72"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">-</span></a> 1) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">r_prev</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Preliminars.html#g"><span class="id" title="definition">g</span></a> (<a class="idref" href="Grandpa.Round.html#get_all_prevote_votes"><span class="id" title="definition">Round.get_all_prevote_votes</span></a> <span class="id" title="var">r</span>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">r_prev</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">g_r</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">estimate_prev</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#081ff67d3116402bb680e8692aa39185"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Protocol.Protocol.html#t:68"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#fc02443a8aa77427811560f425647dd0"><span class="id" title="notation">&lt;?</span></a> <a class="idref" href="Grandpa.Round.html#get_start_time"><span class="id" title="definition">Round.get_start_time</span></a> <span class="id" title="var">r</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#70b7e7c9fc769ba72b0aca5e5bf37e5f"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Time.html#from_nat"><span class="id" title="definition">Time.from_nat</span></a> 4<a class="idref" href="Grandpa.DataTypes.NatWrapper.html#70b7e7c9fc769ba72b0aca5e5bf37e5f"><span class="id" title="notation">)*</span></a><a class="idref" href="Grandpa.Protocol.Io.html#global_time_constant"><span class="id" title="method">global_time_constant</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#081ff67d3116402bb680e8692aa39185"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#081ff67d3116402bb680e8692aa39185"><span class="id" title="notation">||</span></a> <a class="idref" href="Grandpa.Estimate.html#is_completable"><span class="id" title="definition">Estimate.is_completable</span></a> <span class="id" title="var">r</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_precommit"><span class="id" title="definition">build_and_send_precommit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:68"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:70"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:72"><span class="id" title="variable">vs</span></a> <span class="id" title="var">g_r</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:69"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="precommit_step" class="idref" href="#precommit_step"><span class="id" title="definition">precommit_step</span></a> `{<a id="H:74" class="idref" href="#H:74"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:75" class="idref" href="#t:75"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:76" class="idref" href="#state:76"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:77" class="idref" href="#voter:77"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="category:78" class="idref" href="#category:78"><span class="id" title="binder">category</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterCategory"><span class="id" title="inductive">VoterCategory</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:79" class="idref" href="#vs:79"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#category:78"><span class="id" title="variable">category</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#Bizantine"><span class="id" title="constructor">VoterState.Bizantine</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Io.html#io_bizantine_vote"><span class="id" title="method">io_bizantine_vote</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:75"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:77"><span class="id" title="variable">voter</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_precommit"><span class="id" title="definition">build_and_send_precommit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:75"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:76"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:77"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:79"><span class="id" title="variable">vs</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:76"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#Honest"><span class="id" title="constructor">VoterState.Honest</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#precommit_step_legit"><span class="id" title="definition">precommit_step_legit</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:75"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:76"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:77"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#category:78"><span class="id" title="variable">category</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:79"><span class="id" title="variable">vs</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="get_last_finalized_block_number" class="idref" href="#get_last_finalized_block_number"><span class="id" title="definition">get_last_finalized_block_number</span></a><br/>
+&nbsp;&nbsp;(<a id="finalized_blocks:81" class="idref" href="#finalized_blocks:81"><span class="id" title="binder">finalized_blocks</span></a>:<a class="idref" href="Grandpa.DataTypes.Sets.html#DictionarySet"><span class="id" title="inductive">Sets.DictionarySet</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#fold_left"><span class="id" title="definition">List.fold_left</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <a id="acc:82" class="idref" href="#acc:82"><span class="id" title="binder">acc</span></a> <a id="y:83" class="idref" href="#y:83"><span class="id" title="binder">y</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#max"><span class="id" title="abbreviation">max</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#acc:82"><span class="id" title="variable">acc</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#y:83"><span class="id" title="variable">y</span></a>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block_number"><span class="id" title="projection">AnyBlock.block_number</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.DataTypes.Sets.html#to_list"><span class="id" title="definition">Sets.to_list</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#finalized_blocks:81"><span class="id" title="variable">finalized_blocks</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;0.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+A block  can be finalized by a voter <span class="inlinecode"><span class="id" title="var">v</span></span> if :
+<ul class="doclist">
+<li> <span class="inlinecode"><span class="id" title="var">b</span></span> its block number is above the all the finalized blocks the voter knows.
+
+</li>
+<li> <span class="inlinecode"><span class="id" title="var">b</span></span> has a supermajority in 
+
+</li>
+</ul>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="should_finalize" class="idref" href="#should_finalize"><span class="id" title="definition">should_finalize</span></a><br/>
+&nbsp;&nbsp;(<a id="finalized_blocks:84" class="idref" href="#finalized_blocks:84"><span class="id" title="binder">finalized_blocks</span></a>:<a class="idref" href="Grandpa.DataTypes.Sets.html#DictionarySet"><span class="id" title="inductive">Sets.DictionarySet</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;(<a id="opaque:85" class="idref" href="#opaque:85"><span class="id" title="binder">opaque</span></a>:<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="max_block_number:86" class="idref" href="#max_block_number:86"><span class="id" title="binder">max_block_number</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#get_last_finalized_block_number"><span class="id" title="definition">get_last_finalized_block_number</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#finalized_blocks:84"><span class="id" title="variable">finalized_blocks</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:85"><span class="id" title="variable">opaque</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">r</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Preliminars.html#g"><span class="id" title="definition">g</span></a> (<a class="idref" href="Grandpa.Round.html#get_all_precommit_votes"><span class="id" title="definition">Round.get_all_precommit_votes</span></a> <span class="id" title="var">r</span>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#negb"><span class="id" title="definition">negb</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.DataTypes.Sets.html#or"><span class="id" title="definition">Sets.or</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <a id="b2:88" class="idref" href="#b2:88"><span class="id" title="binder">b2</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">b</span>.(<a class="idref" href="Grandpa.Blocks.AnyBlock.html#block_number"><span class="id" title="projection">AnyBlock.block_number</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#6b7621b45fff0af5e2b2cbb2bc2d4e1d"><span class="id" title="notation">&lt;?</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#max_block_number:86"><span class="id" title="variable">max_block_number</span></a>)%<span class="id" title="var">nat</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#finalized_blocks:84"><span class="id" title="variable">finalized_blocks</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a> <a class="idref" href="Grandpa.Votes.html#block_has_supermajority"><span class="id" title="definition">Votes.block_has_supermajority</span></a> <span class="id" title="var">b</span> (<a class="idref" href="Grandpa.Round.html#get_all_prevote_votes"><span class="id" title="definition">Round.get_all_prevote_votes</span></a> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="get_voter_kind_for_round" class="idref" href="#get_voter_kind_for_round"><span class="id" title="definition">get_voter_kind_for_round</span></a> `{<a id="H:89" class="idref" href="#H:89"><span class="id" title="binder">Io</span></a>} (<a id="v:90" class="idref" href="#v:90"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="round_number:91" class="idref" href="#round_number:91"><span class="id" title="binder">round_number</span></a>:<a class="idref" href="Grandpa.RoundNumber.html#RoundNumber"><span class="id" title="definition">RoundNumber</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> <a class="idref" href="Grandpa.VoterState.html#VoterKind"><span class="id" title="inductive">VoterKind</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.DataTypes.Dictionary.html#lookup"><span class="id" title="definition">Dictionary.lookup</span></a>  <a class="idref" href="Grandpa.Protocol.Protocol.html#v:90"><span class="id" title="variable">v</span></a> (<a class="idref" href="Grandpa.Protocol.Io.html#io_get_round_voters"><span class="id" title="method">io_get_round_voters</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#round_number:91"><span class="id" title="variable">round_number</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="get_voter_state" class="idref" href="#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> (<a id="v:92" class="idref" href="#v:92"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="state:93" class="idref" href="#state:93"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> <a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.DataTypes.Dictionary.html#lookup"><span class="id" title="definition">Dictionary.lookup</span></a>  <a class="idref" href="Grandpa.Protocol.Protocol.html#v:92"><span class="id" title="variable">v</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:93"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#voters_state"><span class="id" title="projection">voters_state</span></a>) .<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="is_voter_for_round" class="idref" href="#is_voter_for_round"><span class="id" title="definition">is_voter_for_round</span></a> `{<a id="H:94" class="idref" href="#H:94"><span class="id" title="binder">Io</span></a>} (<a id="v:95" class="idref" href="#v:95"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="round_number:96" class="idref" href="#round_number:96"><span class="id" title="binder">round_number</span></a>:<a class="idref" href="Grandpa.RoundNumber.html#RoundNumber"><span class="id" title="definition">RoundNumber</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.DataTypes.Option.html#is_some"><span class="id" title="definition">is_some</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_kind_for_round"><span class="id" title="definition">get_voter_kind_for_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#v:95"><span class="id" title="variable">v</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#round_number:96"><span class="id" title="variable">round_number</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+All the blocks on all the rounds that a voter can finalize that haven
+been finalized.
+
+<div class="paragraph"> </div>
+
+First, we get all the blocks that the current voter knows has been finalized.
+Then get all the rounds in witch the current voter has participated
+until now.
+We inspect every round to see if we can finalize now a block that haven been
+finalized before.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Program Definition</span> <a id="get_blocks_to_finalize" class="idref" href="#get_blocks_to_finalize"><span class="id" title="definition">get_blocks_to_finalize</span></a> `{<a id="H:97" class="idref" href="#H:97"><span class="id" title="binder">Io</span></a>} (<a id="voter:98" class="idref" href="#voter:98"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="vs:99" class="idref" href="#vs:99"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="finalizeds:100" class="idref" href="#finalizeds:100"><span class="id" title="binder">finalizeds</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:99"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#finalized_blocks"><span class="id" title="projection">VoterState.finalized_blocks</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="all_previous_rounds:101" class="idref" href="#all_previous_rounds:101"><span class="id" title="binder">all_previous_rounds</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Vectors.VectorDef.html#to_list"><span class="id" title="definition">VectorDef.to_list</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Vectors.VectorDef.html#take"><span class="id" title="definition">VectorDef.take</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:99"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">-</span></a>1)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:99"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#rounds"><span class="id" title="projection">VoterState.rounds</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="predicate:103" class="idref" href="#predicate:103"><span class="id" title="binder">predicate</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;: <a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;:=<span class="id" title="keyword">fun</span> <a id="opaque:102" class="idref" href="#opaque:102"><span class="id" title="binder">opaque</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#is_voter_for_round"><span class="id" title="definition">is_voter_for_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:98"><span class="id" title="variable">voter</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#get_round_number"><span class="id" title="definition">OpaqueRound.get_round_number</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:102"><span class="id" title="variable">opaque</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="filtered_rounds:104" class="idref" href="#filtered_rounds:104"><span class="id" title="binder">filtered_rounds</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;:= <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#filter"><span class="id" title="definition">List.filter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#predicate:103"><span class="id" title="variable">predicate</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#all_previous_rounds:101"><span class="id" title="variable">all_previous_rounds</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#fold_left"><span class="id" title="definition">List.fold_left</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <a id="acc:105" class="idref" href="#acc:105"><span class="id" title="binder">acc</span></a> <a id="opaque:106" class="idref" href="#opaque:106"><span class="id" title="binder">opaque</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#should_finalize"><span class="id" title="definition">should_finalize</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#finalizeds:100"><span class="id" title="variable">finalizeds</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:106"><span class="id" title="variable">opaque</span></a>  <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:106"><span class="id" title="variable">opaque</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a><span class="id" title="var">b</span><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::list_scope:x_'::'_x"><span class="id" title="notation">::</span></a><a class="idref" href="Grandpa.Protocol.Protocol.html#acc:105"><span class="id" title="variable">acc</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#acc:105"><span class="id" title="variable">acc</span></a> <span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#filtered_rounds:104"><span class="id" title="variable">filtered_rounds</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#nil"><span class="id" title="abbreviation">List.nil</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Made to be used together with get_blocks_to_finalize.
+Take a block and all the info needed to build a <span class="inlinecode"><a class="idref" href="Grandpa.Message.html#FinalizeBlock"><span class="id" title="record">FinalizeBlock</span></a></span>,
+then adds it to the finalized_blocks in the global state.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="finalize_block" class="idref" href="#finalize_block"><span class="id" title="definition">finalize_block</span></a> (<a id="t:107" class="idref" href="#t:107"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:108" class="idref" href="#voter:108"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:109" class="idref" href="#state:109"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="opaque_and_block:110" class="idref" href="#opaque_and_block:110"><span class="id" title="binder">opaque_and_block</span></a>:<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRound.OpaqueRoundState</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:108"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:109"><span class="id" title="variable">state</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">vs</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<a id="opaque:111" class="idref" href="#opaque:111"><span class="id" title="binder">opaque</span></a>,<a id="b:112" class="idref" href="#b:112"><span class="id" title="binder">b</span></a>) := <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque_and_block:110"><span class="id" title="variable">opaque_and_block</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="fin_msg:113" class="idref" href="#fin_msg:113"><span class="id" title="binder">fin_msg</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:<a class="idref" href="Grandpa.Message.html#FinalizeBlock"><span class="id" title="record">Message.FinalizeBlock</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:={|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#prevoters"><span class="id" title="projection">prevoters</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_prevote_voters"><span class="id" title="definition">OpaqueRound.get_prevote_voters</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:111"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#precommiters"><span class="id" title="projection">precommiters</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_precommit_voters"><span class="id" title="definition">OpaqueRound.get_precommit_voters</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:111"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#prevotes"><span class="id" title="projection">prevotes</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_all_prevote_votes"><span class="id" title="definition">OpaqueRound.get_all_prevote_votes</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:111"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#precommits"><span class="id" title="projection">precommits</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_all_precommit_votes"><span class="id" title="definition">OpaqueRound.get_all_precommit_votes</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:111"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_finalized_block"><span class="id" title="definition">build_and_send_finalized_block</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:107"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:109"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:108"><span class="id" title="variable">voter</span></a> <span class="id" title="var">vs</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#b:112"><span class="id" title="variable">b</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#fin_msg:113"><span class="id" title="variable">fin_msg</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#opaque:111"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:109"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Multiple voters may finalize the same block if they notice it can be
+finalized but haven't received a finalization message.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="finalization" class="idref" href="#finalization"><span class="id" title="definition">finalization</span></a> `{<a id="H:114" class="idref" href="#H:114"><span class="id" title="binder">Io</span></a>} (<a id="t:115" class="idref" href="#t:115"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="state:116" class="idref" href="#state:116"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:117" class="idref" href="#voter:117"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="vs:118" class="idref" href="#vs:118"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#fold_left"><span class="id" title="definition">List.fold_left</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.Protocol.html#finalize_block"><span class="id" title="definition">finalize_block</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:115"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:117"><span class="id" title="variable">voter</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.Protocol.html#get_blocks_to_finalize"><span class="id" title="definition">get_blocks_to_finalize</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:117"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:118"><span class="id" title="variable">vs</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#state:116"><span class="id" title="variable">state</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+See if the current round is completable and advance to next round in such case.
+If voter is the primary voter, we also broadcast the estimate.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="wait_step_for_new_round" class="idref" href="#wait_step_for_new_round"><span class="id" title="definition">wait_step_for_new_round</span></a> `{<a id="H:119" class="idref" href="#H:119"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:120" class="idref" href="#t:120"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:121" class="idref" href="#voter:121"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:122" class="idref" href="#vs:122"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:123" class="idref" href="#state:123"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="tower:124" class="idref" href="#tower:124"><span class="id" title="binder">tower</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#rounds"><span class="id" title="projection">VoterState.rounds</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#get"><span class="id" title="definition">Vectors.get</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#tower:124"><span class="id" title="variable">tower</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#to_nat"><span class="id" title="definition">RoundNumber.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;|<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundStateC"><span class="id" title="constructor">OpaqueRound.OpaqueRoundStateC</span></a> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Estimate.html#try_to_complete_round"><span class="id" title="axiom">Estimate.try_to_complete_round</span></a> <span class="id" title="var">r</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="new_vs:125" class="idref" href="#new_vs:125"><span class="id" title="binder">new_vs</span></a> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#init_next_round_voter_state_from"><span class="id" title="definition">State.init_next_round_voter_state_from</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.Io.html#io_get_round_voters"><span class="id" title="method">io_get_round_voters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.RoundNumber.html#from_nat"><span class="id" title="definition">RoundNumber.from_nat</span></a> 1<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#t:120"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="updated_state:126" class="idref" href="#updated_state:126"><span class="id" title="binder">updated_state</span></a> := <a class="idref" href="Grandpa.Protocol.State.html#update_voter_state"><span class="id" title="definition">update_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:123"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:121"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#new_vs:125"><span class="id" title="variable">new_vs</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="Grandpa.Protocol.Io.html#voter_is_primary_for_round"><span class="id" title="definition">voter_is_primary_for_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:121"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Estimate.html#get_estimate"><span class="id" title="definition">Estimate.get_estimate</span></a> <span class="id" title="var">r</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">b</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#build_and_send_primary_estimate"><span class="id" title="definition">build_and_send_primary_estimate</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:120"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:123"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:121"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:122"><span class="id" title="variable">vs</span></a> <span class="id" title="var">b</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#updated_state:126"><span class="id" title="variable">updated_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#updated_state:126"><span class="id" title="variable">updated_state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:123"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:123"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="should_wait_for_next_round" class="idref" href="#should_wait_for_next_round"><span class="id" title="definition">should_wait_for_next_round</span></a> `{<a id="H:127" class="idref" href="#H:127"><span class="id" title="binder">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="t:128" class="idref" href="#t:128"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="state:129" class="idref" href="#state:129"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:130" class="idref" href="#voter:130"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="vs:131" class="idref" href="#vs:131"><span class="id" title="binder">vs</span></a>:<a class="idref" href="Grandpa.VoterState.html#VoterState"><span class="id" title="record">VoterState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_kind_for_round"><span class="id" title="definition">get_voter_kind_for_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:130"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.VoterState.html#VoterKindC"><span class="id" title="constructor">VoterKindC</span></a> <a class="idref" href="Grandpa.VoterState.html#Bizantine"><span class="id" title="constructor">Bizantine</span></a> <span class="id" title="var">_</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Io.html#io_bizantine_advance_round"><span class="id" title="method">io_bizantine_advance_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:128"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:130"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> (<a class="idref" href="Grandpa.VoterState.html#VoterKindC"><span class="id" title="constructor">VoterKindC</span></a> <span class="id" title="var">_</span> <span class="id" title="var">vote_right</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">vote_right</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VotePrevote"><span class="id" title="constructor">VotePrevote</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒ <a class="idref" href="Grandpa.DataTypes.Option.html#is_some"><span class="id" title="definition">is_some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#prevoted_block"><span class="id" title="projection">VoterState.prevoted_block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VotePrecommit"><span class="id" title="constructor">VotePrecommit</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒ <a class="idref" href="Grandpa.DataTypes.Option.html#is_some"><span class="id" title="definition">is_some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#precommited_block"><span class="id" title="projection">VoterState.precommited_block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VoteBoth"><span class="id" title="constructor">VoteBoth</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒ <a class="idref" href="Grandpa.DataTypes.Option.html#is_some"><span class="id" title="definition">is_some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#prevoted_block"><span class="id" title="projection">VoterState.prevoted_block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#::bool_scope:x_'&amp;&amp;'_x"><span class="id" title="notation">&amp;&amp;</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.DataTypes.Option.html#is_some"><span class="id" title="definition">is_some</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#vs:131"><span class="id" title="variable">vs</span></a>.(<a class="idref" href="Grandpa.VoterState.html#precommited_block"><span class="id" title="projection">VoterState.precommited_block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+If the participant (voter) has one of
+the following conditions (<span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#should_wait_for_next_round"><span class="id" title="definition">should_wait_for_next_round</span></a></span>):
+<ul class="doclist">
+<li> Is a byzantine voter wishing to advance round.
+
+</li>
+<li> Is a voter that already fulfilled it's obligations for this round.
+
+</li>
+<li> Isn't a voter for this round.
+
+</li>
+</ul>
+We see if the current round (for the voter) is completable and if it is,
+we advance the voter local state to a new round. Otherwise do nothing.
+
+<div class="paragraph"> </div>
+
+Otherwise we get perform the corresponding action for the particular voter
+in the protocol or the byzantine action.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="voter_round_step_aux" class="idref" href="#voter_round_step_aux"><span class="id" title="definition">voter_round_step_aux</span></a> `{<a id="H:133" class="idref" href="#H:133"><span class="id" title="binder">Io</span></a>} (<a id="t:134" class="idref" href="#t:134"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="state:135" class="idref" href="#state:135"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>) (<a id="voter:136" class="idref" href="#voter:136"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>): <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">voter_state_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#should_wait_for_next_round"><span class="id" title="definition">should_wait_for_next_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">voter_state_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#wait_step_for_new_round"><span class="id" title="definition">wait_step_for_new_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">voter_state_</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_kind_for_round"><span class="id" title="definition">get_voter_kind_for_round</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">voter_state_</span>.(<a class="idref" href="Grandpa.VoterState.html#round_number"><span class="id" title="projection">VoterState.round_number</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a>(<a class="idref" href="Grandpa.VoterState.html#VoterKindC"><span class="id" title="constructor">VoterKindC</span></a> <span class="id" title="var">category</span> <span class="id" title="var">kind_</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">kind_</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VotePrevote"><span class="id" title="constructor">VotePrevote</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step"><span class="id" title="definition">prevoter_step</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">category</span> <span class="id" title="var">voter_state_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VotePrecommit"><span class="id" title="constructor">VotePrecommit</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#precommit_step"><span class="id" title="definition">precommit_step</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">category</span> <span class="id" title="var">voter_state_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="Grandpa.VoterState.html#VoteBoth"><span class="id" title="constructor">VoteBoth</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">voter_state_</span>.(<a class="idref" href="Grandpa.VoterState.html#prevoted_block"><span class="id" title="projection">VoterState.prevoted_block</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">voter_state_</span>.(<a class="idref" href="Grandpa.VoterState.html#precommited_block"><span class="id" title="projection">VoterState.precommited_block</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#precommit_step"><span class="id" title="definition">precommit_step</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">category</span> <span class="id" title="var">voter_state_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#prevoter_step"><span class="id" title="definition">prevoter_step</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:134"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:136"><span class="id" title="variable">voter</span></a> <span class="id" title="var">category</span> <span class="id" title="var">voter_state_</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:135"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+First we attempt to finalize all the blocks that we see as finalized but
+that aren't still finalized by some one.
+
+<div class="paragraph"> </div>
+
+Then we really perform the Grandpa protocol or the byzantiner actions for
+this time.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="voter_round_step" class="idref" href="#voter_round_step"><span class="id" title="definition">voter_round_step</span></a> `{<a id="H:138" class="idref" href="#H:138"><span class="id" title="binder">Io</span></a>} (<a id="t:139" class="idref" href="#t:139"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="state:140" class="idref" href="#state:140"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>) (<a id="voter:141" class="idref" href="#voter:141"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>): <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:141"><span class="id" title="variable">voter</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:140"><span class="id" title="variable">state</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">vs</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#voter_round_step_aux"><span class="id" title="definition">voter_round_step_aux</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#t:139"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.Protocol.html#finalization"><span class="id" title="definition">finalization</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:139"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:140"><span class="id" title="variable">state</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#voter:141"><span class="id" title="variable">voter</span></a> <span class="id" title="var">vs</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#voter:141"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state:140"><span class="id" title="variable">state</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+This function models the grandpa protocol together with byzantine voters.
+
+<div class="paragraph"> </div>
+
+If a particular participant is byzantine in a round, they send messages
+as dictated by the functions in Io.
+
+<div class="paragraph"> </div>
+
+If a participant is honest in a round, it follows the grandpa protocol.
+
+<div class="paragraph"> </div>
+
+This function expect to be run after a votes update.
+This means that all participants of the model have received all the
+messages that they are supposed to receive at this time.
+
+<div class="paragraph"> </div>
+
+As we separate the process of reception of votes/messages from the emission
+of them, we can update every voter local state independently.
+This update for a single voter is done in <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Protocol.html#voter_round_step"><span class="id" title="definition">voter_round_step</span></a></span>.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <a id="voters_round_step" class="idref" href="#voters_round_step"><span class="id" title="definition">voters_round_step</span></a> `{<a id="H:142" class="idref" href="#H:142"><span class="id" title="binder">Io</span></a>} (<a id="t:143" class="idref" href="#t:143"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) (<a id="state:144" class="idref" href="#state:144"><span class="id" title="binder">state</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>): <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="voters:145" class="idref" href="#voters:145"><span class="id" title="binder">voters</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#map"><span class="id" title="definition">List.map</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> (<a class="idref" href="Grandpa.DataTypes.Dictionary.html#to_list"><span class="id" title="definition">Dictionary.to_list</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:144"><span class="id" title="variable">state</span></a>.(<a class="idref" href="Grandpa.Protocol.State.html#voters_state"><span class="id" title="projection">voters_state</span></a>))<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#fold_left"><span class="id" title="definition">List.fold_left</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#voter_round_step"><span class="id" title="definition">voter_round_step</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:143"><span class="id" title="variable">t</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#voters:145"><span class="id" title="variable">voters</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#state:144"><span class="id" title="variable">state</span></a> .<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <a id="get_state_up_to_nat_aux" class="idref" href="#get_state_up_to_nat_aux"><span class="id" title="definition">get_state_up_to_nat_aux</span></a> `{<a id="H:146" class="idref" href="#H:146"><span class="id" title="binder">Io</span></a>} (<a id="n:147" class="idref" href="#n:147"><span class="id" title="binder">n</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a>) (<a id="state_0:148" class="idref" href="#state_0:148"><span class="id" title="binder">state_0</span></a>:<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#n:147"><span class="id" title="variable">n</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| 0 ⇒ <a class="idref" href="Grandpa.Protocol.Protocol.html#state_0:148"><span class="id" title="variable">state_0</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#S"><span class="id" title="constructor">S</span></a> <span class="id" title="var">m</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="old_state:151" class="idref" href="#old_state:151"><span class="id" title="binder">old_state</span></a> := <a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to_nat_aux:149"><span class="id" title="definition">get_state_up_to_nat_aux</span></a> <span class="id" title="var">m</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#state_0:148"><span class="id" title="variable">state_0</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#voters_round_step"><span class="id" title="definition">voters_round_step</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Time.html#from_nat"><span class="id" title="definition">Time.from_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#n:147"><span class="id" title="variable">n</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="Grandpa.Protocol.StateMessages.html#update_votes"><span class="id" title="definition">update_votes</span></a> (<a class="idref" href="Grandpa.Time.html#from_nat"><span class="id" title="definition">Time.from_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#n:147"><span class="id" title="variable">n</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#old_state:151"><span class="id" title="variable">old_state</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="initial_state" class="idref" href="#initial_state"><span class="id" title="definition">initial_state</span></a> `{<a id="io:152" class="idref" href="#io:152"><span class="id" title="binder">io</span></a>:<a class="idref" href="Grandpa.Protocol.Io.html#Io"><span class="id" title="class">Io</span></a>} :<a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a id="zero_round_dict:153" class="idref" href="#zero_round_dict:153"><span class="id" title="binder">zero_round_dict</span></a> := <a class="idref" href="Grandpa.Protocol.Io.html#io_get_round_voters"><span class="id" title="method">io_get_round_voters</span></a> (<a class="idref" href="Grandpa.RoundNumber.html#from_nat"><span class="id" title="definition">RoundNumber.from_nat</span></a> 0)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.State.html#make_initial_state_from"><span class="id" title="definition">State.make_initial_state_from</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#zero_round_dict:153"><span class="id" title="variable">zero_round_dict</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="get_state_up_to" class="idref" href="#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a> `{<a id="H:154" class="idref" href="#H:154"><span class="id" title="binder">Io</span></a>} (<a id="t:155" class="idref" href="#t:155"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>) : <a class="idref" href="Grandpa.Protocol.State.html#State"><span class="id" title="record">State</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to_nat_aux"><span class="id" title="definition">get_state_up_to_nat_aux</span></a> (<a class="idref" href="Grandpa.Time.html#to_nat"><span class="id" title="definition">Time.to_nat</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#t:155"><span class="id" title="variable">t</span></a>) <a class="idref" href="Grandpa.Protocol.Protocol.html#initial_state"><span class="id" title="definition">initial_state</span></a>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool</span>.<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">list</span>.<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math</span>.<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">natWrapper</span>.<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

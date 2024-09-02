@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Protocol.Proofs.Consistency.VoterStateExists</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Protocol.Proofs.Consistency.VoterStateExists</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="library">Voters</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Preliminars.html#"><span class="id" title="library">Preliminars</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Estimate.html#"><span class="id" title="library">Estimate</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.OpaqueRound.html#"><span class="id" title="library">OpaqueRound</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Round.html#"><span class="id" title="library">Round</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Time.html#"><span class="id" title="library">Time</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.RoundNumber.html#"><span class="id" title="library">RoundNumber</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.VoterState.html#"><span class="id" title="library">VoterState</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#"><span class="id" title="library">Vectors</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Message.html#"><span class="id" title="library">Message</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Count.html#"><span class="id" title="library">DataTypes.List.Count</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Fold.html#"><span class="id" title="library">DataTypes.List.Fold</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Option.html#"><span class="id" title="library">DataTypes.Option</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.OpaqueRound.html#"><span class="id" title="library">OpaqueRound</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.State.html#"><span class="id" title="library">Protocol.State</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.StateMessages.html#"><span class="id" title="library">Protocol.StateMessages</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#"><span class="id" title="library">Protocol.FinalizedBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#"><span class="id" title="library">Protocol.Protocol</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Functor.html#"><span class="id" title="library">Classes.Functor</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.All.html#"><span class="id" title="library">Classes.Math.All</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.List.html#"><span class="id" title="library">Instances.List</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Io.html#"><span class="id" title="library">Protocol.Io</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#"><span class="id" title="library">Protocol</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Proof that all participants of the protocol has a state
+in the protocol at any time.
+See the constraints for the round 0 in the Io class.
+We ask for the voters of all time to be participants of the
+vote 0.
+This requirement isn't a big restriction for the model and is a good
+theoretical tool to have.
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="ProtocolVoterStateExistsConsistency" class="idref" href="#ProtocolVoterStateExistsConsistency"><span class="id" title="section">ProtocolVoterStateExistsConsistency</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">list</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">natWrapper</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="IsParticipant" class="idref" href="#IsParticipant"><span class="id" title="definition">IsParticipant</span></a> `{<a id="io:1" class="idref" href="#io:1"><span class="id" title="binder">io</span></a>:<a class="idref" href="Grandpa.Protocol.Io.html#Io"><span class="id" title="class">Io</span></a>} (<a id="v:2" class="idref" href="#v:2"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) :<span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">∃</span></a> <a id="vs:3" class="idref" href="#vs:3"><span class="id" title="binder">vs</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#v:2"><span class="id" title="variable">v</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#initial_state"><span class="id" title="definition">initial_state</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#vs:3"><span class="id" title="variable">vs</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <a id="participants_has_voter_state_always" class="idref" href="#participants_has_voter_state_always"><span class="id" title="lemma">participants_has_voter_state_always</span></a> `{<a id="io:4" class="idref" href="#io:4"><span class="id" title="binder">io</span></a>:<a class="idref" href="Grandpa.Protocol.Io.html#Io"><span class="id" title="class">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="v:5" class="idref" href="#v:5"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="v_in_initial_state:6" class="idref" href="#v_in_initial_state:6"><span class="id" title="binder">v_in_initial_state</span></a> : <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#IsParticipant"><span class="id" title="definition">IsParticipant</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#v:5"><span class="id" title="variable">v</span></a>)<br/>
+&nbsp;&nbsp;:<span class="id" title="keyword">∀</span> <a id="t:7" class="idref" href="#t:7"><span class="id" title="binder">t</span></a>, <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">∃</span></a> <a id="vs:8" class="idref" href="#vs:8"><span class="id" title="binder">vs</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#v:5"><span class="id" title="variable">v</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#t:7"><span class="id" title="variable">t</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#vs:8"><span class="id" title="variable">vs</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Corollary</span> <a id="if_has_voter_state_is_participant" class="idref" href="#if_has_voter_state_is_participant"><span class="id" title="lemma">if_has_voter_state_is_participant</span></a> `{<a id="io:9" class="idref" href="#io:9"><span class="id" title="binder">io</span></a>:<a class="idref" href="Grandpa.Protocol.Io.html#Io"><span class="id" title="class">Io</span></a>}<br/>
+&nbsp;&nbsp;(<a id="v:10" class="idref" href="#v:10"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="has_voter_state:13" class="idref" href="#has_voter_state:13"><span class="id" title="binder">has_voter_state</span></a>: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">∃</span></a> <a id="t:11" class="idref" href="#t:11"><span class="id" title="binder">t</span></a> <a id="vs:12" class="idref" href="#vs:12"><span class="id" title="binder">vs</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#v:10"><span class="id" title="variable">v</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#t:11"><span class="id" title="variable">t</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#vs:12"><span class="id" title="variable">vs</span></a>)<br/>
+&nbsp;&nbsp;:<span class="id" title="keyword">∀</span> <a id="t:14" class="idref" href="#t:14"><span class="id" title="binder">t</span></a>, <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">∃</span></a> <a id="vs:15" class="idref" href="#vs:15"><span class="id" title="binder">vs</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Protocol.Protocol.html#get_voter_state"><span class="id" title="definition">get_voter_state</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#v:10"><span class="id" title="variable">v</span></a> (<a class="idref" href="Grandpa.Protocol.Protocol.html#get_state_up_to"><span class="id" title="definition">get_state_up_to</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#t:14"><span class="id" title="variable">t</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#vs:15"><span class="id" title="variable">vs</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#ProtocolVoterStateExistsConsistency"><span class="id" title="section">ProtocolVoterStateExistsConsistency</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

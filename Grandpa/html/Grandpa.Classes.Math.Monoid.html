@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Classes.Math.Monoid</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Classes.Math.Monoid</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#"><span class="id" title="library">Classes.Math.Semigroup</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#"><span class="id" title="module">Semigroup</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="Monoid" class="idref" href="#Monoid"><span class="id" title="record">Monoid</span></a> (<a id="T:1" class="idref" href="#T:1"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) `{<a id="H:2" class="idref" href="#H:2"><span class="id" title="binder">Semigroup</span></a> <a id="H:2" class="idref" href="#H:2"><span class="id" title="binder">T</span></a>} := {<br/>
+&nbsp;&nbsp;<a id="neutro" class="idref" href="#neutro"><span class="id" title="projection">neutro</span></a>: <a class="idref" href="Grandpa.Classes.Math.Monoid.html#T:1"><span class="id" title="variable">T</span></a>;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="MonoidLaws" class="idref" href="#MonoidLaws"><span class="id" title="record">MonoidLaws</span></a> (<a id="T:5" class="idref" href="#T:5"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) <br/>
+&nbsp;&nbsp;`{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a id="sg:6" class="idref" href="#sg:6"><span class="id" title="binder">sg</span></a>:<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#Semigroup"><span class="id" title="class">Semigroup</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#T:5"><span class="id" title="variable">T</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="sgl:7" class="idref" href="#sgl:7"><span class="id" title="binder">sgl</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#SemigroupLaws"><span class="id" title="class">SemigroupLaws</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#T:5"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#sg:6"><span class="id" title="variable">sg</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="m:8" class="idref" href="#m:8"><span class="id" title="binder">m</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Monoid.html#Monoid"><span class="id" title="class">Monoid</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#T:5"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#sg:6"><span class="id" title="variable">sg</span></a><br/>
+&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;:={<br/>
+&nbsp;&nbsp;<a id="left_neutro" class="idref" href="#left_neutro"><span class="id" title="projection">left_neutro</span></a> : <span class="id" title="keyword">∀</span> <a id="t:10" class="idref" href="#t:10"><span class="id" title="binder">t</span></a>, <a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#t:10"><span class="id" title="variable">t</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#t:10"><span class="id" title="variable">t</span></a>;<br/>
+&nbsp;&nbsp;<a id="right_neutro" class="idref" href="#right_neutro"><span class="id" title="projection">right_neutro</span></a> : <span class="id" title="keyword">∀</span> <a id="t:12" class="idref" href="#t:12"><span class="id" title="binder">t</span></a>, <a class="idref" href="Grandpa.Classes.Math.Monoid.html#t:12"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#t:12"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Unfold</span> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Resolve</span> <span class="id" title="var">left_neutro</span> <span class="id" title="var">right_neutro</span>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math_scope</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

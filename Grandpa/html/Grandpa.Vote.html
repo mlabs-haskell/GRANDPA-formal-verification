@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Vote</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Vote</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.Block.html#"><span class="id" title="library">Blocks.Block</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voter.html#"><span class="id" title="library">Voter</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="library">Voters</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Voter.html#"><span class="id" title="module">Voter</span></a>.<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="module">Voters</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Instances.Tuple.html#"><span class="id" title="library">Instances.Tuple</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Instances.Nat.html#"><span class="id" title="library">Instances.Nat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Logic.JMeq.html#"><span class="id" title="library">Coq.Logic.JMeq</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Vote
+
+<div class="paragraph"> </div>
+
+From the paper:
+
+<div class="paragraph"> </div>
+
+<pre>
+  A vote is a block hash, together with some metadata such as round number 
+  and the type of vote, such as prevote or precommit, all signed with a 
+  voter’s private key
+</pre>
+
+<div class="paragraph"> </div>
+
+Following the same approach as with the Blocks, we choose to replace the 
+block hash with the real block. This makes proofs easier.
+
+<div class="paragraph"> </div>
+
+Round number would be added later when we add Time and Rounds, this 
+  simplifies the work with a Vote.
+
+<div class="paragraph"> </div>
+
+We don't have types for votes, instead when needed, we distinguish
+them by maintaining two different set of votes, one for precommits 
+and other for prevotes inside <span class="inlinecode"><a class="idref" href="Grandpa.Round.html#RoundState"><span class="id" title="inductive">RoundState</span></a></span>.
+
+<div class="paragraph"> </div>
+
+However, we want to tie a Vote with a particular set of Voters 
+ to ensure that a collection of votes refers to the same set of voters.
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Record</span> <a id="Vote" class="idref" href="#Vote"><span class="id" title="record">Vote</span></a><br/>
+&nbsp;&nbsp;(<a id="voters:1" class="idref" href="#voters:1"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;:<span class="id" title="keyword">Type</span> <br/>
+&nbsp;&nbsp;:= <br/>
+&nbsp;&nbsp;<span class="id" title="var">VoteC</span><br/>
+&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a id="block_number" class="idref" href="#block_number"><span class="id" title="projection">block_number</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="block" class="idref" href="#block"><span class="id" title="projection">block</span></a>: <a class="idref" href="Grandpa.Blocks.Block.html#Block"><span class="id" title="inductive">Block</span></a> <a class="idref" href="Grandpa.Vote.html#block_number:3"><span class="id" title="method">block_number</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="voter" class="idref" href="#voter"><span class="id" title="projection">voter</span></a> : <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="in_voters" class="idref" href="#in_voters"><span class="id" title="projection">in_voters</span></a>: <a class="idref" href="Grandpa.Voters.html#In"><span class="id" title="definition">Voters.In</span></a> <a class="idref" href="Grandpa.Vote.html#voter:5"><span class="id" title="method">voter</span></a> <a class="idref" href="Grandpa.Vote.html#voters:1"><span class="id" title="variable">voters</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Arguments</span> <a class="idref" href="Grandpa.Vote.html#block_number"><span class="id" title="projection">block_number</span></a> {<span class="id" title="var">voters</span>} .<br/>
+<span class="id" title="keyword">Arguments</span> <a class="idref" href="Grandpa.Vote.html#block"><span class="id" title="projection">block</span></a> {<span class="id" title="var">voters</span>} .<br/>
+<span class="id" title="keyword">Arguments</span> <a class="idref" href="Grandpa.Vote.html#voter"><span class="id" title="projection">voter</span></a> {<span class="id" title="var">voters</span>} .<br/>
+<span class="id" title="keyword">Arguments</span> <a class="idref" href="Grandpa.Vote.html#in_voters"><span class="id" title="projection">in_voters</span></a> {<span class="id" title="var">voters</span>} .<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_anyblock" class="idref" href="#to_anyblock"><span class="id" title="definition">to_anyblock</span></a><br/>
+&nbsp;&nbsp;{<a id="voters:7" class="idref" href="#voters:7"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a> }<br/>
+&nbsp;&nbsp;(<a id="vote:8" class="idref" href="#vote:8"><span class="id" title="binder">vote</span></a>: <a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters:7"><span class="id" title="variable">voters</span></a> )<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Blocks.AnyBlock.html#to_any"><span class="id" title="definition">AnyBlock.to_any</span></a> <a class="idref" href="Grandpa.Vote.html#vote:8"><span class="id" title="variable">vote</span></a>.(<a class="idref" href="Grandpa.Vote.html#block"><span class="id" title="projection">block</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_tuple" class="idref" href="#to_tuple"><span class="id" title="definition">to_tuple</span></a><br/>
+&nbsp;&nbsp;{<a id="voters:9" class="idref" href="#voters:9"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>}<br/>
+&nbsp;&nbsp;(<a id="vote:10" class="idref" href="#vote:10"><span class="id" title="binder">vote</span></a>:<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters:9"><span class="id" title="variable">voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a> <br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Vote.html#vote:10"><span class="id" title="variable">vote</span></a>.(<a class="idref" href="Grandpa.Vote.html#voter"><span class="id" title="projection">voter</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="Grandpa.Vote.html#to_anyblock"><span class="id" title="definition">to_anyblock</span></a> <a class="idref" href="Grandpa.Vote.html#vote:10"><span class="id" title="variable">vote</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="Instances" class="idref" href="#Instances"><span class="id" title="section">Instances</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="vote_eqb" class="idref" href="#vote_eqb"><span class="id" title="definition">vote_eqb</span></a> <br/>
+&nbsp;&nbsp;{<a id="voters:11" class="idref" href="#voters:11"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>}<br/>
+&nbsp;&nbsp;(<a id="vote1:12" class="idref" href="#vote1:12"><span class="id" title="binder">vote1</span></a> <a id="vote2:13" class="idref" href="#vote2:13"><span class="id" title="binder">vote2</span></a>: <a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters:11"><span class="id" title="variable">voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Vote.html#to_tuple"><span class="id" title="definition">to_tuple</span></a> <a class="idref" href="Grandpa.Vote.html#vote1:12"><span class="id" title="variable">vote1</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Vote.html#to_tuple"><span class="id" title="definition">to_tuple</span></a> <a class="idref" href="Grandpa.Vote.html#vote2:13"><span class="id" title="variable">vote2</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbVote" class="idref" href="#EqbVote"><span class="id" title="instance">EqbVote</span></a> (<a id="voters:14" class="idref" href="#voters:14"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>): <a class="idref" href="Grandpa.Classes.Eqb.html#Eqb"><span class="id" title="class">Eqb</span></a> (<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters:14"><span class="id" title="variable">voters</span></a>) :=<br/>
+{<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> := <a class="idref" href="Grandpa.Vote.html#vote_eqb"><span class="id" title="definition">vote_eqb</span></a><br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Vote.html#EqbVote"><span class="id" title="instance">EqbVote</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>]<span class="id" title="keyword">Instance</span> <a id="EqbLawsVote" class="idref" href="#EqbLawsVote"><span class="id" title="instance">EqbLawsVote</span></a> (<a id="voters:15" class="idref" href="#voters:15"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>) : <a class="idref" href="Grandpa.Classes.Eqb.html#EqbLaws"><span class="id" title="class">EqbLaws</span></a> (<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters:15"><span class="id" title="variable">voters</span></a>) :=<br/>
+{<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Vote.html#Instances"><span class="id" title="section">Instances</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="Cast" class="idref" href="#Cast"><span class="id" title="section">Cast</span></a>.<br/>
+<span class="id" title="keyword">Lemma</span> <a id="cast" class="idref" href="#cast"><span class="id" title="lemma">cast</span></a><br/>
+&nbsp;&nbsp;{<a id="voters1:16" class="idref" href="#voters1:16"><span class="id" title="binder">voters1</span></a> <a id="voters2:17" class="idref" href="#voters2:17"><span class="id" title="binder">voters2</span></a> : <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>} <br/>
+&nbsp;&nbsp;(<a id="are_eq:18" class="idref" href="#are_eq:18"><span class="id" title="binder">are_eq</span></a>: <a class="idref" href="Grandpa.Vote.html#voters1:16"><span class="id" title="variable">voters1</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Vote.html#voters2:17"><span class="id" title="variable">voters2</span></a>) <br/>
+&nbsp;&nbsp;(<a id="v:19" class="idref" href="#v:19"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters1:16"><span class="id" title="variable">voters1</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters2:17"><span class="id" title="variable">voters2</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="cast_jmeq" class="idref" href="#cast_jmeq"><span class="id" title="lemma">cast_jmeq</span></a> <br/>
+&nbsp;&nbsp;{<a id="voters1:20" class="idref" href="#voters1:20"><span class="id" title="binder">voters1</span></a> <a id="voters2:21" class="idref" href="#voters2:21"><span class="id" title="binder">voters2</span></a> : <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>} <br/>
+&nbsp;&nbsp;(<a id="are_eq:22" class="idref" href="#are_eq:22"><span class="id" title="binder">are_eq</span></a>: <a class="idref" href="Grandpa.Vote.html#voters1:20"><span class="id" title="variable">voters1</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Vote.html#voters2:21"><span class="id" title="variable">voters2</span></a>) <br/>
+&nbsp;&nbsp;(<a id="v:23" class="idref" href="#v:23"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Vote.html#voters1:20"><span class="id" title="variable">voters1</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Logic.JMeq.html#JMeq"><span class="id" title="inductive">JMeq</span></a> <a class="idref" href="Grandpa.Vote.html#v:23"><span class="id" title="variable">v</span></a> (<a class="idref" href="Grandpa.Vote.html#cast"><span class="id" title="lemma">cast</span></a> <a class="idref" href="Grandpa.Vote.html#are_eq:22"><span class="id" title="variable">are_eq</span></a> <a class="idref" href="Grandpa.Vote.html#v:23"><span class="id" title="variable">v</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Vote.html#Cast"><span class="id" title="section">Cast</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

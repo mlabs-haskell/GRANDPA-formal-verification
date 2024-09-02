@@ -19,77 +19,156 @@
 <h1 class="libtitle">Library Grandpa.Message</h1>
 
 <div class="code">
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.html#"><span class="id" title="library">Blocks</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Votes.html#"><span class="id" title="library">Votes</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Dictionary.html#"><span class="id" title="library">Dictionary</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Sets.html#"><span class="id" title="library">Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="library">Voters</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voter.html#"><span class="id" title="library">Voter</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Vote.html#"><span class="id" title="library">Vote</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.Unit.html#"><span class="id" title="library">Instances.Unit</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Dictionary.html#"><span class="id" title="library">Dictionary</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Time.html#"><span class="id" title="library">Time</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.RoundNumber.html#"><span class="id" title="library">RoundNumber</span></a>.<br/>
 
 <br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Nat.html#"><span class="id" title="library">Nat</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#"><span class="id" title="library">DataTypes.NatWrapper</span></a>.<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#"><span class="id" title="module">NatWrapper</span></a>.<br/>
+
+<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.Arith.html#"><span class="id" title="library">Coq.Arith.Arith</span></a>.<br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#"><span class="id" title="library">List</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.List.html#"><span class="id" title="library">List</span></a>.<br/>
 
 <br/>
-<span class="id" title="keyword">Record</span> <a id="FinalizeBlock" class="idref" href="#FinalizeBlock"><span class="id" title="record">FinalizeBlock</span></a> :<span class="id" title="keyword">Type</span> <br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Variant</span> <a id="MessageIdPhantom" class="idref" href="#MessageIdPhantom"><span class="id" title="inductive">MessageIdPhantom</span></a> :=  <a id="MessageIdPhantomC" class="idref" href="#MessageIdPhantomC"><span class="id" title="constructor">MessageIdPhantomC</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="MessageId" class="idref" href="#MessageId"><span class="id" title="definition">MessageId</span></a> := <a class="idref" href="Grandpa.DataTypes.NatWrapper.html#NatWrapper"><span class="id" title="record">NatWrapper</span></a> <a class="idref" href="Grandpa.Message.html#MessageIdPhantom"><span class="id" title="inductive">MessageIdPhantom</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="from_nat" class="idref" href="#from_nat"><span class="id" title="definition">from_nat</span></a> := @<a class="idref" href="Grandpa.DataTypes.NatWrapper.html#from_nat"><span class="id" title="definition">NatWrapper.from_nat</span></a> <a class="idref" href="Grandpa.Message.html#MessageIdPhantom"><span class="id" title="inductive">MessageIdPhantom</span></a>.<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_nat" class="idref" href="#to_nat"><span class="id" title="definition">to_nat</span></a> := @<a class="idref" href="Grandpa.DataTypes.NatWrapper.html#to_nat"><span class="id" title="projection">NatWrapper.to_nat</span></a> <a class="idref" href="Grandpa.Message.html#MessageIdPhantom"><span class="id" title="inductive">MessageIdPhantom</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+  The evidence of the voter sending the message
+   to include the block as finalized.
+
+<div class="paragraph"> </div>
+
+  A byzantine voter may send anything.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <a id="FinalizeBlock" class="idref" href="#FinalizeBlock"><span class="id" title="record">FinalizeBlock</span></a> :<span class="id" title="keyword">Type</span><br/>
 &nbsp;&nbsp;:=<br/>
 &nbsp;&nbsp;{<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<a id="prevoters" class="idref" href="#prevoters"><span class="id" title="projection">prevoters</span></a>: <a class="idref" href="Grandpa.Votes.html#Voters"><span class="id" title="record">Voters</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="precommiters" class="idref" href="#precommiters"><span class="id" title="projection">precommiters</span></a>: <a class="idref" href="Grandpa.Votes.html#Voters"><span class="id" title="record">Voters</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="prevotes" class="idref" href="#prevotes"><span class="id" title="projection">prevotes</span></a> : <a class="idref" href="Grandpa.Votes.html#Votes"><span class="id" title="inductive">Votes</span></a> <a class="idref" href="Grandpa.Message.html#prevoters:2"><span class="id" title="method">prevoters</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="precommits" class="idref" href="#precommits"><span class="id" title="projection">precommits</span></a> : <a class="idref" href="Grandpa.Votes.html#Votes"><span class="id" title="inductive">Votes</span></a> <a class="idref" href="Grandpa.Message.html#precommiters:3"><span class="id" title="method">precommiters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a id="prevoters" class="idref" href="#prevoters"><span class="id" title="projection">prevoters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="precommiters" class="idref" href="#precommiters"><span class="id" title="projection">precommiters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="prevotes" class="idref" href="#prevotes"><span class="id" title="projection">prevotes</span></a> : <a class="idref" href="Grandpa.Votes.html#Votes"><span class="id" title="record">Votes</span></a> <a class="idref" href="Grandpa.Message.html#prevoters:4"><span class="id" title="method">prevoters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="precommits" class="idref" href="#precommits"><span class="id" title="projection">precommits</span></a> : <a class="idref" href="Grandpa.Votes.html#Votes"><span class="id" title="record">Votes</span></a> <a class="idref" href="Grandpa.Message.html#precommiters:5"><span class="id" title="method">precommiters</span></a><br/>
 &nbsp;&nbsp;}.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+  The FinalizationMessage inducles a parameter as a hack to
+   store the voter evidence.
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Variant</span> <a id="MessageKind" class="idref" href="#MessageKind"><span class="id" title="inductive">MessageKind</span></a> : <span class="id" title="keyword">Type</span><br/>
 &nbsp;&nbsp;:=<br/>
-&nbsp;&nbsp;| <a id="PreCommitMessage" class="idref" href="#PreCommitMessage"><span class="id" title="constructor">PreCommitMessage</span></a> : <a class="idref" href="Grandpa.Message.html#MessageKind:6"><span class="id" title="inductive">MessageKind</span></a><br/>
-&nbsp;&nbsp;| <a id="PreVoteMessage" class="idref" href="#PreVoteMessage"><span class="id" title="constructor">PreVoteMessage</span></a> : <a class="idref" href="Grandpa.Message.html#MessageKind:6"><span class="id" title="inductive">MessageKind</span></a><br/>
-&nbsp;&nbsp;| <a id="EstimateMessage" class="idref" href="#EstimateMessage"><span class="id" title="constructor">EstimateMessage</span></a>: <a class="idref" href="Grandpa.Message.html#MessageKind:6"><span class="id" title="inductive">MessageKind</span></a><br/>
-&nbsp;&nbsp;| <a id="FinalizationMessage" class="idref" href="#FinalizationMessage"><span class="id" title="constructor">FinalizationMessage</span></a> (<a id="votes:8" class="idref" href="#votes:8"><span class="id" title="binder">votes</span></a>:<a class="idref" href="Grandpa.Message.html#FinalizeBlock"><span class="id" title="record">FinalizeBlock</span></a>) : <a class="idref" href="Grandpa.Message.html#MessageKind:6"><span class="id" title="inductive">MessageKind</span></a>.<br/>
+&nbsp;&nbsp;| <a id="PreCommitMessage" class="idref" href="#PreCommitMessage"><span class="id" title="constructor">PreCommitMessage</span></a> : <a class="idref" href="Grandpa.Message.html#MessageKind:8"><span class="id" title="inductive">MessageKind</span></a><br/>
+&nbsp;&nbsp;| <a id="PreVoteMessage" class="idref" href="#PreVoteMessage"><span class="id" title="constructor">PreVoteMessage</span></a> : <a class="idref" href="Grandpa.Message.html#MessageKind:8"><span class="id" title="inductive">MessageKind</span></a><br/>
+&nbsp;&nbsp;| <a id="EstimateMessage" class="idref" href="#EstimateMessage"><span class="id" title="constructor">EstimateMessage</span></a>: <a class="idref" href="Grandpa.Message.html#MessageKind:8"><span class="id" title="inductive">MessageKind</span></a><br/>
+&nbsp;&nbsp;| <a id="FinalizationMessage" class="idref" href="#FinalizationMessage"><span class="id" title="constructor">FinalizationMessage</span></a> (<a id="votes:10" class="idref" href="#votes:10"><span class="id" title="binder">votes</span></a>:<a class="idref" href="Grandpa.Message.html#FinalizeBlock"><span class="id" title="record">FinalizeBlock</span></a>) : <a class="idref" href="Grandpa.Message.html#MessageKind:8"><span class="id" title="inductive">MessageKind</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+In a real implementation we may distinguish messages by the
+id of the voter is sending it and another id related to it
+(maybe they mantain their own or we use a hash).
+
+<div class="paragraph"> </div>
+
+Whoever our model runs in a single machine and allow us to
+maintain the notion of <i>the total number of messages emitted</i> .
+
+<div class="paragraph"> </div>
+
+The message include all the information to recognize who send it,
+at what time was send and the round at witch this message correspond.
+
+<div class="paragraph"> </div>
+
+For messages we maintain a single global collection storing all the
+messages that haven't been received by all voters.
+
+<div class="paragraph"> </div>
+
+We attempt to deliver a message to all the participants that haven't receive it
+before we start a step in the main model loop.
+As such, every message stores the set of voters that have received it until now.
+
+<div class="paragraph"> </div>
+
+Whenever a message <span class="inlinecode"><a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a></span> field contains all the protocol participants,
+we delete the message from the global collection of messages.
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Record</span> <a id="Message" class="idref" href="#Message"><span class="id" title="record">Message</span></a> :=<br/>
-&nbsp;&nbsp;&nbsp;{ <a id="id" class="idref" href="#id"><span class="id" title="projection">id</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="block" class="idref" href="#block"><span class="id" title="projection">block</span></a>:<a class="idref" href="Grandpa.Blocks.html#AnyBlock"><span class="id" title="definition">AnyBlock</span></a><br/>
+&nbsp;&nbsp;&nbsp;{ <a id="id" class="idref" href="#id"><span class="id" title="projection">id</span></a>:<a class="idref" href="Grandpa.Message.html#MessageId"><span class="id" title="definition">MessageId</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="block" class="idref" href="#block"><span class="id" title="projection">block</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;;<a id="kind" class="idref" href="#kind"><span class="id" title="projection">kind</span></a>: <a class="idref" href="Grandpa.Message.html#MessageKind"><span class="id" title="inductive">MessageKind</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="round" class="idref" href="#round"><span class="id" title="projection">round</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="time" class="idref" href="#time"><span class="id" title="projection">time</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="voter" class="idref" href="#voter"><span class="id" title="projection">voter</span></a>:<a class="idref" href="Grandpa.Votes.html#Voter"><span class="id" title="definition">Voter</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a id="processed_by" class="idref" href="#processed_by"><span class="id" title="projection">processed_by</span></a>:<a class="idref" href="Grandpa.Dictionary.html#Dictionary"><span class="id" title="inductive">Dictionary</span></a> <a class="idref" href="Grandpa.Votes.html#Voter"><span class="id" title="definition">Voter</span></a> <a class="idref" href="Grandpa.Sets.html#Unit"><span class="id" title="inductive">Unit</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="round" class="idref" href="#round"><span class="id" title="projection">round</span></a>:<a class="idref" href="Grandpa.RoundNumber.html#RoundNumber"><span class="id" title="definition">RoundNumber</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="time" class="idref" href="#time"><span class="id" title="projection">time</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="voter" class="idref" href="#voter"><span class="id" title="projection">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a id="processed_by" class="idref" href="#processed_by"><span class="id" title="projection">processed_by</span></a>:<a class="idref" href="Grandpa.DataTypes.Sets.html#DictionarySet"><span class="id" title="inductive">Sets.DictionarySet</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a><br/>
 &nbsp;&nbsp;&nbsp;}.<br/>
 
 <br/>
-<span class="id" title="keyword">Definition</span> <a id="update_message_proccessed" class="idref" href="#update_message_proccessed"><span class="id" title="definition">update_message_proccessed</span></a> (<a id="msg:17" class="idref" href="#msg:17"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>) (<a id="v:18" class="idref" href="#v:18"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Votes.html#Voter"><span class="id" title="definition">Voter</span></a>) := <br/>
+<span class="id" title="keyword">Definition</span> <a id="update_message_proccessed" class="idref" href="#update_message_proccessed"><span class="id" title="definition">update_message_proccessed</span></a> (<a id="msg:19" class="idref" href="#msg:19"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>) (<a id="v:20" class="idref" href="#v:20"><span class="id" title="binder">v</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) :=<br/>
 &nbsp;&nbsp;{|<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">block</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">block</span></a>)<br/>
-;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a> := <a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>)<br/>
-;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">time</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">time</span></a>)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:= <a class="idref" href="Grandpa.Dictionary.html#add"><span class="id" title="definition">Dictionary.add</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.eqb"><span class="id" title="definition">Nat.eqb</span></a> <a class="idref" href="Grandpa.Message.html#v:18"><span class="id" title="variable">v</span></a> <a class="idref" href="Grandpa.Sets.html#UnitC"><span class="id" title="constructor">UnitC</span></a> <a class="idref" href="Grandpa.Message.html#msg:17"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#id"><span class="id" title="projection">id</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">block</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#block"><span class="id" title="projection">block</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a> := <a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#round"><span class="id" title="projection">round</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">time</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#time"><span class="id" title="projection">time</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>:=<a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#voter"><span class="id" title="projection">voter</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>:= <a class="idref" href="Grandpa.DataTypes.Sets.html#add"><span class="id" title="definition">Sets.add</span></a> <a class="idref" href="Grandpa.Message.html#v:20"><span class="id" title="variable">v</span></a> <a class="idref" href="Grandpa.Message.html#msg:19"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#processed_by"><span class="id" title="projection">processed_by</span></a>)<br/>
 &nbsp;&nbsp;|}.<br/>
 
 <br/>
-<span class="id" title="keyword">Lemma</span> <a id="message_to_vote_aux" class="idref" href="#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> (<a id="msg:19" class="idref" href="#msg:19"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>) <br/>
-&nbsp;&nbsp;(<a id="voters:20" class="idref" href="#voters:20"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Votes.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
-&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> (<a class="idref" href="Grandpa.Votes.html#Vote"><span class="id" title="inductive">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:20"><span class="id" title="variable">voters</span></a>).<br/>
+<span class="id" title="keyword">Lemma</span> <a id="message_to_vote_aux" class="idref" href="#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> (<a id="msg:21" class="idref" href="#msg:21"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voters:22" class="idref" href="#voters:22"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a> (<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:22"><span class="id" title="variable">voters</span></a>).<br/>
 
 <br/>
-<span class="id" title="keyword">Definition</span> <a id="message_to_precommit_vote" class="idref" href="#message_to_precommit_vote"><span class="id" title="definition">message_to_precommit_vote</span></a> (<a id="msg:21" class="idref" href="#msg:21"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>) <br/>
-&nbsp;&nbsp;(<a id="voters:22" class="idref" href="#voters:22"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Votes.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
-&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a>(<a class="idref" href="Grandpa.Votes.html#Vote"><span class="id" title="inductive">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:22"><span class="id" title="variable">voters</span></a>) := <br/>
-&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Message.html#msg:21"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>) <span class="id" title="keyword">with</span><br/>
-&nbsp;&nbsp;| <a class="idref" href="Grandpa.Message.html#PreCommitMessage"><span class="id" title="constructor">PreCommitMessage</span></a> ⇒ <a class="idref" href="Grandpa.Message.html#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> <a class="idref" href="Grandpa.Message.html#msg:21"><span class="id" title="variable">msg</span></a> <a class="idref" href="Grandpa.Message.html#voters:22"><span class="id" title="variable">voters</span></a><br/>
+<span class="id" title="keyword">Definition</span> <a id="message_to_precommit_vote" class="idref" href="#message_to_precommit_vote"><span class="id" title="definition">message_to_precommit_vote</span></a> (<a id="msg:23" class="idref" href="#msg:23"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voters:24" class="idref" href="#voters:24"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a>(<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:24"><span class="id" title="variable">voters</span></a>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Message.html#msg:23"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.Message.html#PreCommitMessage"><span class="id" title="constructor">PreCommitMessage</span></a> ⇒ <a class="idref" href="Grandpa.Message.html#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> <a class="idref" href="Grandpa.Message.html#msg:23"><span class="id" title="variable">msg</span></a> <a class="idref" href="Grandpa.Message.html#voters:24"><span class="id" title="variable">voters</span></a><br/>
 &nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a><br/>
 &nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Definition</span> <a id="message_to_prevote_vote" class="idref" href="#message_to_prevote_vote"><span class="id" title="definition">message_to_prevote_vote</span></a> (<a id="msg:23" class="idref" href="#msg:23"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>) <br/>
-&nbsp;&nbsp;(<a id="voters:24" class="idref" href="#voters:24"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Votes.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
-&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a>(<a class="idref" href="Grandpa.Votes.html#Vote"><span class="id" title="inductive">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:24"><span class="id" title="variable">voters</span></a>) := <br/>
-&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Message.html#msg:23"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>) <span class="id" title="keyword">with</span><br/>
-&nbsp;&nbsp;| <a class="idref" href="Grandpa.Message.html#PreVoteMessage"><span class="id" title="constructor">PreVoteMessage</span></a> ⇒ <a class="idref" href="Grandpa.Message.html#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> <a class="idref" href="Grandpa.Message.html#msg:23"><span class="id" title="variable">msg</span></a> <a class="idref" href="Grandpa.Message.html#voters:24"><span class="id" title="variable">voters</span></a><br/>
+<span class="id" title="keyword">Definition</span> <a id="message_to_prevote_vote" class="idref" href="#message_to_prevote_vote"><span class="id" title="definition">message_to_prevote_vote</span></a> (<a id="msg:25" class="idref" href="#msg:25"><span class="id" title="binder">msg</span></a>:<a class="idref" href="Grandpa.Message.html#Message"><span class="id" title="record">Message</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voters:26" class="idref" href="#voters:26"><span class="id" title="binder">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#option"><span class="id" title="inductive">option</span></a>(<a class="idref" href="Grandpa.Vote.html#Vote"><span class="id" title="record">Vote</span></a> <a class="idref" href="Grandpa.Message.html#voters:26"><span class="id" title="variable">voters</span></a>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="Grandpa.Message.html#msg:25"><span class="id" title="variable">msg</span></a>.(<a class="idref" href="Grandpa.Message.html#kind"><span class="id" title="projection">kind</span></a>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="Grandpa.Message.html#PreVoteMessage"><span class="id" title="constructor">PreVoteMessage</span></a> ⇒ <a class="idref" href="Grandpa.Message.html#message_to_vote_aux"><span class="id" title="lemma">message_to_vote_aux</span></a> <a class="idref" href="Grandpa.Message.html#msg:25"><span class="id" title="variable">msg</span></a> <a class="idref" href="Grandpa.Message.html#voters:26"><span class="id" title="variable">voters</span></a><br/>
 &nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a><br/>
 &nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 

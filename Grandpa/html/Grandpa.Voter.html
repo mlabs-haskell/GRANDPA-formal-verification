@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Voter</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Voter</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">DataTypes.Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.Nat.html#"><span class="id" title="library">Instances.Nat</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab6"></a><h1 class="section">Voter</h1>
+
+
+<div class="paragraph"> </div>
+
+
+<div class="paragraph"> </div>
+
+Some requirements about a type that can represent voters:
+<ul class="doclist">
+<li> It must have infinite inhabitants.
+
+</li>
+<li> It must have decidable equality.
+
+</li>
+</ul>
+This means, we can have any number of voters and we can 
+distinguish between them. 
+For this reason we choose to use naturals.
+
+<div class="paragraph"> </div>
+
+Additionally we use the newtype pattern as we would work 
+a lot with other types isomorphic to naturals.
+
+<div class="paragraph"> </div>
+
+We aren't using the NatWrapper module here as 
+it doesn't make sense to make operations over the voters
+other than equality.
+
+<div class="paragraph"> </div>
+
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <a id="Voter" class="idref" href="#Voter"><span class="id" title="record">Voter</span></a> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">VoterC</span> { <a id="to_nat" class="idref" href="#to_nat"><span class="id" title="projection">to_nat</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> }.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="from_nat" class="idref" href="#from_nat"><span class="id" title="definition">from_nat</span></a> (<a id="n:3" class="idref" href="#n:3"><span class="id" title="binder">n</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a>) : <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> <br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Voter.html#VoterC"><span class="id" title="constructor">VoterC</span></a> <a class="idref" href="Grandpa.Voter.html#n:3"><span class="id" title="variable">n</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="VoterInstances" class="idref" href="#VoterInstances"><span class="id" title="section">VoterInstances</span></a>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbVoter" class="idref" href="#EqbVoter"><span class="id" title="instance">EqbVoter</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#Eqb"><span class="id" title="class">Eqb</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> :={<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a id="v1:4" class="idref" href="#v1:4"><span class="id" title="binder">v1</span></a> <a id="v2:5" class="idref" href="#v2:5"><span class="id" title="binder">v2</span></a> := <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Voter.html#to_nat"><span class="id" title="projection">to_nat</span></a> <a class="idref" href="Grandpa.Voter.html#v1:4"><span class="id" title="variable">v1</span></a><a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">)</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">=?</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Voter.html#to_nat"><span class="id" title="projection">to_nat</span></a> <a class="idref" href="Grandpa.Voter.html#v2:5"><span class="id" title="variable">v2</span></a><a class="idref" href="Grandpa.Classes.Eqb.html#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">)</span></a>;<br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Voter.html#EqbVoter"><span class="id" title="instance">EqbVoter</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>] <br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbLawsVoter" class="idref" href="#EqbLawsVoter"><span class="id" title="instance">EqbLawsVoter</span></a> :<a class="idref" href="Grandpa.Classes.Eqb.html#EqbLaws"><span class="id" title="class">EqbLaws</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> :={<br/>
+&nbsp;&nbsp;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Voter.html#EqbLawsVoter"><span class="id" title="instance">EqbLawsVoter</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbEqVoter" class="idref" href="#EqbEqVoter"><span class="id" title="instance">EqbEqVoter</span></a>: <a class="idref" href="Grandpa.Classes.Eqb.html#EqbEq"><span class="id" title="class">EqbEq</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a> :={<br/>
+&nbsp;&nbsp;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Existing Instance</span> <a class="idref" href="Grandpa.Voter.html#EqbEqVoter"><span class="id" title="instance">EqbEqVoter</span></a>.<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Voter.html#VoterInstances"><span class="id" title="section">VoterInstances</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

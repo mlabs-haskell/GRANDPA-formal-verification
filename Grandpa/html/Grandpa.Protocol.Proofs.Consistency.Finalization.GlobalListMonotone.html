@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Protocol.Proofs.Consistency.Finalization.GlobalListMonotone</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Protocol.Proofs.Consistency.Finalization.GlobalListMonotone</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voters.html#"><span class="id" title="library">Voters</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Preliminars.html#"><span class="id" title="library">Preliminars</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Estimate.html#"><span class="id" title="library">Estimate</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.OpaqueRound.html#"><span class="id" title="library">OpaqueRound</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Round.html#"><span class="id" title="library">Round</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Time.html#"><span class="id" title="library">Time</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.RoundNumber.html#"><span class="id" title="library">RoundNumber</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.VoterState.html#"><span class="id" title="library">VoterState</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Vectors.html#"><span class="id" title="library">Vectors</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Message.html#"><span class="id" title="library">Message</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Count.html#"><span class="id" title="library">DataTypes.List.Count</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Fold.html#"><span class="id" title="library">DataTypes.List.Fold</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Option.html#"><span class="id" title="library">DataTypes.Option</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.State.html#"><span class="id" title="library">Protocol.State</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.StateMessages.html#"><span class="id" title="library">Protocol.StateMessages</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#"><span class="id" title="library">Protocol.FinalizedBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Protocol.html#"><span class="id" title="library">Protocol.Protocol</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Protocol.Io.html#"><span class="id" title="library">Protocol.Io</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Functor.html#"><span class="id" title="library">Classes.Functor</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.All.html#"><span class="id" title="library">Classes.Math.All</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.List.html#"><span class="id" title="library">Instances.List</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.VoterStateExists.html#"><span class="id" title="library">Protocol.Proofs.Consistency.VoterStateExists</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+   We proof that the global list of finalized blocks grows
+   over time (is monotone).
+
+<div class="paragraph"> </div>
+
+   Main result : <span class="inlinecode"><a class="idref" href="Grandpa.Protocol.Proofs.Consistency.Finalization.GlobalListMonotone.html#finalized_blocks_list_is_monotone"><span class="id" title="definition">finalized_blocks_list_is_monotone</span></a></span>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="IsMonotone" class="idref" href="#IsMonotone"><span class="id" title="section">IsMonotone</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">list</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">natWrapper</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="finalized_blocks_list_is_monotone" class="idref" href="#finalized_blocks_list_is_monotone"><span class="id" title="definition">finalized_blocks_list_is_monotone</span></a> : <span class="id" title="keyword">Type</span>.<br/>
+<span class="id" title="var">Admitted</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Protocol.Proofs.Consistency.Finalization.GlobalListMonotone.html#IsMonotone"><span class="id" title="section">IsMonotone</span></a>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
