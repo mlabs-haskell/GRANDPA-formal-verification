@@ -29,13 +29,54 @@ Require Protocol.Proofs.Consistency.Finalization.VotersVerify.
 (* we use dependent induction*)
 Require Import Coq.Program.Equality.
 
+Require Import Lia.
+
+(**
+This module is in charge of the proof of the theorem 4.1
+The proof is as follows:
+
+- First we split it in tree cases by the naturals trichotomy,
+  two of them can be collapsed (and we do so) in a single one.
+  This leave us with the same two cases as in the paper:
+  if the finalized blocks are in the same round
+   or if they were finalized in different rounds.
+
+- The case of two unrelated blocks that were finalized in
+  the same round but maybe by different voters at different times.
+  (*TODO: currently we have a proof whose result we already abstract
+     in another module, we need to move the part of the proof
+   related to this new abstraction to the corresponding place,
+   that may make the proof for this case more clean*)
+
+- The case of two unrelated blocks that are finalized at different rounds.
+  Here is were we divert from the paper.
+  We first proof the corollary 4.3 and then use it to establish the
+  theorem 4.1
+  In the proof for 4.1, we end considering four cases.
+  Let r1 and r2 be the two different rounds with r1 ocurring
+  before r2.
+
+  First if the number of byzantines is below the threshold
+  for every round between r1 and r2 (inclusive), then we can use the corollary
+  to establish the desired result.
+
+  Otherwise  there exists a round r between r1 and r2 such that
+  r has a number of byzantines above the threshold (either in
+   the prevotes or the precommits) and r is the lowest round
+   that is still above r1.  This is split in
+   two more cases:
+
+    We have a unsafe set of votes at r, in such case we finish.
+
+    The set of votes for r are safe (prevotes and precommits)
+*)
+
 Open Scope bool.
 Open Scope list.
 Open Scope eqb.
 Open Scope math.
 Open Scope natWrapper.
 
-Require Import Lia.
 
 Definition VoterVotedInRound (v:Voter) (opaque:OpaqueRound.OpaqueRoundState)
 :Prop
@@ -61,6 +102,246 @@ apply Arith_base.le_plus_minus_stt.
 assumption.
 Qed.
 
+
+Lemma decidable_amount_of_byzantines `{io:Io}
+  (rn:RoundNumber)
+  :
+(
+    3 * get_round_bizantiners_number (io_get_round_voters rn)
+    <
+List.length (Dictionary.to_list (io_get_round_voters rn))
+    )%nat
+  \/
+    (
+    3 * get_round_bizantiners_number (io_get_round_voters rn)
+    >=
+    List.length (Dictionary.to_list (io_get_round_voters rn))
+    )%nat
+  .
+Proof.
+  destruct rn as [n].
+  lia.
+Qed.
+
+
+Lemma decidable_amount_of_byzantines_between_rounds `{io:Io}
+  (r_lower r_upper:RoundNumber)
+  (ordered : r_lower <= r_upper)
+  :
+  ( forall rn: RoundNumber,
+    r_lower <= rn
+    -> rn <= r_upper
+    ->
+    (
+      3 * get_round_bizantiners_number (io_get_round_voters rn)
+      <
+      List.length (Dictionary.to_list (io_get_round_voters rn))
+    )%nat
+  )
+  \/
+    exists rn:RoundNumber,
+    r_lower <= rn
+    /\ rn <= r_upper
+    /\
+    (
+    3 * get_round_bizantiners_number (io_get_round_voters rn)
+    >=
+    List.length (Dictionary.to_list (io_get_round_voters rn))
+    )%nat
+  .
+Proof.
+  destruct r_lower, r_upper .
+  (*Induction over the difference r_upper - r_lower,
+     It may need a separate lemma  explicitly stated on terms of
+     the difference, but is a direct result for naturals.
+   *)
+  Admitted.
+
+
+Lemma corollary_4_3_aux_step
+  `{io:Io}
+  (t:Time)
+  (v:Voter)
+  (rn: RoundNumber)
+  (v_is_honest: voter_is_hones_at_round v (RoundNumber.from_nat 1 + rn)=true)
+  (r1 r2:OpaqueRound.OpaqueRoundState)
+  (r1_is_round_at_t : get_voter_opaque_round (get_state_up_to t) v rn  = Some r1)
+  (r2_is_round_at_t : get_voter_opaque_round (get_state_up_to t) v (RoundNumber.from_nat 1 + rn)  = Some r2)
+  (r1_completable: OpaqueRound.is_completable r1 = true)
+  (r2_completable: OpaqueRound.is_completable r2 = true)
+  :exists eb1 eb2,
+  OpaqueRound.get_estimate r1 = Some eb1
+  /\
+  OpaqueRound.get_estimate r2 = Some eb2
+  /\
+  is_prefix eb1 eb2 = true
+  .
+Proof.
+  Admitted.
+
+
+(*
+  We state it in this form for ease of use of the induction tactic.
+*)
+Lemma corollary_4_3_aux
+  `{io:Io}
+  (fb:FinalizedBlock)
+  (fb_in:
+  List.In fb (global_finalized_blocks (get_state_up_to (Time.from_nat 1 + fb.(FinalizedBlock.time))))
+  )
+  :
+  forall n v nt,
+  (*TODO: we need to add 4T for synchronisation *)
+  let t := (Time.from_nat nt + fb.(FinalizedBlock.time))
+  in
+  let rn := (RoundNumber.from_nat n +fb.(FinalizedBlock.round_number))
+  in
+  voter_is_hones_at_round v rn = true
+  ->
+  (
+  forall rm, fb.(FinalizedBlock.round_number) <= rm -> rm <= rn ->
+  (3 * get_round_bizantiners_number (io_get_round_voters rm)
+  <
+  List.length (Dictionary.to_list (io_get_round_voters rm)))%nat
+  )
+  ->
+  forall r,
+    get_voter_opaque_round (get_state_up_to t) v rn  = Some r
+    ->
+    OpaqueRound.is_completable r = true
+    -> exists eb,
+          (
+            OpaqueRound.get_estimate r = Some eb
+            /\
+            is_prefix fb.(FinalizedBlock.block) eb = true
+          )
+  .
+Proof.
+  dependent induction n.
+  - intros v nt voter_is_hones_at_round rmH r r_is_round r_completable.
+    simpl in r_is_round.
+    unfold OpaqueRound.is_completable in r_completable.
+    destruct r.
+    unfold Estimate.is_completable in r_completable.
+    destruct (Estimate.try_to_complete_round round_state) eqn:Htry_complete.
+    2:{ inversion r_completable. }
+    destruct c as [
+        estimate_block
+        estimate
+        g_prevote
+        get_prevote_is_some
+        new_block_is_below_g
+      | estimate_block
+        estimate
+        get_prevote_is_some
+    ].
+    + exists estimate_block.
+      split.
+      apply (
+        Estimate.estimate_is_output_of_get_estimate round_state estimate
+      ).
+      (* estimate_block < g (Prevotes)  and fb has supermajority and
+        g (Prevotes) must be related to fb
+         so
+         fb is related to estimate_block
+      *)
+      admit.
+    + exists estimate_block.
+      split.
+      apply (
+        Estimate.estimate_is_output_of_get_estimate round_state estimate
+      ).
+      admit.
+  - intros v nt v_honest Hrm r r_is_at_t r_completable.
+    assert (
+      exists r1 : OpaqueRound.OpaqueRoundState,
+      get_voter_opaque_round (get_state_up_to (Time.from_nat nt + fb.(FinalizedBlock.time))) v
+        (from_nat n + fb.(FinalizedBlock.round_number)) = Some r1
+      /\
+      OpaqueRound.is_completable r1 = true
+      /\
+      exists eb : AnyBlock,
+        OpaqueRound.get_estimate r1 = Some eb /\
+        is_prefix (FinalizedBlock.block fb) eb = true
+    ).
+    {
+      assert (exists v, voter_is_hones_at_round v (from_nat n + fb.(FinalizedBlock.round_number)) = true ) as H.
+      (*
+      inmediate consequence of Hrm and the fact that we have at least 5
+      participants per round (see Io)
+      *)
+      admit.
+      destruct H as [vn vn_honest].
+      admit.
+    }
+    destruct H as (r1 & r1_is_round_at_t & r1_completable & [estimate_block1 [is_estimate1 estimate1_is_prefix]]).
+    pose (
+      corollary_4_3_aux_step
+        (Time.from_nat nt + fb.(FinalizedBlock.time))
+        v
+        (RoundNumber.from_nat n + fb.(FinalizedBlock.round_number))
+        v_honest
+        r1
+        r
+    ).
+    destruct e;auto.
+    destruct H as [eb2 (x_is_estimate & eb2_is_estimate & eb2_is_prefix )].
+    exists eb2.
+    split.
+    + auto.
+    + unfold is_prefix.
+      pose (Block.prefix_transitive fb.(FinalizedBlock.block).(AnyBlock.block) x.(AnyBlock.block) eb2.(AnyBlock.block)) as H.
+      apply Block.prefix_implies_is_prefix.
+      rewrite is_estimate1 in x_is_estimate.
+      injection x_is_estimate.
+      intro H2.
+      subst x.
+      apply H.
+      ++ apply Block.is_prefix_implies_prefix.
+         auto.
+      ++ apply Block.is_prefix_implies_prefix.
+         auto.
+Admitted.
+
+Corollary corollary_4_3
+  `{io:Io}
+  (fb:FinalizedBlock)
+  (t:Time)
+  (fb_in:
+  List.In fb (global_finalized_blocks (get_state_up_to t))
+  )
+  (rn:RoundNumber)
+  (fb_rn_leq_rn: fb.(FinalizedBlock.round_number) <= rn)
+  (byzantines_are_lower:
+    (3 * get_round_bizantiners_number (io_get_round_voters rn)
+    <
+    List.length (Dictionary.to_list (io_get_round_voters rn) )
+    )%nat
+  )
+  (v:Voter)
+  (v_is_honest: voter_is_hones_at_round v rn = true )
+  (*TODO: not needed, consequence of fb_in*)
+  (fb_t_leq_t :fb.(FinalizedBlock.time) <= t)
+  (r:OpaqueRound.OpaqueRoundState)
+  (r_is_round_at_t :
+    get_voter_opaque_round (get_state_up_to t) v rn  = Some r
+  )
+  (r_completable:
+    OpaqueRound.is_completable r = true
+  )
+  :
+  exists eb,
+      OpaqueRound.get_estimate r = Some eb
+      /\
+      is_prefix fb.(FinalizedBlock.block) eb = true
+  .
+(*
+  A direct consquence of the lemma with the name of the corollary_4_3_aux
+  , this is just a reformulation closer to the original paper,
+  we need to use fb_rn_leq_rn to rewrite rn as the fb round + difference
+  and do the same for t.
+*)
+  Admitted.
 
 Lemma theorem_4_1_eq_aux `{io:Io}
   {t:Time}
@@ -331,7 +612,8 @@ Proof.
     + auto.
 Qed.
 
-Lemma theorem_4_1_step `{io:Io}
+
+Lemma theorem_4_1_lt `{io:Io}
   (t:Time)
   (fb1 fb2 : FinalizedBlock)
   (un_related:
@@ -339,14 +621,16 @@ Lemma theorem_4_1_step `{io:Io}
       fb1.(FinalizedBlock.block).(AnyBlock.block)
       fb2.(FinalizedBlock.block).(AnyBlock.block)
   )
-  (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
-  (fb2_in:List.In fb2 (global_finalized_blocks (get_state_up_to t)))
-  (step_hipotesis:
-    RoundNumber.from_nat 1
-    =
-    fb2.(FinalizedBlock.round_number)
-    -
+  (fb1_in:
+    List.In fb1 (global_finalized_blocks (get_state_up_to t))
+  )
+  (fb2_in:
+    List.In fb2 (global_finalized_blocks (get_state_up_to t))
+  )
+  (fb1_lower:
     fb1.(FinalizedBlock.round_number)
+    <
+    fb2.(FinalizedBlock.round_number)
   )
   :
   exists
@@ -357,105 +641,148 @@ Lemma theorem_4_1_step `{io:Io}
     ,
     (
       Rounds.Existence.IsRoundAt v t3 r_n r
-      /\(
-          (
-          fb1.(FinalizedBlock.round_number)
-          <= r_n
-          )
-          /\
-          (
-          r_n
-          <=fb2.(FinalizedBlock.round_number)
-          )
-        )
       /\
       Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
     ).
-Admitted.
-
-Lemma theorem_4_1_lt `{io:Io}
-  (t:Time)
-  (fb1 : FinalizedBlock)
-  (fb1_in:List.In fb1 (global_finalized_blocks (get_state_up_to t)))
-  :
-  forall n fb2,
-    n = RoundNumber.to_nat (fb2.(FinalizedBlock.round_number) - fb1.(FinalizedBlock.round_number))
-    ->
-    Unrelated
-      fb1.(FinalizedBlock.block).(AnyBlock.block)
-      fb2.(FinalizedBlock.block).(AnyBlock.block)
-    ->
-    List.In fb2 (global_finalized_blocks (get_state_up_to t))
-    ->
-    (
-      fb1.(FinalizedBlock.round_number)
-      <
-      fb2.(FinalizedBlock.round_number)
-    )
-    ->
-  (
-  exists
-    (t3:Time)
-    (v:Voter)
-    (r_n:RoundNumber)
-    (r:OpaqueRound.OpaqueRoundState)
-    ,
-    (
-      Rounds.Existence.IsRoundAt v t3 r_n r
-      /\(
-          (
-          fb1.(FinalizedBlock.round_number)
-          <= r_n
-          )
-          /\
-          (
-          r_n
-          <=fb2.(FinalizedBlock.round_number)
-          )
-        )
-      /\
-      Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
-    )
-  ).
 Proof.
-  (*
-  destruct (
-    fb1
-  ) as [
-    b1 t1 rn1 v1 voters1 precommits1
-  ].
-  destruct (
-    fb2
-  ) as [
-    b2 t2 rn2 v2 voters2 precommits2
-  ].
-  simpl in un_related.
-  simpl in symmetry_hipotesis.
-   *)
-  dependent induction n.
-  - destruct fb1.(FinalizedBlock.round_number) as [n1].
-    intros fb2 h  unrelated fb2_in symmetry_hipotesis.
-    destruct fb2.(FinalizedBlock.round_number) as [n2].
-    simpl in *.
-    exfalso.
-    lia.
-  - intros fb2 h  unrelated fb2_in symmetry_hipotesis.
-    apply (theorem_4_1_step t). try assumption.
-    simpl in * .
-
-  (*
-  dependent induction b1.
-  - pose (originBlock_is_always_prefix b2) as contra.
-    apply (prefix_implies_related _ _) in contra.
-    contradiction.
-  - dependent destruction b2.
-    +  pose (originBlock_is_always_prefix (NewBlock b1 id)) as contra.
-       apply (prefix_implies_related _ _) in contra.
-       apply related_symmetric in contra.
-       contradiction.
-    +
-      (*TODO in 3.8 *)
-  *)
+  assert (
+    (
+      forall rn, fb1.(FinalizedBlock.round_number) <= rn
+      -> rn <= fb2.(FinalizedBlock.round_number)
+      ->
+      (
+        3 * get_round_bizantiners_number (io_get_round_voters rn)
+        <
+        List.length (Dictionary.to_list (io_get_round_voters rn))
+      )%nat
+    )
+    \/
+    (
+      exists rn, fb1.(FinalizedBlock.round_number) <= rn
+      /\ rn <= fb2.(FinalizedBlock.round_number)
+      /\ exists t3 v r,
+        (
+          Rounds.Existence.IsRoundAt v t3 rn r
+          /\
+          Votes.is_safe (OpaqueRound.get_all_prevote_votes r) = false
+        )
+    )
+  ) as H.
+  {
+    admit.
+  }
+  destruct H.
+  2:{ destruct H as (
+    rn
+      &
+      fb1_leq_rn
+      &
+      rn_leq_fb2
+      &
+      (
+        t3
+        &
+        v
+        &
+        r
+        &
+        (r_is_round & r_is_safe)
+      )
+  ).
+  exists t3.
+  eauto.
+  }
+  pose (
+    corollary_4_3
+      fb1
+      t
+      fb1_in
+      (fb2.(FinalizedBlock.round_number))
+  ) as H2.
+  remember (
+    fb2.(FinalizedBlock.round_number)
+  ) as rn.
+  assert (
+    (3 *
+      (get_round_bizantiners_number ( io_get_round_voters rn)
+      )
+      <
+      Datatypes.length
+        (
+          Dictionary.to_list
+            (io_get_round_voters rn)
+        )
+    )%nat
+  ) as H3.
+  {
+    apply H.
+    - subst rn. simpl. lia.
+    - subst rn.
+      destruct fb1 ,fb2.
+      destruct round_number, round_number0.
+      simpl.
+      simpl in fb1_lower.
+      lia.
+  }
+  clear H.
+  assert (
+    fb1.(FinalizedBlock.round_number)
+      <=
+    rn
+  ) as H4.
+  { subst rn. simpl. lia. }
+  pose (H2 H4 H3) as H5.
+  assert (exists v, voter_is_hones_at_round v rn = true) as H6.
+  { (* consequence that at every round we have at least 5 voters and
+      (see Io class) and H3 (the number of byzantines is below the threshold).
+    *)
+    admit.
+  }
+  destruct H6 as [v voter_is_hones_at_round].
+  pose (
+    H5 v voter_is_hones_at_round
+  ) as H7.
+  assert (fb1.(FinalizedBlock.time) <= t ) as H8.
+  {
+    (* fb1.time <= fb2.time and fb2.time <= t are already hypothesis
+      but we need to work a little to get it (see how the eq case handles this)
+    *)
+    admit.
+  }
+  pose (
+    H7 H8
+  ) as H9.
+  assert (
+    exists r : OpaqueRound.OpaqueRoundState,
+      get_voter_opaque_round (get_state_up_to t) v rn = Some r
+  ) as H10.
+  {
+    (* rn = fb1.round +1  and fb1.round < fb2.round  -> rn <= fb2.round
+      We may need to take a t further ahead to ensure v sees r as completable.
+    *)
+    admit.
+  }
+  destruct H10 as [r r_is_voter_at_t].
+  destruct (OpaqueRound.is_completable r) eqn:Hcompletable.
+  - exists t.
+    exists v.
+    exists rn.
+    exists r.
+    split.
+    + unfold Existence.IsRoundAt.
+      auto.
+    + pose (H9 r r_is_voter_at_t Hcompletable) as H.
+      (* TODO: apply the corollary_4_3 again for fb2 to get that
+         v can also see that (is_prefix fb2.(FinalizedBlock.block) eb)
+         concluding that fb2 is related to fb1.
+      *)
+      admit.
+  - (* is the same argument as the other case,
+      we just need to wait until the round is completable
+      maybe we should abstract that in a lemma instead of destruction
+       of r completable.
+    *)
+      admit.
 Admitted.
 
 
@@ -525,8 +852,7 @@ Proof.
   (*Solve the case fb1 finalized in a round below fb2, by using lemma
      [theorem_4_1_lt] for it.
   *)
-  Admitted.
-  (*
+
   - apply (
       theorem_4_1_lt
         t
@@ -566,8 +892,8 @@ Proof.
     (*Telling coq the fact that two blocks are unrelated is symmetric*)
     pose (
       Blocks.Block.unrelated_symmetric
-        fb1.(block).(AnyBlock.block)
-        fb2.(block).(AnyBlock.block)
+        fb1.(FinalizedBlock.block).(AnyBlock.block)
+        fb2.(FinalizedBlock.block).(AnyBlock.block)
         un_related
     ) as un_related2.
     (*Solving this case by using theorem_4_1_lt*)
@@ -581,43 +907,7 @@ Proof.
       fb1_in
     ). assumption.
 Qed.
-   *)
 
-Corollary corollary_4_3
-  `{Io}
-  (fb:FinalizedBlock)
-  (fb_in:
-  List.In fb (global_finalized_blocks (get_state_up_to (Time.from_nat 1 + fb.(FinalizedBlock.time))))
-  )
-  :
-  forall n v nt,
-  let t := (Time.from_nat nt + fb.(FinalizedBlock.time))
-  in
-  let rn := (RoundNumber.from_nat n +fb.(FinalizedBlock.round_number))
-  in
-  voter_is_hones_at_round v rn = true
-  ->
-    (*TODO: complete this, it must say that forall voters the byzantine number should be lower than the max cuota for a safe set*)
-  (forall rm, fb.(FinalizedBlock.round_number) <= rm -> rm <= rn -> forall v2, is_safe )
-  exists r,
-    get_voter_opaque_round (get_state_up_to t) v rn  = Some r
-    /\
-    (
-      OpaqueRound.is_completable r = true
-      -> exists eb,
-          (
-            OpaqueRound.get_estimate r = Some eb
-            /\
-            Related eb.(AnyBlock.block) fb.(FinalizedBlock.block).(AnyBlock.block)
-          )
-    )
-  .
-Proof.
-  dependent induction n.
-  2:{
-  (*TODO: delayed
-   *)
-  Admitted.
 
 Close Scope bool.
 Close Scope list.

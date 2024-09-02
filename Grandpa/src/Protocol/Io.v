@@ -72,8 +72,8 @@ Class Io := {
         Dictionary.lookup voter (io_get_round_voters (RoundNumber.from_nat 0))
         = Some kind0;
 
-  minimum_size_of_participants : 5 <= List.length (Dictionary.to_list (io_get_round_voters (RoundNumber.from_nat 0)));
-
+  minimum_voters_per_round :
+    forall rn, 5 <= List.length (Dictionary.to_list (io_get_round_voters (RoundNumber.from_nat rn)));
 }.
 
 Definition get_all_time_participants `{Io} : list Voter

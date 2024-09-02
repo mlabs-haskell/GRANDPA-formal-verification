@@ -145,17 +145,32 @@ Proof.
 Qed.
 
 Theorem get_estimate_output_is_estimate
-  {block_number:nat}
-  {block:Block block_number}
+  {block:AnyBlock}
   (round_state:
     RoundState total_voters prevote_voters precommit_voters
       round_time  round_number
       time_increment
   )
   (get_estimate_result
-    : get_estimate round_state = Some (AnyBlock.to_any block)
+    : get_estimate round_state = Some block
   )
-  : Estimate round_state (AnyBlock.to_any block).
+  : Estimate round_state block.
+Proof.
+Admitted.
+(*
+dependent destruction block.
+  - refine (EstimateOrigin round_state _).
+*)
+
+Theorem estimate_is_output_of_get_estimate
+  {block:AnyBlock}
+  (round_state:
+    RoundState total_voters prevote_voters precommit_voters
+      round_time  round_number
+      time_increment
+  )
+  (is_estimate: Estimate round_state block)
+  : get_estimate round_state = Some block.
 Proof.
 Admitted.
 (*
@@ -179,6 +194,7 @@ Variant Completable
       (new_block_is_below_g: number_and_block.(AnyBlock.block_number) < g_prevote.(AnyBlock.block_number))
   | CompletableByImpossible
       (g_prevote: AnyBlock)
+      (e: Estimate  round_state g_prevote)
       (
         g_prevote_is_some
         : g ( get_prevote_votes round_state)
@@ -205,6 +221,15 @@ Definition is_completable
   end.
 
 
+Definition get_estimate_from_completable
+  {round_state: RoundState total_voters prevote_voters precommit_voters  round_time  round_number time_increment}
+  (completable:Completable round_state)
+  : {block & Estimate round_state block}.
+Proof.
+  destruct completable.
+  - refine (existT _ number_and_block e).
+  - refine (existT _ g_prevote e).
+Qed.
 
 End State3.
 
