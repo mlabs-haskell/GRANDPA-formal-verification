@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Protocol.FinalizedBlock</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Protocol.FinalizedBlock</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Blocks.AnyBlock.html#"><span class="id" title="library">Blocks.AnyBlock</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Votes.html#"><span class="id" title="library">Votes</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.VoterState.html#"><span class="id" title="library">VoterState</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Time.html#"><span class="id" title="library">Time</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.RoundNumber.html#"><span class="id" title="library">RoundNumber</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.OpaqueRound.html#"><span class="id" title="library">OpaqueRound</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+*FinalizedBlock
+
+<div class="paragraph"> </div>
+
+This type ties a finalized block with all the information
+to identify the moment in witch the algorithm finalized the
+block.
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Record</span> <a id="FinalizedBlock" class="idref" href="#FinalizedBlock"><span class="id" title="record">FinalizedBlock</span></a> := <span class="id" title="var">FinalizedBlockC</span> {<br/>
+&nbsp;&nbsp;<a id="block" class="idref" href="#block"><span class="id" title="projection">block</span></a> : <a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a><br/>
+&nbsp;&nbsp;;<a id="time" class="idref" href="#time"><span class="id" title="projection">time</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a><br/>
+&nbsp;&nbsp;;<a id="round_number" class="idref" href="#round_number"><span class="id" title="projection">round_number</span></a>:<a class="idref" href="Grandpa.RoundNumber.html#RoundNumber"><span class="id" title="definition">RoundNumber</span></a><br/>
+&nbsp;&nbsp;;<a id="submitter_voter" class="idref" href="#submitter_voter"><span class="id" title="projection">submitter_voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a><br/>
+&nbsp;&nbsp;;<a id="voters" class="idref" href="#voters"><span class="id" title="projection">voters</span></a>: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a><br/>
+&nbsp;&nbsp;;<a id="precommit_votes" class="idref" href="#precommit_votes"><span class="id" title="projection">precommit_votes</span></a>:<a class="idref" href="Grandpa.Votes.html#Votes"><span class="id" title="record">Votes</span></a> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#voters:6"><span class="id" title="method">voters</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="make_with_round" class="idref" href="#make_with_round"><span class="id" title="definition">make_with_round</span></a><br/>
+&nbsp;&nbsp;(<a id="t:8" class="idref" href="#t:8"><span class="id" title="binder">t</span></a>:<a class="idref" href="Grandpa.Time.html#Time"><span class="id" title="definition">Time</span></a>)<br/>
+&nbsp;&nbsp;(<a id="voter:9" class="idref" href="#voter:9"><span class="id" title="binder">voter</span></a>:<a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>)<br/>
+&nbsp;&nbsp;(<a id="b:10" class="idref" href="#b:10"><span class="id" title="binder">b</span></a>:<a class="idref" href="Grandpa.Blocks.AnyBlock.html#AnyBlock"><span class="id" title="record">AnyBlock</span></a>)<br/>
+&nbsp;&nbsp;(<a id="opaque:11" class="idref" href="#opaque:11"><span class="id" title="binder">opaque</span></a>:<a class="idref" href="Grandpa.OpaqueRound.html#OpaqueRoundState"><span class="id" title="inductive">OpaqueRoundState</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#FinalizedBlock"><span class="id" title="record">FinalizedBlock</span></a><br/>
+&nbsp;&nbsp;:= {|<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#block"><span class="id" title="projection">block</span></a> := <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#b:10"><span class="id" title="variable">b</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#time"><span class="id" title="projection">time</span></a>:=<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#t:8"><span class="id" title="variable">t</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#round_number"><span class="id" title="projection">round_number</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_round_number"><span class="id" title="definition">OpaqueRound.get_round_number</span></a> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#opaque:11"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#submitter_voter"><span class="id" title="projection">submitter_voter</span></a>:=<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#voter:9"><span class="id" title="variable">voter</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#voters"><span class="id" title="projection">voters</span></a>:=<a class="idref" href="Grandpa.OpaqueRound.html#get_precommit_voters"><span class="id" title="definition">OpaqueRound.get_precommit_voters</span></a> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#opaque:11"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;;<a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#precommit_votes"><span class="id" title="projection">precommit_votes</span></a>:= <a class="idref" href="Grandpa.OpaqueRound.html#get_all_precommit_votes"><span class="id" title="definition">OpaqueRound.get_all_precommit_votes</span></a> <a class="idref" href="Grandpa.Protocol.FinalizedBlock.html#opaque:11"><span class="id" title="variable">opaque</span></a><br/>
+&nbsp;&nbsp;|}.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

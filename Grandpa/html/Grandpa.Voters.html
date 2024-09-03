@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Voters</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Voters</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.Sets.html#"><span class="id" title="library">DataTypes.Sets</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.Nat.html#"><span class="id" title="library">Instances.Nat</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Functor.html#"><span class="id" title="library">Classes.Functor</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Instances.List.html#"><span class="id" title="library">Instances.List</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.DataTypes.List.Count.html#"><span class="id" title="library">DataTypes.List.Count</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Voter.html#"><span class="id" title="library">Voter</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Voter.html#"><span class="id" title="module">Voter</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab7"></a><h1 class="section">Voters</h1>
+
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Record</span> <a id="Voters" class="idref" href="#Voters"><span class="id" title="record">Voters</span></a> : <span class="id" title="keyword">Type</span> <br/>
+&nbsp;&nbsp;:= <span class="id" title="var">VotersC</span> {<a id="to_set" class="idref" href="#to_set"><span class="id" title="projection">to_set</span></a>: <a class="idref" href="Grandpa.DataTypes.Sets.html#DictionarySet"><span class="id" title="inductive">DictionarySet</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a id="round_number_of_voters" class="idref" href="#round_number_of_voters"><span class="id" title="projection">round_number_of_voters</span></a>: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_list" class="idref" href="#to_list"><span class="id" title="definition">to_list</span></a> (<a id="voters:4" class="idref" href="#voters:4"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a><br/>
+&nbsp;&nbsp;:= <a class="idref" href="Grandpa.DataTypes.Sets.html#to_list"><span class="id" title="definition">Sets.to_list</span></a> (<a class="idref" href="Grandpa.Voters.html#to_set"><span class="id" title="projection">to_set</span></a> <a class="idref" href="Grandpa.Voters.html#voters:4"><span class="id" title="variable">voters</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="length" class="idref" href="#length"><span class="id" title="definition">length</span></a> (<a id="voters:5" class="idref" href="#voters:5"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;:= <br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#length"><span class="id" title="definition">length</span></a> (<a class="idref" href="Grandpa.Voters.html#to_list"><span class="id" title="definition">to_list</span></a> <a class="idref" href="Grandpa.Voters.html#voters:5"><span class="id" title="variable">voters</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="from_list" class="idref" href="#from_list"><span class="id" title="definition">from_list</span></a> (<a id="voters:6" class="idref" href="#voters:6"><span class="id" title="binder">voters</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) <br/>
+&nbsp;&nbsp;(<a id="round_number_of_voters:7" class="idref" href="#round_number_of_voters:7"><span class="id" title="binder">round_number_of_voters</span></a>:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a><br/>
+&nbsp;&nbsp;:= {| <a class="idref" href="Grandpa.Voters.html#to_set"><span class="id" title="projection">to_set</span></a>:= <a class="idref" href="Grandpa.DataTypes.Sets.html#from_list"><span class="id" title="definition">Sets.from_list</span></a> <a class="idref" href="Grandpa.Voters.html#voters:6"><span class="id" title="variable">voters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<a class="idref" href="Grandpa.Voters.html#round_number_of_voters"><span class="id" title="projection">round_number_of_voters</span></a>:=<a class="idref" href="Grandpa.Voters.html#round_number_of_voters:7"><span class="id" title="variable">round_number_of_voters</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;|}.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="In" class="idref" href="#In"><span class="id" title="definition">In</span></a><br/>
+&nbsp;&nbsp;(<a id="voter:8" class="idref" href="#voter:8"><span class="id" title="binder">voter</span></a> : <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) <br/>
+&nbsp;&nbsp;(<a id="voters:9" class="idref" href="#voters:9"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>) <br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Lists.List.html#In"><span class="id" title="definition">List.In</span></a> <a class="idref" href="Grandpa.Voters.html#voter:8"><span class="id" title="variable">voter</span></a> (<a class="idref" href="Grandpa.Voters.html#to_list"><span class="id" title="definition">to_list</span></a> <a class="idref" href="Grandpa.Voters.html#voters:9"><span class="id" title="variable">voters</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="inb" class="idref" href="#inb"><span class="id" title="definition">inb</span></a>  <br/>
+&nbsp;&nbsp;(<a id="voter:10" class="idref" href="#voter:10"><span class="id" title="binder">voter</span></a> : <a class="idref" href="Grandpa.Voter.html#Voter"><span class="id" title="record">Voter</span></a>) (<a id="voters:11" class="idref" href="#voters:11"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>) <br/>
+&nbsp;&nbsp;:= 0 <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#6b7621b45fff0af5e2b2cbb2bc2d4e1d"><span class="id" title="notation">&lt;?</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#6b7621b45fff0af5e2b2cbb2bc2d4e1d"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.DataTypes.List.Count.html#count"><span class="id" title="definition">count</span></a> <a class="idref" href="Grandpa.Voters.html#voter:10"><span class="id" title="variable">voter</span></a> (<a class="idref" href="Grandpa.Voters.html#to_list"><span class="id" title="definition">to_list</span></a> <a class="idref" href="Grandpa.Voters.html#voters:11"><span class="id" title="variable">voters</span></a>)<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#6b7621b45fff0af5e2b2cbb2bc2d4e1d"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="calculate_max_bizantiners" class="idref" href="#calculate_max_bizantiners"><span class="id" title="definition">calculate_max_bizantiners</span></a><br/>
+&nbsp;&nbsp;(<a id="voters:12" class="idref" href="#voters:12"><span class="id" title="binder">voters</span></a>:<a class="idref" href="Grandpa.Voters.html#Voters"><span class="id" title="record">Voters</span></a>)<br/>
+&nbsp;&nbsp;:<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <a id="total:13" class="idref" href="#total:13"><span class="id" title="binder">total</span></a>:= <a class="idref" href="Grandpa.Voters.html#voters:12"><span class="id" title="variable">voters</span></a>.(<a class="idref" href="Grandpa.Voters.html#round_number_of_voters"><span class="id" title="projection">round_number_of_voters</span></a>)<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.modulo"><span class="id" title="definition">Nat.modulo</span></a> <a class="idref" href="Grandpa.Voters.html#total:13"><span class="id" title="variable">total</span></a> 3 <span class="id" title="keyword">with</span> <br/>
+&nbsp;&nbsp;| 0 ⇒ <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Voters.html#total:13"><span class="id" title="variable">total</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#2e0d8202c5a48097752d760d3a1db6a7"><span class="id" title="notation">/</span></a>3<a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Peano.html#::nat_scope:x_'-'_x"><span class="id" title="notation">-</span></a>1<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <a class="idref" href="Grandpa.Voters.html#total:13"><span class="id" title="variable">total</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#2e0d8202c5a48097752d760d3a1db6a7"><span class="id" title="notation">/</span></a>3<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

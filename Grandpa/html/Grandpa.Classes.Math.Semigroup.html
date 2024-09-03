@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Classes.Math.Semigroup</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Classes.Math.Semigroup</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.Common.html#"><span class="id" title="library">Classes.Math.Common</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="Semigroup" class="idref" href="#Semigroup"><span class="id" title="record">Semigroup</span></a> (<a id="T:1" class="idref" href="#T:1"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) :={<br/>
+&nbsp;&nbsp;<a id="plus" class="idref" href="#plus"><span class="id" title="projection">plus</span></a>: <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#T:1"><span class="id" title="variable">T</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#T:1"><span class="id" title="variable">T</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a><a class="idref" href="Grandpa.Classes.Math.Semigroup.html#T:1"><span class="id" title="variable">T</span></a>;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="SemigroupLaws" class="idref" href="#SemigroupLaws"><span class="id" title="record">SemigroupLaws</span></a> (<a id="T:4" class="idref" href="#T:4"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) `{<a id="H:5" class="idref" href="#H:5"><span class="id" title="binder">Semigroup</span></a> <a id="H:5" class="idref" href="#H:5"><span class="id" title="binder">T</span></a>} :={<br/>
+&nbsp;&nbsp;<a id="plus_associative" class="idref" href="#plus_associative"><span class="id" title="projection">plus_associative</span></a>: <span class="id" title="keyword">∀</span> <a id="x:7" class="idref" href="#x:7"><span class="id" title="binder">x</span></a> <a id="y:8" class="idref" href="#y:8"><span class="id" title="binder">y</span></a> <a id="z:9" class="idref" href="#z:9"><span class="id" title="binder">z</span></a>, <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#x:7"><span class="id" title="variable">x</span></a> (<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#y:8"><span class="id" title="variable">y</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#z:9"><span class="id" title="variable">z</span></a>) <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a> (<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#x:7"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#y:8"><span class="id" title="variable">y</span></a>) <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#z:9"><span class="id" title="variable">z</span></a> <br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="plus_law_operator" class="idref" href="#plus_law_operator"><span class="id" title="definition">plus_law_operator</span></a> {<a id="T:11" class="idref" href="#T:11"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>} `{<a id="sg:12" class="idref" href="#sg:12"><span class="id" title="binder">sg</span></a>:<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#Semigroup"><span class="id" title="class">Semigroup</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#T:11"><span class="id" title="variable">T</span></a>, <a id="H:13" class="idref" href="#H:13"><span class="id" title="binder">@</span></a><a id="H:13" class="idref" href="#H:13"><span class="id" title="binder">SemigroupLaws</span></a> <a id="H:13" class="idref" href="#H:13"><span class="id" title="binder">T</span></a> <a id="H:13" class="idref" href="#H:13"><span class="id" title="binder">sg</span></a>} := <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="bd0dc97a35a215d97e8a463a14f0b420" class="idref" href="#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">&quot;</span></a>+" := <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus_law_operator"><span class="id" title="definition">plus_law_operator</span></a>: <span class="id" title="var">math_scope</span> .<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Resolve</span> <span class="id" title="var">plus_associative</span>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Unfold</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus_law_operator"><span class="id" title="definition">plus_law_operator</span></a>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Opaque</span> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a>: <span class="id" title="var">MathHints</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

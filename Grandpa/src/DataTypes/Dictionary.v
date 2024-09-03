@@ -1,5 +1,6 @@
 Require List.
 Require Import DataTypes.List.Count.
+Require Import DataTypes.Option.
 
 Import List.ListNotations.
 
@@ -69,6 +70,53 @@ Proof.
         apply H2.
 Qed.
 
+Lemma add_aux_step_if_neq (k1 k2:K) (v1 v2:V) l 
+  (k1_neq_k2: k1 =? k2 =false)
+  : 
+  add_aux (k1,v1) ((k2,v2)::l) = (k2,v2)::add_aux (k1,v1) l.
+Proof.
+  simpl.
+  rewrite k1_neq_k2.
+  auto.
+Qed.
+
+Lemma add_aux_neq_at_begining (k1 k2:K) (v1 v2:V) l1 l2
+  (H: forall k', List.In k' (map fst l1) -> k1 =? k' = false)
+  : 
+  add_aux (k1,v1) (l1++l2) = l1++add_aux (k1,v1) l2.
+Proof.
+  induction l1.
+  - auto.
+  - enough (k1 =? fst a = false) as H2.
+    + simpl.
+      destruct a as [k3 v3].
+      simpl in H2.
+      rewrite H2.
+      rewrite IHl1.
+      ++ auto.
+      ++ simpl.
+         intros k4 H3.
+         apply H.
+         simpl.
+         right.
+         auto.
+    + apply H.
+      simpl.
+      left.
+      auto.
+Qed.
+
+Lemma add_aux_modifies_first_match (k1 k2:K) (v v':V) (l1 l2:list (K*V))
+  (eqb_k1_k2: k1 =? k2 = true)
+  (H: forall k', List.In k' (map fst l1) -> k1 =? k' = false)
+  : add_aux (k1,v) (l1++ (k2,v')::l2) = l1 ++ (k1,v)::l2.
+Proof.
+  rewrite (add_aux_neq_at_begining k1 k2 v v' l1 ((k2,v')::l2)).
+  - simpl.
+    rewrite eqb_k1_k2.
+    auto.
+  - auto.
+Qed.
 
 Definition add (k:K) (v:V) (dict:Dictionary K V): Dictionary K V
  := DictionaryC (add_aux (k,v) (to_list dict)).
@@ -147,6 +195,44 @@ Proof.
         inversion k1_eq_k.
       * apply Hind.
         assumption.
+Qed.
+
+Lemma lookup_add_result d :
+  forall k1 k2 v, 
+    let result := lookup k1 (add k2 v d) 
+    in
+      (k1 =? k2 = true /\ result = Some v) \/ ((k1 =? k2 = false) /\ (result = lookup k1 d)).
+Proof.
+  intros k1 k2.
+  destruct (k1 =? k2) eqn:k_eqb.
+  - simpl.
+    left.
+    split. auto.
+    auto using add_really_adds_eqb_k.
+  - right.
+    destruct d as [l].
+    induction l as [|[k' v'] remain Hind].
+    + unfold lookup. simpl. rewrite k_eqb. auto. 
+    + destruct (k2 =? k') eqn:k2_eq_k'.
+      * unfold lookup.
+        simpl.
+        rewrite k2_eq_k'.
+        simpl.
+        rewrite k_eqb.
+        destruct (k1 =? k') eqn:k1_eq_k'.
+        ++ rewrite eqb_symmetry in k1_eq_k'. 
+           pose (eqb_transitivity k2 k' k1 k2_eq_k' k1_eq_k') as contra.
+           rewrite eqb_symmetry in contra.
+           rewrite k_eqb in contra.
+           discriminate contra.
+        ++ auto.
+      * unfold lookup.
+        simpl.
+        rewrite k2_eq_k'.
+        simpl.
+        unfold lookup in Hind.
+        simpl in Hind.
+        destruct (k1 =? k');auto.
 Qed.
 
 Definition from_list (l:list (K*V)): Dictionary K V
@@ -242,6 +328,7 @@ Proof.
   - simpl.
     auto using WellFormedAdd.
 Qed.
+
 
 Lemma wellformed_means_unique_elements d (wf:WellFormedDict d) 
   : forall k, 
@@ -380,13 +467,19 @@ Lemma delete_works (dict:Dictionary K V)
 Proof.
   intro k.
   destruct dict.
+  unfold lookup.
   induction l.
-  - unfold delete.
-    simpl.
-    unfold lookup.
-    simpl.
-    reflexivity.
+  - auto.
   - Admitted.
+
+
+
+Definition PreserveKeys (f: Dictionary K V -> Dictionary K V) 
+  := forall d k
+    , is_some (Dictionary.lookup k d) = true 
+      <-> 
+      is_some (Dictionary.lookup k (f d)) = true.
+
 
 End Dictionary.
 

@@ -13,10 +13,10 @@ Require Import Classes.Math.All.
 
 Record State :={
   (**
-    Mantains a global conunter of all messages emited until now.
+    Maintains a global counter of all messages emitted until now.
     In a real implementation every voter should attach a ID 
     to their messages and that together with the voter ID 
-    can be used as an id. We don't need to do that thanks to this.
+    can be used as an id. We don't need to do that in our model.
   *)
   message_count:nat
   (**
@@ -72,11 +72,34 @@ Definition remove_message (state:State) (msg:Message): State :=
     ;global_finalized_blocks:=state.(global_finalized_blocks)
   |}.
 
+Definition update_add_finalized_block (state:State) (fb:FinalizedBlock):State 
+  :=
+  {|
+    message_count:=state.(message_count)
+    ;pending_messages:=state.(pending_messages)
+    ;voters_state:=state.(voters_state)
+    ;global_finalized_blocks:=
+      List.cons fb state.(global_finalized_blocks)
+  |}.
+
+
 End Update.
 
 Section ProcessIo.
 Open Scope list.
 
+(** *ProcessIo
+Those functions works on the outputs of the Io class. 
+They originally required the Io class, but we made them pure.
+*)
+
+(**
+Auxiliary function, the output are :
+   - The number of byzantine voters
+   - The number of prevoters
+   - The number of precommiters
+After one step of the processing.
+*)
 Definition process_round_voters_step 
   (acc: nat*(list Voter)*(list Voter) )
   (value:Voter*VoterKind)
@@ -105,6 +128,11 @@ Definition process_round_voters_step
     end
   end.
 
+(**
+Takes a dictionary like the one returned by Io, that represents 
+the voters involved in a round together with the information of 
+what kind of voter are they going to be.
+*)
 Definition process_round_voters_from 
    (round_dictionary:Dictionary Voter VoterKind)
   : (nat*list Voter *list Voter)
@@ -128,6 +156,25 @@ Definition get_round_bizantiners_number
     => bizantiners_number
   end.
 
+(**
+The canonical way to construct the initial state for the 
+protocol based on the information provided by the Io class.
+
+In particular we:
+  - Set the [message_count] to zero.
+  - Set the [pending_messages] as the empty dictionary.
+  - Initialize the voters state for every voter ever in the model.
+    (This is guaranteed by a predicate stored in Io, using it on a 
+     different collection posses no guarantees.)
+  - Accept that the [OriginBlock] is already finalized 
+    (and is the only block finalized).
+    For this we accept that the [OriginBlock] doesn't have to 
+    have any precommit or prevote vote to be finalized and 
+    is finalized before any round or time passes.
+    As all participants would see the 0 round as completable all 
+    of them would move immediately to the first round, and this 
+    would look as if we finalized the [OriginBlock] in the 0 round.
+*)
 Definition make_initial_state_from 
   (round_zero_dict: Dictionary.Dictionary Voter VoterKind)
   :State
@@ -170,6 +217,11 @@ Definition make_initial_state_from
 
 Open Scope math.
 
+(**
+The function is here since we need the other functions processing the output 
+  of the IO class to define it. 
+We may move it to the [VoterState] module in the future.
+*)
 Definition init_next_round_voter_state_from 
   (round_dictionary: Dictionary Voter VoterKind)
   (time:Time)

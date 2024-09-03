@@ -7,7 +7,38 @@ Require Import Classes.Math.All.
 Declare Scope natWrapper_scope.
 Delimit Scope natWrapper_scope with natWrapper.
 
-Record NatWrapper (T:Type) :Type 
+(** *NatWrapper
+Coq doesn't have support for [newtypes], instead we
+must create a regular type every time we want to
+wrap some type around.
+
+The case of wrapping a natural is a recurrent pattern.
+
+Two important types that use this wrapper are:
+  - Time
+  - Round
+*)
+
+
+(**
+  The type [T] is a phantom type, it's only use is to distinguish two
+   different natural wrappers, otherwise we would defeat the entire
+   purpose of using a wrapper.
+
+  This means that every time you want to create a natural wrapper you
+   need to create a phantom type representing it first.
+
+  A minimal definition of a wrapper in a new module looks like this:
+
+   [
+    Require Import NatWrapper.
+
+    Variant CustomCounterPhantom := CustomCounterPhantomC.
+    Definition CustomCounter := NatWrapper CustomCounterPhantom
+    Definition from_nat n : CustomCounter := NatWrapper.from_nat n
+   ]
+*)
+Record NatWrapper (T:Type) :Type
     := NatWrapperC { to_nat:nat }.
 
 Arguments NatWrapperC {T}.
@@ -92,7 +123,7 @@ Existing Instance SemigroupNatWrapper.
 Instance SemigroupLawsNatWrapper (T:Type) : SemigroupLaws (NatWrapper T) :={
 }.
 Proof.
-  intros x y z. 
+  intros x y z.
   destruct x,y,z.
   simpl.
   apply f_equal.
@@ -135,6 +166,10 @@ Infix "-" := (fun x y => from_nat ((to_nat x) - (to_nat y))) : natWrapper_scope.
 #[global]
 Infix "*" := (fun x y => from_nat ((to_nat x) * (to_nat y))) : natWrapper_scope.
 
+(*
+TODO: The proper way to adquire this notation must be by defining boolean
+ordering classes as we did with Eqb.
+*)
 #[global]
 Infix "<" := (fun x y => ((to_nat x) < (to_nat y)))%nat : natWrapper_scope.
 
@@ -152,3 +187,17 @@ Infix ">" := (fun x y =>  ((to_nat x) > (to_nat y)))%nat : natWrapper_scope.
 
 #[global]
 Infix ">=" := (fun x y => ((to_nat x) >= (to_nat y)))%nat : natWrapper_scope.
+
+
+Lemma natWrapper_recursion {Phantom}
+  (P: NatWrapper Phantom -> Prop)
+  (at_0:P (NatWrapperC 0))
+  (step:(forall n, P (NatWrapperC n) -> P (NatWrapperC (S n))))
+  : forall w, P w :Prop.
+Proof.
+  intro w.
+  destruct w as [n].
+  induction n.
+  - auto.
+  - auto.
+Qed.

@@ -15,6 +15,7 @@ Require Import DataTypes.List.Inb.
 Require Import DataTypes.Sets.
 
 Require Import Classes.Eqb.
+Require Import Classes.Functor.
 
 Require Import Voter.
 Require Import Voters.
@@ -24,6 +25,8 @@ Export Voter.
 Export Voters.
 Export Vote.
 
+Require Import Coq.Logic.JMeq.
+
 Open Scope bool.
 Open Scope blocks_scope.
 Open Scope eqb.
@@ -31,10 +34,10 @@ Open Scope eqb.
 (** * Votes
   As with [Voters], we choose to use the newtype pattern here.
 *)
-Record Votes  
-  (voters: Voters) 
-  :Type 
-  := 
+Record Votes
+  (voters: Voters)
+  :Type
+  :=
     VotesC
       {
         vlist:list (Vote voters)
@@ -42,30 +45,30 @@ Record Votes
 
 Arguments vlist {voters} _.
 
-Definition votes_to_list 
-  {voters: Voters} 
+Definition votes_to_list
+  {voters: Voters}
   (votes: Votes voters)
   : list (Vote voters)
-  := 
+  :=
   match votes with
   | VotesC _ l => l
   end.
 
-Definition votes_to_voters_list 
-  {voters: Voters} 
+Definition votes_to_voters_list
+  {voters: Voters}
   (votes: Votes voters)
   : list Voter
   := List.map Vote.voter votes.(vlist).
 
-Definition votes_to_pair_list 
-  {voters: Voters} 
+Definition votes_to_pair_list
+  {voters: Voters}
   (votes: Votes voters )
   : list (Voter * AnyBlock)
   := List.map Vote.to_tuple (votes_to_list votes).
 
 
-Definition voter_voted_in_votes 
-  {voters: Voters} 
+Definition voter_voted_in_votes
+  {voters: Voters}
   (voter: Voter)
   (votes: Votes voters)
   :=
@@ -75,7 +78,7 @@ Definition voter_voted_in_votes
 (**
    Since Votes is a wrap around a list, this function wraps [++].
 *)
-Definition mergeVotes 
+Definition mergeVotes
   {voters:Voters }
   (votes1 :Votes voters)
   (votes2 :Votes voters)
@@ -85,7 +88,7 @@ Definition mergeVotes
       | VotesC _ list1, VotesC _ list2 => VotesC _ (list1 ++ list2)
       end.
 
-Definition is_equivocate  
+Definition is_equivocate
   {voters: Voters}
   (voter: Voter)
   (votes: Votes voters)
@@ -93,11 +96,11 @@ Definition is_equivocate
   := 1 <? count voter ( votes_to_voters_list votes).
 
 (**
-The first element are the equivocate voters 
+The first element are the equivocate voters
 and the second one are the voters that only voted once.
 *)
 
-Definition split_voters_by_equivocation 
+Definition split_voters_by_equivocation
   {voters: Voters}
   (votes: Votes voters)
   : list Voter * list Voter
@@ -108,10 +111,10 @@ Definition split_voters_by_equivocation
 
 Section Some.
 
-(** 
-  Sections are really useful to declare local variables 
+(**
+  Sections are really useful to declare local variables
    to avoid having big predicates.
-   But sometimes we may need to close a section since 
+   But sometimes we may need to close a section since
    coq interprets in a erroneous way what we write.
    We immediately open a section again when this happens.
 *)
@@ -119,9 +122,9 @@ Variable voters: Voters.
 Variable votes: Votes voters.
 
 
-Definition filter_votes_by_voters_subset (subset : Voters) 
+Definition filter_votes_by_voters_subset (subset : Voters)
   : Votes voters
-  := 
+  :=
   let votes_list := votes_to_list votes
   in
   let voters_as_nat_list := Voters.to_list subset
@@ -129,40 +132,40 @@ Definition filter_votes_by_voters_subset (subset : Voters)
   let vote_predicate vote := Inb (Vote.voter vote) voters_as_nat_list
   in
     VotesC voters (List.filter vote_predicate  votes_list).
-    
+
 End Some.
 
 
 
-Definition is_safe  
+Definition is_safe
   {voters: Voters }
   (votes: Votes voters)
   :bool
   :=
   match split_voters_by_equivocation votes with
   | (equivocate_voters, non_equivocate_voters) =>
-     List.length equivocate_voters <=? calculate_max_bizantiners voters 
+     List.length equivocate_voters <=? calculate_max_bizantiners voters
   end.
 
 Definition BlockDictionary := Dictionary.Dictionary AnyBlock nat.
 
 (** ** Vote count
 
-- First we split the set of votes in two, one of votes 
-  made by equivocate voters and other made by 
+- First we split the set of votes in two, one of votes
+  made by equivocate voters and other made by
    non equivocate voters
-- We count the total votes for all the block that 
-  were votes (that is, we don't count the 
+- We count the total votes for all the block that
+  were votes (that is, we don't count the
    blocks b such that   b < b'
    when some voter voted for b' but not for b)
-- Then we do a "flatten" it means for every 
+- Then we do a "flatten" it means for every
   voted block b, if b' < b
    then we add the votes for b to the votes for b'.
 *)
 
 
 Definition aux_vote_update (old_votes: option nat) (new_votes:nat)
-  := 
+  :=
   match old_votes with
   | None => new_votes
   | Some v' => new_votes+v'
@@ -181,7 +184,7 @@ Definition make_votes_dictionary
   (votes:list AnyBlock)(acc: BlockDictionary)
   : BlockDictionary
   :=
-  List.fold_left 
+  List.fold_left
   update_with_vote_to_block
   votes
   acc.
@@ -216,21 +219,21 @@ Proof.
   reflexivity.
 Qed.
  *)
-
+(*TODO: remove this *)
 Definition some_to_nat (x:option nat)
-  := 
+  :=
   match x with
      | Some y => y
      | None => 0
   end.
 
-Lemma make_votes_dictionary_counts_right_aux 
+Lemma make_votes_dictionary_counts_right_aux
   (votes:list AnyBlock)
   : forall block votes_value d,
     Dictionary.lookup block (make_votes_dictionary votes d)
       = Some votes_value
-    -> votes_value = count block votes 
-      + some_to_nat (Dictionary.lookup block d). 
+    -> votes_value = count block votes
+      + some_to_nat (Dictionary.lookup block d).
 Proof.
   induction votes.
   - intros block v d H.
@@ -244,8 +247,8 @@ Proof.
     rewrite count_cons.
     enough (
       some_to_nat(
-        Dictionary.lookup 
-          block 
+        Dictionary.lookup
+          block
           (update_with_vote_to_block d a)
       )
       =
@@ -274,8 +277,8 @@ Lemma make_votes_dictionary_counts_right_aux2
   (votes:list AnyBlock)
   : forall block d,
     some_to_nat (Dictionary.lookup block (make_votes_dictionary votes d))
-    = count block votes 
-      + some_to_nat (Dictionary.lookup block d). 
+    = count block votes
+      + some_to_nat (Dictionary.lookup block d).
 Proof.
   induction votes.
   - intros block d.
@@ -287,8 +290,8 @@ Proof.
     rewrite IHvotes.
     enough (
       some_to_nat(
-        Dictionary.lookup 
-          block 
+        Dictionary.lookup
+          block
           (update_with_vote_to_block d a)
       )
       =
@@ -327,71 +330,89 @@ Qed.
 
 
 (**
-  A vote for [B: Block n] is also a vote for [B':Block n'] 
-   as long as [B' <= B]. 
+  A vote for [B: Block n] is also a vote for [B':Block n']
+   as long as [B' <= B].
 *)
 Fixpoint flat_votes_aux {m}
   (block:Block m)
   (voter_number:nat)
   (acc: BlockDictionary): BlockDictionary
   :=
-  match block with  
+  match block with
   | OriginBlock => acc
-  | NewBlock older_block id 
+  | NewBlock older_block id
       =>
-     let update_vote maybe_old_value v := 
+     let update_vote maybe_old_value v :=
        match maybe_old_value with
        | None => v
        | Some v2 => v+v2
        end
      in
-     let updated_acc := 
-          Dictionary.update_with 
+     let updated_acc :=
+          Dictionary.update_with
             (AnyBlock.to_any block) voter_number update_vote acc
-     in 
+     in
       flat_votes_aux older_block voter_number updated_acc
   end.
 
-Definition flat_votes_dictionary 
+Definition flat_votes_dictionary
   (acc:BlockDictionary) : BlockDictionary
-  := 
-  List.fold_right 
+  :=
+  List.fold_right
     (
-      fun anyblock updated_dict 
+      fun anyblock updated_dict
       =>
       match anyblock with
       | (block,votes_for_block)
-          => flat_votes_aux 
+          => flat_votes_aux
             (AnyBlock.block block) votes_for_block updated_dict
       end
     )
     Dictionary.empty
     (Dictionary.to_list acc).
 
-(** 
+(**
   Takes a set of votes and returns a dictionary of blocks
    where the value for a block is the number of votes (already flattened)
    for that block.
 
-  We have to use AnyBlock here since the Dictionary 
+  We have to use AnyBlock here since the Dictionary
    contains blocks of different lengths.
 *)
-Definition count_votes 
+Definition count_votes
   {voters:Voters}
   (votes: Votes voters): BlockDictionary
   :=
-  match 
-    make_votes_dictionary 
-      (List.map (fun v => AnyBlock.to_any (Vote.block v)) votes.(vlist)) 
-      Dictionary.empty 
+  match
+    make_votes_dictionary
+      (List.map (fun v => AnyBlock.to_any (Vote.block v)) votes.(vlist))
+      Dictionary.empty
   with
   | out => flat_votes_dictionary out
   end.
 
-Lemma count_votes_nil_is_zero 
+Definition count_with_equivocations
+  {voters:Voters}
+  (T : Votes voters)
+  : BlockDictionary
+  :=
+  let (equivocate_voters, non_equivocate_voters)
+    := split_voters_by_equivocation T
+  in
+  let number_of_equivocates := List.length equivocate_voters
+  in
+    count_votes
+      (filter_votes_by_voters_subset
+        voters
+        T
+        (Voters.from_list non_equivocate_voters voters.(round_number_of_voters))
+      )
+  .
+
+Lemma count_votes_nil_is_zero
   {voters:Voters}
   (votes: Votes voters)
-  : votes.(vlist) = nil 
+  : votes.(vlist) = nil
     -> Dictionary.to_list (count_votes votes) = nil.
 Proof.
   intro H.
@@ -400,22 +421,22 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma count_votes_works 
+Lemma count_votes_works
   {block_number:nat}
   (block: Block block_number)
   {voters:Voters}
   (votes:Votes voters)
   :
   some_to_nat(
-    Dictionary.lookup 
+    Dictionary.lookup
     (AnyBlock.to_any block)
     (count_votes votes)
   )
   =List.length (
        List.filter (
-         fun vote => is_prefix block vote.(Vote.block)
-       ) 
-       votes.(vlist) 
+         fun vote => Block.is_prefix block vote.(Vote.block)
+       )
+       votes.(vlist)
       ).
 Proof.
   unfold count_votes.
@@ -424,7 +445,7 @@ Proof.
 
 
 
-Lemma voted_block_in_count_votes 
+Lemma voted_block_in_count_votes
   {voters:Voters }
   (votes: Votes voters)
   {voter:Voter }
@@ -435,8 +456,8 @@ Lemma voted_block_in_count_votes
   {vote_is: vote = VoteC voters block_number block voter is_voter }
   (is_vote : List.In vote (votes_to_list votes))
   : exists v:nat
-    , List.In 
-      (AnyBlock.to_any block,v) 
+    , List.In
+      (AnyBlock.to_any block,v)
       (Dictionary.to_list (count_votes votes)).
 Proof.
   Admitted.
@@ -446,7 +467,7 @@ Proof.
   unfold make_votes_dictionary.
   unfold make_votes_dictionary_aux.
   simpl.
-  simpl. 
+  simpl.
 
   Admitted.
    *)
@@ -456,16 +477,16 @@ Proof.
 (**
   This is the core function implementing supermajority.
 
-   From the paper: 
+   From the paper:
 
 <<
-A voter equivocates in a set of votes [S] if they have cast multiple different 
-votes in [S] . We call a set [S] of votes safe if the number of voters 
+A voter equivocates in a set of votes [S] if they have cast multiple different
+votes in [S] . We call a set [S] of votes safe if the number of voters
 who equivocate in [S] is at most [f] . We say that [S] has a [supermajority]
-for a block [B] if the set of voters who either have a vote for 
-blocks [>= B] or equivocate in [S] has size at least [(n+f + 1)/2]. 
-We count equivocations as votes for everything so that observing a vote 
-is monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority 
+for a block [B] if the set of voters who either have a vote for
+blocks [>= B] or equivocate in [S] has size at least [(n+f + 1)/2].
+We count equivocations as votes for everything so that observing a vote
+is monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority
 for [B] so does [T] , while being able to ignore yet more equivocating votes
 from an equivocating voter.
 >>
@@ -475,45 +496,45 @@ Our implementation aproach is as follows:
    - Find the equivocate votes and the ones that aren't equivocate.
    - Count the non equivocate votes for every block.
    - Remove blocks that don't have at least [(n+f+1)/2] votes.
-      In this case [n:=length voters] and [f:= ]
+   In this case [n:=length voters] and [f:= floor(n/3)+1 ]
 *)
 
-Definition has_supermajority_predicate 
+Definition has_supermajority_predicate
   (voters:Voters)
   (number_of_equivocates:nat)
-  (block_and_vote:AnyBlock*nat) : bool:= 
+  (block_and_vote:AnyBlock*nat) : bool:=
     match block_and_vote with
-    | (_, number_of_votes) 
-        => 
-        voters.(round_number_of_voters) 
-        + calculate_max_bizantiners voters +1 
+    | (_, number_of_votes)
+        =>
+        voters.(round_number_of_voters)
+        + calculate_max_bizantiners voters +1
         <? 2 * (number_of_votes + number_of_equivocates)
     end.
 
 
 
-Definition get_supermajority_blocks 
+Definition get_supermajority_blocks
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   : list (AnyBlock * nat)
-  := 
-  let (equivocate_voters, non_equivocate_voters) 
+  :=
+  let (equivocate_voters, non_equivocate_voters)
     := split_voters_by_equivocation T
   in
   let number_of_equivocates := List.length equivocate_voters
   in
-  let count  
-    := 
-    count_votes  
-      (filter_votes_by_voters_subset 
-        voters 
-        T 
+  let count
+    :=
+    count_votes
+      (filter_votes_by_voters_subset
+        voters
+        T
         (Voters.from_list non_equivocate_voters voters.(round_number_of_voters))
       )
   in
-  let blocks_with_super_majority 
-    := 
-    List.filter 
+  let blocks_with_super_majority
+    :=
+    List.filter
       (has_supermajority_predicate voters number_of_equivocates)
       (Dictionary.to_list count)
   in
@@ -525,11 +546,11 @@ This definition doesn't take in account the repetitions of elements
 *)
 
 
-Lemma equivocates_are_voters_aux {A} (l l1 l2:list A) p 
-  : 
-  List.partition p l = (l1,l2) 
-  -> forall x, List.In x l1 
-  -> p x = true. 
+Lemma equivocates_are_voters_aux {A} (l l1 l2:list A) p
+  :
+  List.partition p l = (l1,l2)
+  -> forall x, List.In x l1
+  -> p x = true.
 Proof.
   intros H x Hin.
   pose (List.partition_as_filter p l) as H3.
@@ -542,12 +563,12 @@ Proof.
 Qed.
 
 
-Lemma equivocates_are_voters 
+Lemma equivocates_are_voters
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   {equivocate_voters non_equivocate_voters: list Voter}
   {split_result: split_voters_by_equivocation T = (equivocate_voters,non_equivocate_voters)}
-  : forall (voter:Voter), 
+  : forall (voter:Voter),
     List.In voter equivocate_voters
     -> List.In voter (votes_to_voters_list T).
 Proof.
@@ -555,21 +576,21 @@ Proof.
   unfold split_voters_by_equivocation in split_result.
   assert (List.In voter (Voters.to_list voters)) as in_voters_list.
   {
-    pose 
-      (List.elements_in_partition 
-        (fun voter => is_equivocate voter T) 
-        (Voters.to_list voters) 
+    pose
+      (List.elements_in_partition
+        (fun voter => is_equivocate voter T)
+        (Voters.to_list voters)
         split_result
       ) as is_element_iff .
     apply is_element_iff.
     left.
     assumption.
   }
-  pose 
-    (equivocates_are_voters_aux 
-      (Voters.to_list voters) 
-      equivocate_voters 
-      non_equivocate_voters 
+  pose
+    (equivocates_are_voters_aux
+      (Voters.to_list voters)
+      equivocate_voters
+      non_equivocate_voters
       (fun voter => is_equivocate voter T)
       split_result
       voter
@@ -580,7 +601,7 @@ Proof.
     rewrite PeanoNat.Nat.ltb_lt in H.
     remember (List.filter (eqb voter) (votes_to_voters_list T) ) as filtered_list.
     destruct filtered_list as [|one_elem remain].
-    - simpl in H.  
+    - simpl in H.
       pose (PeanoNat.Nat.nlt_succ_diag_l 0) as contra.
       Admitted.
       (*      contradiction.
@@ -600,19 +621,19 @@ Qed.
 From the paper:
 
 <<
-We count equivocations as votes for everything so that observing a vote is 
-monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority 
-for [B] so does [T] , while being able to ignore yet more equivocating votes 
+We count equivocations as votes for everything so that observing a vote is
+monotonic, meaning that if [S ⊂ T] then if [S] has a supermajority
+for [B] so does [T] , while being able to ignore yet more equivocating votes
 from an equivocating voter.
 >>
-  
+
 TODO: Really important
 *)
-Lemma blocks_with_super_majority_are_related 
+Lemma blocks_with_super_majority_are_related
   {voters:Voters}
-  (T : Votes voters) 
+  (T : Votes voters)
   (is_safe_t: is_safe T = true)
-  : forall (block1 block2:AnyBlock) (v1 v2:nat), 
+  : forall (block1 block2:AnyBlock) (v1 v2:nat),
     List.In (block1,v1) (get_supermajority_blocks T)
     -> List.In (block2,v2) (get_supermajority_blocks T)
     -> (AnyBlock.block block1) ~ (AnyBlock.block block2).
@@ -640,7 +661,8 @@ Proof.
 
 Open Scope list.
 
-Lemma list_in_location {A} (x:A) l : 
+(* TODO: MOve this to Datatypes/List*)
+Lemma list_in_location {A} (x:A) l :
   List.In x l <-> exists l1 l2, l = l1 ++ x::l2.
 Proof.
   split.
@@ -662,7 +684,7 @@ Proof.
         simpl.
         rewrite H.
         reflexivity.
-  - intro H. 
+  - intro H.
     destruct H as  [l1].
     destruct H as  [l2].
     rewrite H.
@@ -670,7 +692,10 @@ Proof.
 Qed.
 
 
-Lemma superset_has_subset_majority_blocks_aux1  l p (b:AnyBlock) : 
+(**
+TODO: move to list facts
+*)
+Lemma superset_has_subset_majority_blocks_aux1  l p (b:AnyBlock) :
   (exists v:nat, List.In (b,v) l /\ p (b,v)= true )
   -> exists v:nat, List.In (b,v) (List.filter p l).
 Proof.
@@ -681,31 +706,31 @@ Proof.
   auto.
 Qed.
 
-Definition VotesIsSubset  
+Definition VotesIsSubset
   {voters:Voters }
   (S : Votes voters )
-  (T : Votes voters) 
+  (T : Votes voters)
   :Prop
   :=
-  forall (vote: Vote voters), 
+  forall (vote: Vote voters),
     (count vote S.(vlist)
     <= count vote T.(vlist))%nat.
 
-Definition intersection  
+Definition intersection
   {voters:Voters }
   (S : Votes voters)
   (T : Votes voters)
   : Votes voters.
 Admitted.
 
-Definition difference  
+Definition difference
   {voters:Voters}
   (S : Votes voters)
   (T : Votes voters)
   : Votes voters.
 Admitted.
 
-Lemma is_votes_subset_transitive  
+Lemma is_votes_subset_transitive
   {voters:Voters}
   (S1 S2 S3 : Votes voters)
   (s1_s2 : VotesIsSubset S1 S2)
@@ -713,23 +738,23 @@ Lemma is_votes_subset_transitive
   : VotesIsSubset S1 S3.
 Proof.
   unfold VotesIsSubset.
-  intro vote. 
+  intro vote.
   pose (s1_s2 vote) as ineq1.
   pose (s2_s3 vote) as ineq2.
   transitivity (count vote (votes_to_list S2));auto.
 Qed.
 
 
-(* TODO:  Really important *)
-Lemma superset_has_subset_majority_blocks 
+(* TODO: Critical!  Really important *)
+Lemma superset_has_subset_majority_blocks
   {voters:Voters}
-  (S : Votes voters) 
-  (T : Votes voters) 
+  (S : Votes voters)
+  (T : Votes voters)
   (safe_proof: is_safe T  =true)
   (is_subset: VotesIsSubset S T)
-  : forall anyblock anyblock_votes, 
+  : forall anyblock anyblock_votes,
       List.In (anyblock,anyblock_votes) (get_supermajority_blocks  S)
-      -> {anyblock_votes_in_t 
+      -> {anyblock_votes_in_t
           & List.In (anyblock,anyblock_votes_in_t) (get_supermajority_blocks  T)}.
 Proof.
   intros b b_votes_number HinS.
@@ -744,7 +769,7 @@ Proof.
   Admitted.
   (*
   apply superset_has_subset_majority_blocks_aux1.
-  assert 
+  assert
     ( has_supermajority_predicate voters (length equivocate_voters_T) (b, v) =
     true
     )
@@ -753,91 +778,90 @@ Proof.
 
   destruct HinS as  [l1 HinS].
   destruct HinS as  [l2 HinS].
-  
+
 
 Admitted.
    *)
-  
 
-Definition has_supermajority 
+
+Definition has_supermajority
   {voters:Voters}
   (S : Votes voters)
   : bool
-  := 
+  :=
   0 <? List.length (get_supermajority_blocks  S) .
 
+Definition block_has_supermajority
+  {voters:Voters}
+  (block:AnyBlock)
+  (S:Votes voters)
+  :bool
+  :=
+  let blocks_with_super_majority := get_supermajority_blocks S
+  in
+  match
+    List.filter
+      (fun x => AnyBlock.is_prefix block (fst x))
+      blocks_with_super_majority
+  with
+  | List.nil => false
+  | _ => true
+  end.
 
-Require Import Coq.Logic.JMeq.
-
-
-Lemma castVote 
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  (v:Vote voters1)
-  :Vote voters2.
-Proof.
-  destruct v.
-  assert (Voters.In voter voters2) as H.
-  - rewrite <- are_eq.
-    assumption.
-  - refine (VoteC _ _ block voter H ).
-Defined.
-
-Lemma jmeq_vote 
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  (v:Vote voters1)
-  : JMeq v (castVote are_eq v).
-Proof.
-  subst.
-  destruct v.
-  simpl.
-  reflexivity.
-Qed.
-
-Lemma jmeq_vote2
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
-  :JMeq (Vote voters1) (Vote voters2).
-Proof.
-  subst.
-  reflexivity.
-Qed.
+Corollary blocks_that_has_supermajority_are_related
+  {voters:Voters}
+  (b1 b2:AnyBlock)
+  (S:Votes voters)
+  (s_is_safe : is_safe S = true)
+  : b1.(AnyBlock.block) ~ b2.(AnyBlock.block).
+Admitted.
+  (*TODO: critical*)
 
 
-Lemma identity_castVote (voters:Voters) (v:Vote voters) 
-  : castVote eq_refl v = v . 
-Proof.
-  destruct v.
-  auto.
-Qed.
+Section Cast.
 
-
-
-Lemma castVotes 
-  {voters1 voters2 : Voters} 
-  (are_eq: voters1 = voters2) 
+Lemma cast
+  {voters1 voters2 : Voters}
+  (are_eq: voters1 = voters2)
   (v:Votes voters1) : Votes voters2.
 Proof.
-  destruct v.
-  remember (List.map (castVote are_eq) vlist0) as votes_list2.
+  destruct v as [vlist].
+  remember (map (Vote.cast are_eq) vlist) as votes_list2.
   refine (VotesC voters2 votes_list2).
 Defined.
 
-Lemma identity_castVotes (voters:Voters) (v:Votes voters) 
-  : castVotes eq_refl v = v . 
+Lemma cast_list_jemq
+  {voters1 voters2 : Voters}
+  (are_eq: voters1 = voters2)
+  (l : list (Vote voters1))
+  : JMeq l (List.map (Vote.cast are_eq) l).
 Proof.
-  destruct v.
-  simpl.
-  enough (List.map (castVote eq_refl) vlist0 = vlist0).
-  - rewrite H. auto.
-  - induction vlist0.
-    + auto.
-    + simpl.
-      rewrite identity_castVote.
-      rewrite IHvlist0.
-      auto.
+  subst.
+  induction l.
+  - simpl. apply JMeq_refl.
+  - apply JMeq_eq in IHl.
+    simpl.
+    rewrite <- IHl.
+    pose (Vote.cast_jmeq eq_refl a) as w.
+    apply JMeq_eq in w.
+    rewrite <- w.
+    reflexivity.
 Qed.
+
+Lemma cast_jmeq
+  {voters1 voters2 : Voters}
+  (are_eq: voters1 = voters2)
+  (vs:Votes voters1)
+  : JMeq vs (cast are_eq vs).
+Proof.
+  subst.
+  destruct vs as [vlist].
+  simpl.
+  pose (cast_list_jemq eq_refl vlist).
+  rewrite <- j.
+  reflexivity.
+Qed.
+End Cast.
 
 
 Close Scope blocks.

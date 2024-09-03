@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Classes.Eqb</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Classes.Eqb</h1>
+
+<div class="code">
+<span class="id" title="keyword">Declare Scope</span> <span class="id" title="var">eqb_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Delimit</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">eqb_scope</span>  <span class="id" title="keyword">with</span> <span class="id" title="var">eqb</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Create HintDb</span> <span class="id" title="var">eqb</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="Eqb" class="idref" href="#Eqb"><span class="id" title="record">Eqb</span></a> (<a id="T:1" class="idref" href="#T:1"><span class="id" title="binder">T</span></a> : <span class="id" title="keyword">Type</span>) := {<br/>
+&nbsp;&nbsp;<a id="eqb" class="idref" href="#eqb"><span class="id" title="projection">eqb</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#T:1"><span class="id" title="variable">T</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#T:1"><span class="id" title="variable">T</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="d1e236ec039c134a0512d70204e70cbc" class="idref" href="#d1e236ec039c134a0512d70204e70cbc"><span class="id" title="notation">&quot;</span></a>=?" := <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70) : <span class="id" title="var">eqb_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="EqbLaws" class="idref" href="#EqbLaws"><span class="id" title="record">EqbLaws</span></a> (<a id="T:4" class="idref" href="#T:4"><span class="id" title="binder">T</span></a> : <span class="id" title="keyword">Type</span>) `{<a id="H:5" class="idref" href="#H:5"><span class="id" title="binder">Eqb</span></a> <a id="H:5" class="idref" href="#H:5"><span class="id" title="binder">T</span></a>} := {<br/>
+&nbsp;&nbsp;<a id="eqb_reflexivity" class="idref" href="#eqb_reflexivity"><span class="id" title="projection">eqb_reflexivity</span></a> : <span class="id" title="keyword">∀</span> <a id="x:7" class="idref" href="#x:7"><span class="id" title="binder">x</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#T:4"><span class="id" title="variable">T</span></a>, <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:7"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:7"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>;<br/>
+&nbsp;&nbsp;<a id="eqb_symmetry" class="idref" href="#eqb_symmetry"><span class="id" title="projection">eqb_symmetry</span></a> : <span class="id" title="keyword">∀</span> <a id="x:9" class="idref" href="#x:9"><span class="id" title="binder">x</span></a> <a id="y:10" class="idref" href="#y:10"><span class="id" title="binder">y</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#T:4"><span class="id" title="variable">T</span></a>, <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:9"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:10"><span class="id" title="variable">y</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:10"><span class="id" title="variable">y</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:9"><span class="id" title="variable">x</span></a>;<br/>
+&nbsp;&nbsp;<a id="eqb_transitivity" class="idref" href="#eqb_transitivity"><span class="id" title="projection">eqb_transitivity</span></a> : <span class="id" title="keyword">∀</span> <a id="x:12" class="idref" href="#x:12"><span class="id" title="binder">x</span></a> <a id="y:13" class="idref" href="#y:13"><span class="id" title="binder">y</span></a> <a id="z:14" class="idref" href="#z:14"><span class="id" title="binder">z</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#T:4"><span class="id" title="variable">T</span></a>, <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:12"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:13"><span class="id" title="variable">y</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:13"><span class="id" title="variable">y</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#z:14"><span class="id" title="variable">z</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:12"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#z:14"><span class="id" title="variable">z</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a><br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Hint Resolve</span> <span class="id" title="var">eqb_reflexivity</span>:<span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Global Hint Resolve</span> <span class="id" title="var">eqb_symmetry</span>:<span class="id" title="var">eqb</span>.<br/>
+<span class="id" title="keyword">Global Hint Resolve</span> <span class="id" title="var">eqb_transitivity</span>:<span class="id" title="var">eqb</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="EqbEq" class="idref" href="#EqbEq"><span class="id" title="record">EqbEq</span></a> (<a id="T:16" class="idref" href="#T:16"><span class="id" title="binder">T</span></a> : <span class="id" title="keyword">Type</span>) `{<a id="H:17" class="idref" href="#H:17"><span class="id" title="binder">Eqb</span></a> <a id="H:17" class="idref" href="#H:17"><span class="id" title="binder">T</span></a>} := {<br/>
+&nbsp;&nbsp;<a id="eqb_eq" class="idref" href="#eqb_eq"><span class="id" title="projection">eqb_eq</span></a> : <span class="id" title="keyword">∀</span> <a id="x:19" class="idref" href="#x:19"><span class="id" title="binder">x</span></a> <a id="y:20" class="idref" href="#y:20"><span class="id" title="binder">y</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#T:16"><span class="id" title="variable">T</span></a>, <a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:19"><span class="id" title="variable">x</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:20"><span class="id" title="variable">y</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">↔</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#x:19"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Eqb.html#y:20"><span class="id" title="variable">y</span></a><br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Hint Resolve</span> <span class="id" title="var">eqb_eq</span>:<span class="id" title="var">eqb</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

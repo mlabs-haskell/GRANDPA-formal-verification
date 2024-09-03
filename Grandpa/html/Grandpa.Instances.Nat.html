@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Instances.Nat</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Instances.Nat</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Eqb.html#"><span class="id" title="library">Classes.Eqb</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.All.html#"><span class="id" title="library">Classes.Math.All</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbNat" class="idref" href="#EqbNat"><span class="id" title="instance">EqbNat</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#Eqb"><span class="id" title="class">Eqb</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> :=<br/>
+{<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb"><span class="id" title="method">eqb</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.eqb"><span class="id" title="definition">PeanoNat.Nat.eqb</span></a><br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#EqbNat"><span class="id" title="instance">EqbNat</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>]<span class="id" title="keyword">Instance</span> <a id="EqbLawsNat" class="idref" href="#EqbLawsNat"><span class="id" title="instance">EqbLawsNat</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#EqbLaws"><span class="id" title="class">EqbLaws</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> :=<br/>
+{<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_reflexivity"><span class="id" title="method">eqb_reflexivity</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.eqb_refl"><span class="id" title="lemma">PeanoNat.Nat.eqb_refl</span></a>;<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_symmetry"><span class="id" title="method">eqb_symmetry</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.eqb_sym"><span class="id" title="lemma">PeanoNat.Nat.eqb_sym</span></a>;<br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#EqbLawsNat"><span class="id" title="instance">EqbLawsNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="EqbEqNat" class="idref" href="#EqbEqNat"><span class="id" title="instance">EqbEqNat</span></a> : <a class="idref" href="Grandpa.Classes.Eqb.html#EqbEq"><span class="id" title="class">EqbEq</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> :=<br/>
+{<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Eqb.html#eqb_eq"><span class="id" title="method">eqb_eq</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.eqb_eq"><span class="id" title="lemma">PeanoNat.Nat.eqb_eq</span></a>;<br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#EqbEqNat"><span class="id" title="instance">EqbEqNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <a id="Math" class="idref" href="#Math"><span class="id" title="section">Math</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="SemigroupNat" class="idref" href="#SemigroupNat"><span class="id" title="instance">SemigroupNat</span></a>: <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#Semigroup"><span class="id" title="class">Semigroup</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
+:={<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#plus"><span class="id" title="method">plus</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Arith.PeanoNat.html#Nat.add"><span class="id" title="definition">PeanoNat.Nat.add</span></a><br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#SemigroupNat"><span class="id" title="instance">SemigroupNat</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="SemigroupLawsNat" class="idref" href="#SemigroupLawsNat"><span class="id" title="instance">SemigroupLawsNat</span></a> : <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#SemigroupLaws"><span class="id" title="class">SemigroupLaws</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> := {<br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#SemigroupLawsNat"><span class="id" title="instance">SemigroupLawsNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="MonoidNat" class="idref" href="#MonoidNat"><span class="id" title="instance">MonoidNat</span></a>: <a class="idref" href="Grandpa.Classes.Math.Monoid.html#Monoid"><span class="id" title="class">Monoid</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
+:={<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a> := 0;<br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#MonoidNat"><span class="id" title="instance">MonoidNat</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="tactic">refine</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="MonoidLawsNat" class="idref" href="#MonoidLawsNat"><span class="id" title="instance">MonoidLawsNat</span></a>: <a class="idref" href="Grandpa.Classes.Math.Monoid.html#MonoidLaws"><span class="id" title="class">MonoidLaws</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
+:={<br/>
+}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <a class="idref" href="Grandpa.Instances.Nat.html#MonoidLawsNat"><span class="id" title="instance">MonoidLawsNat</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <a class="idref" href="Grandpa.Instances.Nat.html#Math"><span class="id" title="section">Math</span></a>.<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

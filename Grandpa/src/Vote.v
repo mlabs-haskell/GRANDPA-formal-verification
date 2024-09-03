@@ -10,6 +10,7 @@ Require Import Classes.Eqb.
 Require Instances.Tuple.
 Require Instances.Nat.
 
+Require Import Coq.Logic.JMeq.
 
 (** Vote
 
@@ -29,10 +30,10 @@ Round number would be added later when we add Time and Rounds, this
 
 We don't have types for votes, instead when needed, we distinguish
 them by maintaining two different set of votes, one for precommits 
-and other for prevotes.
+and other for prevotes inside [RoundState].
 
 However, we want to tie a Vote with a particular set of Voters 
-and to ensure that the Vote is coherent.
+ to ensure that a collection of votes refers to the same set of voters.
 *)
 
 Record Vote
@@ -108,3 +109,32 @@ Proof.
 Qed.
 
 End Instances.
+
+
+Section Cast.
+Lemma cast
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (v:Vote voters1)
+  :Vote voters2.
+Proof.
+  destruct v as [block_number block voter in_voters].
+  enough (Voters.In voter voters2) as H.
+  refine (VoteC _ _ block voter H ).
+  rewrite <- are_eq.
+  assumption.
+Defined.
+
+Lemma cast_jmeq 
+  {voters1 voters2 : Voters} 
+  (are_eq: voters1 = voters2) 
+  (v:Vote voters1)
+  : JMeq v (cast are_eq v).
+Proof.
+  subst.
+  destruct v.
+  simpl.
+  reflexivity.
+Qed.
+
+End Cast.

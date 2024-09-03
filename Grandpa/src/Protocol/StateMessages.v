@@ -29,10 +29,13 @@ Definition is_message_processed_by(state:State) (msg:Message) (v:Voter) : bool:=
 Definition accept_vote (state:State) (voter:Voter) (msg:Message): State :=
   match Dictionary.lookup voter state.(voters_state)with
   | Some voter_state_ => 
-    update_voter_state 
-    state 
-    voter 
-    (VoterState.update_with_msg voter_state_ msg)
+    let voter_state_is_updated:=
+          update_voter_state 
+          state 
+          voter 
+          (VoterState.update_with_msg voter_state_ msg)
+    in
+    set_message_as_processed_by voter msg voter_state_is_updated
   (* None means that a message for participant outside of the simulation is tried *)
   (* we expect this to never happend*)
   | _ => state
@@ -49,7 +52,7 @@ Definition update_vote_for_voter `{Io} (t:Time) (voter:Voter) (state:State) (msg
         if (t <=? (msg.(Message.time)+ global_time_constant)%math ) || (voter =? msg.(Message.voter))
         then accept_vote state voter msg else state.
 
-Definition upate_votes_for_voter `{Io} (t:Time) (state:State) (voter:Voter) : State :=
+Definition update_votes_for_voter `{Io} (t:Time) (state:State) (voter:Voter) : State :=
   let messages := List.map snd (Dictionary.to_list (pending_messages state))
   in
   let f := update_vote_for_voter t voter 
@@ -57,17 +60,13 @@ Definition upate_votes_for_voter `{Io} (t:Time) (state:State) (voter:Voter) : St
     List.fold_left f messages state.
 
 
-(*
-TODO: Critial, this must check for all the voters that participate ever! not only the round ones!
-Or not?
-*)
 Definition prune_message `{Io} (state:State) (msg:Message) : State := 
-  let round_participants := io_get_round_voters (Message.round msg)
+  let all_participants := get_all_time_participants
   in
   if 
       List.fold_left 
         (fun acc v => andb acc (is_message_processed_by state msg v) ) 
-        (List.map fst (Dictionary.to_list round_participants))
+        all_participants
         true
   then
     remove_message state msg 
@@ -81,7 +80,7 @@ Definition update_votes `{Io} (t:Time) (state:State) : State:=
   let state_votes_updated
     := 
     List.fold_left 
-      (upate_votes_for_voter t ) 
+      (update_votes_for_voter t ) 
       (List.map fst (Dictionary.to_list state.(voters_state)))
       state 
   in

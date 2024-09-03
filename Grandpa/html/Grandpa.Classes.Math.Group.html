@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Grandpa.Classes.Math.Group</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Grandpa.Classes.Math.Group</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#"><span class="id" title="library">Classes.Math.Monoid</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Export</span> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#"><span class="id" title="module">Monoid</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="Group" class="idref" href="#Group"><span class="id" title="record">Group</span></a> (<a id="T:1" class="idref" href="#T:1"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) `{<a id="H0:3" class="idref" href="#H0:3"><span class="id" title="binder">Monoid</span></a> <a id="H0:3" class="idref" href="#H0:3"><span class="id" title="binder">T</span></a>} := {<br/>
+&nbsp;&nbsp;<a id="negate" class="idref" href="#negate"><span class="id" title="projection">negate</span></a>: <a class="idref" href="Grandpa.Classes.Math.Group.html#T:1"><span class="id" title="variable">T</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:1"><span class="id" title="variable">T</span></a>;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Class</span> <a id="GroupLaws" class="idref" href="#GroupLaws"><span class="id" title="record">GroupLaws</span></a> (<a id="T:6" class="idref" href="#T:6"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>) <br/>
+&nbsp;&nbsp;`{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a id="sg:7" class="idref" href="#sg:7"><span class="id" title="binder">sg</span></a>:<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#Semigroup"><span class="id" title="class">Semigroup</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:6"><span class="id" title="variable">T</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="sgl:8" class="idref" href="#sgl:8"><span class="id" title="binder">sgl</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Semigroup.html#SemigroupLaws"><span class="id" title="class">SemigroupLaws</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:6"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#sg:7"><span class="id" title="variable">sg</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="m:9" class="idref" href="#m:9"><span class="id" title="binder">m</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Monoid.html#Monoid"><span class="id" title="class">Monoid</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:6"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#sg:7"><span class="id" title="variable">sg</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="ml:10" class="idref" href="#ml:10"><span class="id" title="binder">ml</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Monoid.html#MonoidLaws"><span class="id" title="class">MonoidLaws</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:6"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#sg:7"><span class="id" title="variable">sg</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#sgl:8"><span class="id" title="variable">sgl</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#m:9"><span class="id" title="variable">m</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;,<a id="g:11" class="idref" href="#g:11"><span class="id" title="binder">g</span></a>:@<a class="idref" href="Grandpa.Classes.Math.Group.html#Group"><span class="id" title="class">Group</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:6"><span class="id" title="variable">T</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#sg:7"><span class="id" title="variable">sg</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#m:9"><span class="id" title="variable">m</span></a><br/>
+&nbsp;&nbsp;} <br/>
+&nbsp;&nbsp;:= <br/>
+&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;<a id="left_negate" class="idref" href="#left_negate"><span class="id" title="projection">left_negate</span></a>: <span class="id" title="keyword">∀</span> <a id="t:13" class="idref" href="#t:13"><span class="id" title="binder">t</span></a>, <a class="idref" href="Grandpa.Classes.Math.Group.html#t:13"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#negate"><span class="id" title="method">negate</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#t:13"><span class="id" title="variable">t</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a>;<br/>
+&nbsp;&nbsp;<a id="right_negate" class="idref" href="#right_negate"><span class="id" title="projection">right_negate</span></a>: <span class="id" title="keyword">∀</span> <a id="t:15" class="idref" href="#t:15"><span class="id" title="binder">t</span></a>, <a class="idref" href="Grandpa.Classes.Math.Group.html#negate"><span class="id" title="method">negate</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#t:15"><span class="id" title="variable">t</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#t:15"><span class="id" title="variable">t</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.2/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="Grandpa.Classes.Math.Monoid.html#neutro"><span class="id" title="method">neutro</span></a><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="substraction" class="idref" href="#substraction"><span class="id" title="definition">substraction</span></a> {<a id="T:17" class="idref" href="#T:17"><span class="id" title="binder">T</span></a>:<span class="id" title="keyword">Type</span>} `{<a id="gl:23" class="idref" href="#gl:23"><span class="id" title="binder">gl</span></a>:<a class="idref" href="Grandpa.Classes.Math.Group.html#GroupLaws"><span class="id" title="class">GroupLaws</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#T:17"><span class="id" title="variable">T</span></a>} (<a id="t1:24" class="idref" href="#t1:24"><span class="id" title="binder">t1</span></a> <a id="t2:25" class="idref" href="#t2:25"><span class="id" title="binder">t2</span></a> : <a class="idref" href="Grandpa.Classes.Math.Group.html#T:17"><span class="id" title="variable">T</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="Grandpa.Classes.Math.Group.html#T:17"><span class="id" title="variable">T</span></a><br/>
+&nbsp;&nbsp;:=<br/>
+&nbsp;&nbsp;<a class="idref" href="Grandpa.Classes.Math.Group.html#t1:24"><span class="id" title="variable">t1</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">+</span></a> <a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">(</span></a><a class="idref" href="Grandpa.Classes.Math.Group.html#negate"><span class="id" title="method">negate</span></a> <a class="idref" href="Grandpa.Classes.Math.Group.html#t2:25"><span class="id" title="variable">t2</span></a><a class="idref" href="Grandpa.Classes.Math.Semigroup.html#bd0dc97a35a215d97e8a463a14f0b420"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="::math_scope:x_'-'_x" class="idref" href="#::math_scope:x_'-'_x"><span class="id" title="notation">&quot;</span></a>-" := <a class="idref" href="Grandpa.Classes.Math.Group.html#substraction"><span class="id" title="definition">substraction</span></a> : <span class="id" title="var">math_scope</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Unfold</span> <a class="idref" href="Grandpa.Classes.Math.Group.html#substraction"><span class="id" title="definition">substraction</span></a>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Resolve</span> <span class="id" title="var">left_negate</span> <span class="id" title="var">right_negate</span>: <span class="id" title="var">MathHints</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">math_scope</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
